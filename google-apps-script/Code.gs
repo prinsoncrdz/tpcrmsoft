@@ -7,7 +7,7 @@
  * 3. Delete all existing code and replace with this complete Code.gs script.
  * 4. Click "Deploy" (top right) > "New deployment"
  * 5. Click Gear Icon ⚙️ > Select "Web app"
- * 6. Set Description: "Turning Point CRM Live API v2"
+ * 6. Set Description: "Turning Point CRM & Live Chat API v3"
  * 7. Set Execute as: "Me"
  * 8. Set Who has access: "Anyone" (CRITICAL: Must be "Anyone" so the website can read/write)
  * 9. Click "Deploy" > Copy the Web App URL!
@@ -45,6 +45,10 @@ function handleRequest(e) {
       return handleAddProject(postData);
     } else if (action === 'addPettyCash') {
       return handleAddPettyCash(postData);
+    } else if (action === 'getChatMessages') {
+      return handleGetChatMessages();
+    } else if (action === 'sendChatMessage') {
+      return handleSendChatMessage(postData);
     }
 
     return responseJSON({ status: 'success', message: 'Turning Point CRM API Operational' });
@@ -62,7 +66,6 @@ function handleRead(gid) {
   
   var values = sheet.getDataRange().getValues();
   
-  // Format Date objects to clean YYYY-MM-DD strings for JSON compatibility
   var cleanValues = values.map(function(row) {
     return row.map(function(cell) {
       if (cell instanceof Date) {
@@ -88,7 +91,6 @@ function handleCellUpdate(data) {
   if (rowIndex > 0 && columnIndex > 0) {
     sheet.getRange(rowIndex, columnIndex).setValue(value);
     
-    // Update Last Updated timestamp column if CRM Sheet
     if ((data.gid || '1178829100') === '1178829100') {
       sheet.getRange(rowIndex, 17).setValue(Utilities.formatDate(new Date(), ss.getSpreadsheetTimeZone(), 'dd-MMM-yyyy'));
     }
@@ -145,7 +147,7 @@ function handleAddPettyCash(data) {
   var lastRow = sheet.getLastRow() + 1;
   
   var rowValues = [
-    '', // Column A padding
+    '',
     item.date || Utilities.formatDate(new Date(), ss.getSpreadsheetTimeZone(), 'yyyy-MM-dd'),
     item.description || '',
     item.voucherNo || '-',
@@ -162,6 +164,57 @@ function handleAddPettyCash(data) {
   return responseJSON({ status: 'success', message: 'Petty Cash transaction added to Google Sheet', rowIndex: lastRow });
 }
 
+// Global Chat Messages Cloud Read Handler
+function handleGetChatMessages() {
+  var props = PropertiesService.getScriptProperties();
+  var rawMessages = props.getProperty('TP_GLOBAL_CHAT_MESSAGES') || '[]';
+  var messages = [];
+  try {
+    messages = JSON.parse(rawMessages);
+  } catch (err) {
+    messages = [];
+  }
+
+  // Prune messages older than 24 hours (86,400,000 ms)
+  var now = new Date().getTime();
+  var oneDayMs = 24 * 60 * 60 * 1000;
+  var validMessages = messages.filter(function(m) {
+    return (now - (m.timestamp || 0)) < oneDayMs;
+  });
+
+  return responseJSON({ status: 'success', data: validMessages });
+}
+
+// Global Chat Messages Cloud Send Handler
+function handleSendChatMessage(data) {
+  var props = PropertiesService.getScriptProperties();
+  var rawMessages = props.getProperty('TP_GLOBAL_CHAT_MESSAGES') || '[]';
+  var messages = [];
+  try {
+    messages = JSON.parse(rawMessages);
+  } catch (err) {
+    messages = [];
+  }
+
+  var msg = data.message || {};
+  var now = new Date().getTime();
+  var oneDayMs = 24 * 60 * 60 * 1000;
+
+  // Prune expired messages older than 24 hours
+  var validMessages = messages.filter(function(m) {
+    return (now - (m.timestamp || 0)) < oneDayMs;
+  });
+
+  // Append new message if valid
+  if (msg.text) {
+    validMessages.push(msg);
+  }
+
+  props.setProperty('TP_GLOBAL_CHAT_MESSAGES', JSON.stringify(validMessages));
+
+  return responseJSON({ status: 'success', message: 'Chat message synced globally', data: validMessages });
+}
+
 function getSheetByGid(ss, gid) {
   var sheets = ss.getSheets();
   for (var i = 0; i < sheets.length; i++) {
@@ -170,7 +223,6 @@ function getSheetByGid(ss, gid) {
     }
   }
   
-  // Resilient fallback by Sheet Tab Name
   var gidStr = gid.toString();
   if (gidStr === '1178829100') return ss.getSheetByName('CRM Sheet') || sheets[0];
   if (gidStr === '2002') return ss.getSheetByName('Petty Cash Dashboard') || sheets[1];

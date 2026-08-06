@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, MessageSquare, Clock, Users, User, ShieldCheck, Sparkles, Lock, MessageCircle, Check, CheckCheck } from 'lucide-react';
-import { SYSTEM_USERS } from '../services/googleSheets';
+import { SYSTEM_USERS, fetchGlobalChatMessages, sendGlobalChatMessage } from '../services/googleSheets';
 
 const CHAT_STORAGE_KEY = 'tp_team_chat_messages_v3';
 const PRESENCE_STORAGE_KEY = 'tp_team_user_presence_v1';
@@ -32,20 +32,24 @@ export default function TeamChatView({ currentUser }) {
     setPresenceMap(map);
   };
 
-  // Load messages, mark current channel messages as seen, and prune > 24 hours
-  const loadAndProcessMessages = () => {
-    const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+  // Sync and load messages from Cloud + local backup
+  const loadAndProcessMessages = async () => {
     const now = Date.now();
     const oneDayMs = 24 * 60 * 60 * 1000;
 
-    let parsedMessages = [];
-    if (saved) {
-      try { parsedMessages = JSON.parse(saved); } catch (err) { parsedMessages = []; }
+    // Fetch live messages from Cloud Apps Script backend
+    const cloudMessages = await fetchGlobalChatMessages();
+    let baseMessages = cloudMessages;
+
+    if (!baseMessages || !Array.isArray(baseMessages) || baseMessages.length === 0) {
+      const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+      if (saved) {
+        try { baseMessages = JSON.parse(saved); } catch (err) { baseMessages = []; }
+      }
     }
 
-    // Default starter welcome messages if empty
-    if (parsedMessages.length === 0) {
-      parsedMessages = [
+    if (!baseMessages || baseMessages.length === 0) {
+      baseMessages = [
         {
           id: 'msg-1',
           channel: 'GROUP',
@@ -74,7 +78,7 @@ export default function TeamChatView({ currentUser }) {
     }
 
     // Prune > 24 hours
-    const validMessages = parsedMessages.filter(msg => (now - msg.timestamp) < oneDayMs);
+    const validMessages = baseMessages.filter(msg => (now - msg.timestamp) < oneDayMs);
 
     // Auto-mark messages as SEEN by current user if they are viewing the channel
     let modified = false;
@@ -86,17 +90,14 @@ export default function TeamChatView({ currentUser }) {
            (msg.senderEmail === currentUser.email && msg.receiverEmail === activeChannel.replace('dm:', ''))))
       );
 
-      if (isForCurrentView && !msg.seenBy.includes(currentUser.email)) {
+      if (isForCurrentView && !(msg.seenBy || []).includes(currentUser.email)) {
         modified = true;
-        return { ...msg, seenBy: [...msg.seenBy, currentUser.email] };
+        return { ...msg, seenBy: [...(msg.seenBy || []), currentUser.email] };
       }
       return msg;
     });
 
-    if (modified) {
-      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(processedMessages));
-    }
-
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(processedMessages));
     setMessages(processedMessages);
   };
 
@@ -104,11 +105,11 @@ export default function TeamChatView({ currentUser }) {
     updatePresence();
     loadAndProcessMessages();
 
-    // Heartbeat every 5 seconds
+    // Fast 3-second Cloud Polling interval for instant messages on hosted domains
     const interval = setInterval(() => {
       updatePresence();
       loadAndProcessMessages();
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [activeChannel]);
@@ -117,7 +118,7 @@ export default function TeamChatView({ currentUser }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, activeChannel]);
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputMessage.trim()) return;
 
@@ -139,10 +140,14 @@ export default function TeamChatView({ currentUser }) {
       seenBy: [currentUser.email]
     };
 
+    // Immediate optimistic local UI update
     const updated = [...messages, newMessage];
     setMessages(updated);
     localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(updated));
     setInputMessage('');
+
+    // Push message to Cloud Google Apps Script API endpoint
+    await sendGlobalChatMessage(null, newMessage);
   };
 
   const formatTimestamp = (ts) => {
@@ -167,7 +172,6 @@ export default function TeamChatView({ currentUser }) {
     const p = presenceMap[email];
     if (!p || !p.lastActive) return { isOnline: false, statusText: 'Offline' };
 
-    // Active within last 35 seconds considered Online
     const isOnline = (Date.now() - p.lastActive) < 35000;
     return {
       isOnline,
@@ -181,7 +185,6 @@ export default function TeamChatView({ currentUser }) {
     return { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' };
   };
 
-  // Filter messages for current channel view
   const visibleMessages = messages.filter(msg => {
     if (activeChannel === 'GROUP') {
       return msg.channel === 'GROUP' || !msg.receiverEmail;
@@ -196,7 +199,6 @@ export default function TeamChatView({ currentUser }) {
     return false;
   });
 
-  // Target DM User info
   const activeDmUser = activeChannel.startsWith('dm:') 
     ? SYSTEM_USERS.find(u => u.email === activeChannel.replace('dm:', '')) 
     : null;
@@ -206,7 +208,7 @@ export default function TeamChatView({ currentUser }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '14px', minHeight: 'calc(100vh - 120px)' }} className="team-chat-container">
       
-      {/* Sidebar: Channels & User Online / Offline Status */}
+      {/* Sidebar */}
       <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: 'var(--shadow-card)' }}>
         
         {/* Public Group Channels */}
@@ -238,7 +240,7 @@ export default function TeamChatView({ currentUser }) {
           </button>
         </div>
 
-        {/* 1-on-1 Personal Direct Messages & Live Presence Indicators */}
+        {/* 1-on-1 Personal Direct Messages */}
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span>Personal DMs & Status</span>
@@ -249,7 +251,6 @@ export default function TeamChatView({ currentUser }) {
             {otherUsers.map(user => {
               const dmKey = `dm:${user.email}`;
               const isActive = activeChannel === dmKey;
-              const roleStyle = getRoleBadgeStyle(user.role);
               const presence = getUserOnlineStatus(user.email);
 
               return (
@@ -288,11 +289,9 @@ export default function TeamChatView({ currentUser }) {
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {user.name}
-                      </span>
-                    </div>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {user.name}
+                    </span>
                     <span style={{ fontSize: '0.6rem', color: presence.isOnline ? '#059669' : 'var(--text-muted)', fontWeight: 600 }}>
                       {presence.statusText}
                     </span>
@@ -307,7 +306,7 @@ export default function TeamChatView({ currentUser }) {
         <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', padding: '10px', borderRadius: '8px', fontSize: '0.68rem', color: '#B45309', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
           <Clock size={15} style={{ flexShrink: 0, marginTop: '2px' }} />
           <span>
-            <strong>1-Day Policy:</strong> Chats self-delete after 24h. Blue ticks ✔✔ indicate recipient has seen the message.
+            <strong>Cloud Global Sync:</strong> Messages sync across all hosted devices & auto-delete after 24h. Blue ticks ✔✔ indicate recipient has seen the message.
           </span>
         </div>
 
@@ -335,14 +334,14 @@ export default function TeamChatView({ currentUser }) {
                 {activeDmUser ? `Private DM: ${activeDmUser.name}` : '🌐 Team Public Group Chat'}
               </h3>
               <p style={{ fontSize: '0.68rem', color: activeDmStatus?.isOnline ? '#059669' : 'var(--text-muted)', fontWeight: 600 }}>
-                {activeDmUser ? activeDmStatus.statusText : 'Visible to all 5 Turning Point team members'}
+                {activeDmUser ? activeDmStatus.statusText : 'Cloud-synced live channel across all hosted devices'}
               </p>
             </div>
           </div>
 
           <span style={{ fontSize: '0.68rem', color: 'var(--brand-green)', background: '#ECFDF5', padding: '3px 8px', borderRadius: '10px', border: '1px solid #A7F3D0', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
             {activeDmUser ? <Lock size={12} /> : null}
-            {activeDmUser ? 'Personal DM' : 'Team Public'}
+            {activeDmUser ? 'Personal DM' : 'Cloud Live'}
           </span>
         </div>
 
@@ -354,14 +353,13 @@ export default function TeamChatView({ currentUser }) {
               <p style={{ fontSize: '0.82rem', fontWeight: 600 }}>
                 {activeDmUser ? `No personal messages with ${activeDmUser.name} in the last 24 hours.` : 'No group messages in the last 24 hours.'}
               </p>
-              <p style={{ fontSize: '0.72rem', marginTop: '4px' }}>Type a message below to start chatting!</p>
+              <p style={{ fontSize: '0.72rem', marginTop: '4px' }}>Type a message below to send live across all hosted computers!</p>
             </div>
           ) : (
             visibleMessages.map((msg) => {
               const isMine = msg.senderEmail === currentUser.email;
               const roleStyle = getRoleBadgeStyle(msg.senderRole);
 
-              // Blue Tick logic: If someone other than sender has seen the message
               const seenByOthers = (msg.seenBy || []).filter(e => e !== msg.senderEmail);
               const isSeen = seenByOthers.length > 0;
 
@@ -398,14 +396,12 @@ export default function TeamChatView({ currentUser }) {
                         border: isMine ? 'none' : '1px solid var(--border-color)',
                         fontSize: '0.78rem',
                         lineHeight: '1.4',
-                        wordBreak: 'break-word',
-                        position: 'relative'
+                        wordBreak: 'break-word'
                       }}
                     >
                       {msg.text}
                     </div>
 
-                    {/* BLUE TICK READ RECEIPTS FOR SENT MESSAGES */}
                     {isMine && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px', fontSize: '0.65rem' }}>
                         {isSeen ? (
@@ -414,7 +410,7 @@ export default function TeamChatView({ currentUser }) {
                             <span>Seen</span>
                           </span>
                         ) : (
-                          <span style={{ color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: '2px' }} title="Sent, awaiting recipient view">
+                          <span style={{ color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: '2px' }} title="Sent to Cloud API, awaiting recipient view">
                             <Check size={14} />
                             <span>Sent</span>
                           </span>
@@ -438,7 +434,7 @@ export default function TeamChatView({ currentUser }) {
           <input 
             type="text"
             className="form-input"
-            placeholder={activeDmUser ? `Send personal message to ${activeDmUser.name}...` : 'Post a public message to the team...'}
+            placeholder={activeDmUser ? `Send cloud message to ${activeDmUser.name}...` : 'Post a live cloud message to the team...'}
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             style={{ flex: 1, fontSize: '0.78rem', padding: '8px 12px' }}

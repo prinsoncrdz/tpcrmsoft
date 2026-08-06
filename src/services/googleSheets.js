@@ -11,8 +11,8 @@ export const SHEET_GIDS = {
   PETTY_CASH_SEPT: '1003'
 };
 
-// User's Updated Live Google Apps Script Web App Deployment URL for instant writes
-export const DEPLOYED_GAS_URL = 'https://script.google.com/macros/s/AKfycby4IyYDCOgF2eM9C33cYkcwANBsHaDh4Edb739z1pgYEFEIi22phnJUDpoOe5QtNKxiUg/exec';
+// User's Updated Live Google Apps Script Web App Deployment URL with Global Cloud Chat Engine
+export const DEPLOYED_GAS_URL = 'https://script.google.com/macros/s/AKfycbzETeFK9bXgNc4C_I8PSyMaPp6-fuFMw8SViAW3mhWiyFkNHQejEJN9ioqF9_4btggfzw/exec';
 export const DEFAULT_GAS_URL = DEPLOYED_GAS_URL;
 
 // Registered Turning Point Retail Team Users with UNIQUE passwords for each user
@@ -165,12 +165,10 @@ function parseCRMRows(rows) {
     const col0 = (row[0] || '').toString().trim();
     const col1 = (row[1] || '').toString().trim();
     
-    // Ignore legacy test row IDs completely
     if (col0 === 'TP-HC-001' || col0 === 'TP-RT-002' || col0 === 'TP-TC-003') {
       continue;
     }
     
-    // Sector row banner
     if (col0.includes('▌') || (col0.toUpperCase() === col0 && col0.length > 3 && !col0.startsWith('TP-') && !col1)) {
       currentSector = col0.replace('▌', '').trim();
       continue;
@@ -178,7 +176,6 @@ function parseCRMRows(rows) {
     
     if (col0 === 'PORTFOLIO TOTAL') continue;
     
-    // Valid project row if col1 (name) or col0 (ID) exists
     if (col1 || (col0 && col0.length >= 2)) {
       const rawOwner = (row[4] || '').toString().trim();
       const rawAssignee = (row[5] || '').toString().trim();
@@ -377,4 +374,40 @@ export async function addPettyCashToGoogleSheet(gasUrl, { gid, item }) {
   } catch (err) {
     return { success: true, message: 'Petty cash entry sent to Google Sheet API.' };
   }
+}
+
+// FETCH GLOBAL LIVE CHAT MESSAGES FROM CLOUD ENDPOINT
+export async function fetchGlobalChatMessages(gasUrl) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(`${targetUrl}?action=getChatMessages&t=${Date.now()}`);
+    if (!response.ok) throw new Error('Network response not ok');
+    const json = await response.json();
+    if (json.status === 'success' && Array.isArray(json.data)) {
+      return json.data;
+    }
+  } catch (err) {
+    console.warn('Global Chat fetch:', err);
+  }
+  return null;
+}
+
+// SEND GLOBAL LIVE CHAT MESSAGE TO CLOUD ENDPOINT
+export async function sendGlobalChatMessage(gasUrl, message) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'sendChatMessage',
+        message
+      })
+    });
+    const json = await response.json();
+    return json.data || null;
+  } catch (err) {
+    console.warn('Global Chat send:', err);
+  }
+  return null;
 }
