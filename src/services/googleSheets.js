@@ -15,7 +15,7 @@ export const SHEET_GIDS = {
 export const DEPLOYED_GAS_URL = 'https://script.google.com/macros/s/AKfycbzETeFK9bXgNc4C_I8PSyMaPp6-fuFMw8SViAW3mhWiyFkNHQejEJN9ioqF9_4btggfzw/exec';
 export const DEFAULT_GAS_URL = DEPLOYED_GAS_URL;
 
-// Registered Turning Point Retail Team Users with UNIQUE passwords for each user
+// Registered Turning Point Retail Team Users (6 Official Team Accounts)
 export const SYSTEM_USERS = [
   {
     email: 'walterdantis@turningpointretail.com',
@@ -24,7 +24,7 @@ export const SYSTEM_USERS = [
     passwordHash: 'WalterCEO@2026!',
     fallbackPassword: 'TurningPoint@2026!',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-    allowedTabs: ['CRM', 'PETTY_CASH_DASHBOARD', 'PETTY_CASH_JULY', 'PETTY_CASH_AUG', 'PETTY_CASH_SEPT']
+    allowedTabs: ['CRM', 'PETTY_CASH_DASHBOARD', 'PETTY_CASH_JULY', 'PETTY_CASH_AUG', 'PETTY_CASH_SEPT', 'TEAM_CHAT']
   },
   {
     email: 'admin@turningpointretail.com',
@@ -33,7 +33,16 @@ export const SYSTEM_USERS = [
     passwordHash: 'AdminTurning@2026!',
     fallbackPassword: 'TurningPoint@2026!',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150',
-    allowedTabs: ['CRM', 'PETTY_CASH_DASHBOARD', 'PETTY_CASH_JULY', 'PETTY_CASH_AUG', 'PETTY_CASH_SEPT']
+    allowedTabs: ['CRM', 'PETTY_CASH_DASHBOARD', 'PETTY_CASH_JULY', 'PETTY_CASH_AUG', 'PETTY_CASH_SEPT', 'TEAM_CHAT']
+  },
+  {
+    email: 'support@turningpointretail.com',
+    name: 'Sreymom Sophal',
+    role: 'Support & Ops Manager',
+    passwordHash: 'SreymomSupport@2026!',
+    fallbackPassword: 'TurningPoint@2026!',
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=150',
+    allowedTabs: ['CRM', 'PETTY_CASH_DASHBOARD', 'PETTY_CASH_JULY', 'PETTY_CASH_AUG', 'PETTY_CASH_SEPT', 'TEAM_CHAT']
   },
   {
     email: 'srelyang.thim@turningpointretail.com',
@@ -42,7 +51,7 @@ export const SYSTEM_USERS = [
     passwordHash: 'SrelyangThim@2026!',
     fallbackPassword: 'TurningPoint@2026!',
     avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=150',
-    allowedTabs: ['CRM']
+    allowedTabs: ['CRM', 'TEAM_CHAT']
   },
   {
     email: 'ajay.dsouza@turningpointretail.com',
@@ -51,7 +60,7 @@ export const SYSTEM_USERS = [
     passwordHash: 'AjayDsouza@2026!',
     fallbackPassword: 'TurningPoint@2026!',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150',
-    allowedTabs: ['CRM']
+    allowedTabs: ['CRM', 'TEAM_CHAT']
   },
   {
     email: 'prinson.cardoza@turningpointretail.com',
@@ -60,7 +69,7 @@ export const SYSTEM_USERS = [
     passwordHash: 'PrinsonCardoza@2026!',
     fallbackPassword: 'TurningPoint@2026!',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150',
-    allowedTabs: ['CRM']
+    allowedTabs: ['CRM', 'TEAM_CHAT']
   }
 ];
 
@@ -131,6 +140,9 @@ function sanitizeOwnerName(rawName) {
   if (str.toLowerCase().includes('vannak')) {
     return 'Srelyang Thim';
   }
+  if (str.toLowerCase().includes('sreymom') || str.toLowerCase().includes('support')) {
+    return 'Sreymom Sophal';
+  }
   return str;
 }
 
@@ -139,6 +151,9 @@ function sanitizeAssigneeName(rawName) {
   const str = rawName.toString().trim();
   if (str.toLowerCase().includes('dara') || str.toLowerCase().includes('pich')) {
     return 'Ajay Dsouza';
+  }
+  if (str.toLowerCase().includes('sreymom') || str.toLowerCase().includes('support')) {
+    return 'Sreymom Sophal';
   }
   return str;
 }
@@ -297,8 +312,8 @@ export function filterProjectsByRole(projects, currentUser) {
   const userName = currentUser.name.toLowerCase();
   const userEmail = currentUser.email.toLowerCase();
   
-  if (role === 'CEO' || role === 'Admin') {
-    return projects; // Unrestricted full access
+  if (role === 'CEO' || role === 'Admin' || role.includes('Support')) {
+    return projects; // Unrestricted full access for CEO, Admin, and Support Manager
   }
   
   return projects.filter(p => {

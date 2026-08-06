@@ -3,7 +3,7 @@ import { Lock, ShieldAlert, DollarSign, Calendar, CheckCircle2, TrendingUp, Refr
 import { fetchSheetData, SHEET_GIDS, PUBLISHED_SHEET_ID } from '../services/googleSheets';
 
 export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCashModal, refreshTrigger }) {
-  const isAuthorized = currentUser?.role === 'CEO' || currentUser?.role === 'Admin';
+  const isAuthorized = currentUser?.role === 'CEO' || currentUser?.role === 'Admin' || currentUser?.role?.includes('Support');
   const [julyData, setJulyData] = useState([]);
   const [augData, setAugData] = useState([]);
   const [septData, setSeptData] = useState([]);
@@ -66,9 +66,9 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
         <div className="restricted-icon">
           <Lock />
         </div>
-        <h2 className="restricted-title">Access Restricted - CEO & Admin Only</h2>
+        <h2 className="restricted-title">Access Restricted - Management Only</h2>
         <p className="restricted-desc">
-          The <strong>{tabTitles[activeTab]}</strong> tab is strictly restricted to executive management. 
+          The <strong>{tabTitles[activeTab]}</strong> tab is strictly restricted to management. 
           <br /><br />
           Your account role is currently <strong>{currentUser?.role}</strong> ({currentUser?.name}). 
           <br />
