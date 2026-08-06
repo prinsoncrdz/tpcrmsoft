@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, MessageSquare, Clock, Users, User, ShieldCheck, Sparkles, Lock, MessageCircle, Check, CheckCheck, Headphones } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Send, MessageSquare, Clock, Users, Lock, MessageCircle, Check, CheckCheck, X, Bell } from 'lucide-react';
 import { SYSTEM_USERS, fetchGlobalChatMessages, sendGlobalChatMessage } from '../services/googleSheets';
 
 const CHAT_STORAGE_KEY = 'tp_team_chat_messages_v3';
@@ -10,7 +10,10 @@ export default function TeamChatView({ currentUser }) {
   const [messages, setMessages] = useState([]);
   const [presenceMap, setPresenceMap] = useState({});
   const [inputMessage, setInputMessage] = useState('');
+  const [notification, setNotification] = useState(null); // { msg, dmKey }
   const messagesEndRef = useRef(null);
+  const seenMsgIds = useRef(new Set());
+  const notifTimerRef = useRef(null);
 
   // All registered team members excluding current user for personal 1-on-1 DM selection
   const otherUsers = SYSTEM_USERS.filter(u => u.email.toLowerCase() !== currentUser.email.toLowerCase());
@@ -32,6 +35,28 @@ export default function TeamChatView({ currentUser }) {
     localStorage.setItem(PRESENCE_STORAGE_KEY, JSON.stringify(map));
     setPresenceMap(map);
   };
+
+  // Show notification popup for incoming messages
+  const showNotification = useCallback((msg) => {
+    // Don't show notification for own messages
+    if (msg.senderEmail.toLowerCase() === currentUser.email.toLowerCase()) return;
+
+    // Determine if this message is relevant to current user
+    const isGroupMsg = msg.channel === 'GROUP' || !msg.receiverEmail;
+    const isDmForMe = msg.receiverEmail?.toLowerCase() === currentUser.email.toLowerCase();
+    if (!isGroupMsg && !isDmForMe) return;
+
+    // Don't show if already seen
+    if (seenMsgIds.current.has(msg.id)) return;
+
+    const dmKey = isDmForMe ? `dm:${msg.senderEmail}` : null;
+
+    setNotification({ msg, dmKey });
+
+    // Auto-dismiss after 5 seconds
+    if (notifTimerRef.current) clearTimeout(notifTimerRef.current);
+    notifTimerRef.current = setTimeout(() => setNotification(null), 5000);
+  }, [currentUser.email]);
 
   // Sync and load messages from Cloud + local backup (Map merged)
   const loadAndProcessMessages = async () => {
@@ -106,6 +131,15 @@ export default function TeamChatView({ currentUser }) {
     });
 
     localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(processedMessages));
+
+    // Detect NEW incoming messages not yet in seenMsgIds
+    processedMessages.forEach(msg => {
+      if (!seenMsgIds.current.has(msg.id)) {
+        showNotification(msg);
+        seenMsgIds.current.add(msg.id);
+      }
+    });
+
     setMessages(processedMessages);
   };
 
@@ -219,6 +253,98 @@ export default function TeamChatView({ currentUser }) {
   const activeDmStatus = activeDmUser ? getUserOnlineStatus(activeDmUser.email) : null;
 
   return (
+    <div style={{ position: 'relative' }}>
+
+      {/* ===== INCOMING MESSAGE POPUP NOTIFICATION ===== */}
+      {notification && (
+        <div
+          onClick={() => {
+            if (notification.dmKey) setActiveChannel(notification.dmKey);
+            else setActiveChannel('GROUP');
+            setNotification(null);
+          }}
+          style={{
+            position: 'fixed',
+            top: '80px',
+            right: '24px',
+            zIndex: 99999,
+            background: '#FFFFFF',
+            border: '2px solid var(--brand-green)',
+            borderRadius: '14px',
+            padding: '12px 16px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            cursor: 'pointer',
+            minWidth: '300px',
+            maxWidth: '360px',
+            animation: 'slideInRight 0.35s cubic-bezier(0.34,1.56,0.64,1)'
+          }}
+        >
+          {/* Avatar */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <img
+              src={notification.msg.senderAvatar}
+              alt={notification.msg.senderName}
+              style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--brand-green)' }}
+            />
+            <div style={{ position: 'absolute', bottom: 0, right: 0, width: '10px', height: '10px', borderRadius: '50%', background: '#10B981', border: '2px solid #FFF' }} />
+          </div>
+
+          {/* Message Info */}
+          <div style={{ flex: 1, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                {notification.msg.senderName}
+              </span>
+              <span style={{
+                fontSize: '0.58rem',
+                padding: '1px 5px',
+                borderRadius: '4px',
+                background: notification.msg.channel === 'GROUP' ? '#ECFDF5' : '#EFF6FF',
+                color: notification.msg.channel === 'GROUP' ? '#047857' : '#1D4ED8',
+                fontWeight: 700,
+                border: notification.msg.channel === 'GROUP' ? '1px solid #A7F3D0' : '1px solid #93C5FD'
+              }}>
+                {notification.msg.channel === 'GROUP' ? '🌐 Group' : '🔒 Personal DM'}
+              </span>
+            </div>
+            <p style={{
+              fontSize: '0.75rem',
+              color: 'var(--text-muted)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              margin: 0
+            }}>
+              {notification.msg.text}
+            </p>
+            <p style={{ fontSize: '0.62rem', color: 'var(--brand-green)', marginTop: '3px', fontWeight: 600 }}>
+              Click to open chat →
+            </p>
+          </div>
+
+          {/* Bell icon + Close */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            <Bell size={16} style={{ color: 'var(--brand-green)' }} />
+            <button
+              onClick={(e) => { e.stopPropagation(); setNotification(null); }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px' }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideInRight {
+          from { transform: translateX(120%); opacity: 0; }
+          to   { transform: translateX(0);    opacity: 1; }
+        }
+      `}</style>
+
     <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '14px', minHeight: 'calc(100vh - 120px)' }} className="team-chat-container">
       
       {/* Sidebar */}
@@ -472,6 +598,7 @@ export default function TeamChatView({ currentUser }) {
         </form>
 
       </div>
+    </div>
     </div>
   );
 }
