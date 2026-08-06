@@ -378,6 +378,11 @@ export default function TeamChatView({ currentUser }) {
             <span>🌐 Team Group Chat</span>
           </button>
         </div>
+{/* Online Users Summary */}
+<div style={{ marginTop: '8px', fontSize: '0.68rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+  <span>Online: {Object.values(presenceMap).filter(p => (Date.now() - p.lastActive) < 35000).length} / {SYSTEM_USERS.length}</span>
+  <button onClick={() => setActiveChannel('GROUP')} style={{ background: 'none', border: 'none', color: 'var(--brand-green)', cursor: 'pointer' }}>Refresh</button>
+</div>
 
         {/* 1-on-1 Personal Direct Messages */}
         <div style={{ flex: 1 }}>
