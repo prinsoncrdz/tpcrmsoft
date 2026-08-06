@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import ProjectTable from './components/ProjectTable';
 import PettyCashView from './components/PettyCashView';
+import TeamChatView from './components/TeamChatView';
 import LoginModal from './components/LoginModal';
 import NewProjectModal from './components/NewProjectModal';
 import NewPettyCashModal from './components/NewPettyCashModal';
@@ -212,6 +213,10 @@ export default function App() {
             onCellEdit={handleCellEdit}
             onOpenNewProjectModal={() => setShowNewProjectModal(true)}
             onRefresh={loadData}
+          />
+        ) : activeTab === 'TEAM_CHAT' ? (
+          <TeamChatView 
+            currentUser={currentUser}
           />
         ) : (
           <PettyCashView 

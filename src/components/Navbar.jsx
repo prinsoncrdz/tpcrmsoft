@@ -7,6 +7,7 @@ import {
   RefreshCw, 
   Lock, 
   LayoutDashboard,
+  MessageSquare,
   Menu,
   X
 } from 'lucide-react';
@@ -17,6 +18,7 @@ export default function Navbar({ activeTab, setActiveTab, currentUser, onLogout,
 
   const navItems = [
     { id: 'CRM', label: 'Project CRM Sheet', icon: <Building2 size={15} />, restricted: false },
+    { id: 'TEAM_CHAT', label: 'Team Chat 💬', icon: <MessageSquare size={15} />, restricted: false },
     { id: 'PETTY_CASH_DASHBOARD', label: 'Petty Cash Dashboard', icon: <LayoutDashboard size={15} />, restricted: true },
     { id: 'PETTY_CASH_JULY', label: 'July 2026', icon: <DollarSign size={15} />, restricted: true },
     { id: 'PETTY_CASH_AUG', label: 'August 2026', icon: <DollarSign size={15} />, restricted: true },
