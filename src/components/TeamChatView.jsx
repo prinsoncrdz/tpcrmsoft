@@ -32,24 +32,30 @@ export default function TeamChatView({ currentUser }) {
     setPresenceMap(map);
   };
 
-  // Sync and load messages from Cloud + local backup
+  // Sync and load messages from Cloud + local backup (Map merged)
   const loadAndProcessMessages = async () => {
     const now = Date.now();
     const oneDayMs = 24 * 60 * 60 * 1000;
 
     // Fetch live messages from Cloud Apps Script backend
     const cloudMessages = await fetchGlobalChatMessages();
-    let baseMessages = cloudMessages;
-
-    if (!baseMessages || !Array.isArray(baseMessages) || baseMessages.length === 0) {
-      const saved = localStorage.getItem(CHAT_STORAGE_KEY);
-      if (saved) {
-        try { baseMessages = JSON.parse(saved); } catch (err) { baseMessages = []; }
-      }
+    
+    // Read local messages backup
+    const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+    let localMessages = [];
+    if (saved) {
+      try { localMessages = JSON.parse(saved); } catch (err) { localMessages = []; }
     }
 
-    if (!baseMessages || baseMessages.length === 0) {
-      baseMessages = [
+    // Merge Cloud & Local messages seamlessly by ID
+    const messageMap = new Map();
+    (localMessages || []).forEach(m => messageMap.set(m.id, m));
+    (cloudMessages || []).forEach(m => messageMap.set(m.id, m));
+
+    let combinedMessages = Array.from(messageMap.values());
+
+    if (combinedMessages.length === 0) {
+      combinedMessages = [
         {
           id: 'msg-1',
           channel: 'GROUP',
@@ -78,21 +84,22 @@ export default function TeamChatView({ currentUser }) {
     }
 
     // Prune > 24 hours
-    const validMessages = baseMessages.filter(msg => (now - msg.timestamp) < oneDayMs);
+    const validMessages = combinedMessages.filter(msg => (now - msg.timestamp) < oneDayMs);
 
     // Auto-mark messages as SEEN by current user if they are viewing the channel
     let modified = false;
     const processedMessages = validMessages.map(msg => {
       const isForCurrentView = (
-        (activeChannel === 'GROUP' && msg.channel === 'GROUP') ||
+        (activeChannel === 'GROUP' && (msg.channel === 'GROUP' || !msg.receiverEmail)) ||
         (activeChannel.startsWith('dm:') && 
           ((msg.senderEmail === activeChannel.replace('dm:', '') && msg.receiverEmail === currentUser.email) ||
            (msg.senderEmail === currentUser.email && msg.receiverEmail === activeChannel.replace('dm:', ''))))
       );
 
-      if (isForCurrentView && !(msg.seenBy || []).includes(currentUser.email)) {
+      const seenByList = msg.seenBy || [];
+      if (isForCurrentView && !seenByList.includes(currentUser.email)) {
         modified = true;
-        return { ...msg, seenBy: [...(msg.seenBy || []), currentUser.email] };
+        return { ...msg, seenBy: [...seenByList, currentUser.email] };
       }
       return msg;
     });
@@ -105,11 +112,11 @@ export default function TeamChatView({ currentUser }) {
     updatePresence();
     loadAndProcessMessages();
 
-    // Fast 3-second Cloud Polling interval for instant messages on hosted domains
+    // Fast 2-second Cloud Polling interval for instant messages across devices
     const interval = setInterval(() => {
       updatePresence();
       loadAndProcessMessages();
-    }, 3000);
+    }, 2000);
 
     return () => clearInterval(interval);
   }, [activeChannel]);
@@ -253,6 +260,13 @@ export default function TeamChatView({ currentUser }) {
               const isActive = activeChannel === dmKey;
               const presence = getUserOnlineStatus(user.email);
 
+              // Check for unread message indicator from this user
+              const unreadFromUser = messages.some(
+                m => m.senderEmail === user.email && 
+                     m.receiverEmail === currentUser.email && 
+                     !(m.seenBy || []).includes(currentUser.email)
+              );
+
               return (
                 <button
                   key={user.email}
@@ -289,9 +303,16 @@ export default function TeamChatView({ currentUser }) {
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
-                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {user.name}
-                    </span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {user.name}
+                      </span>
+                      {unreadFromUser && (
+                        <span style={{ fontSize: '0.6rem', background: '#DC2626', color: '#FFF', fontWeight: 800, padding: '1px 5px', borderRadius: '10px' }}>
+                          NEW
+                        </span>
+                      )}
+                    </div>
                     <span style={{ fontSize: '0.6rem', color: presence.isOnline ? '#059669' : 'var(--text-muted)', fontWeight: 600 }}>
                       {presence.statusText}
                     </span>
