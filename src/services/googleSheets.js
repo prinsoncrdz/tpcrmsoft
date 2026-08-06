@@ -65,7 +65,7 @@ export const SYSTEM_USERS = [
   {
     email: 'support@turningpointretail.com',
     name: 'Sreymom Sophal',
-    role: 'Support',
+    role: 'Project Assignee',
     passwordHash: 'SreymomSupport@2026!',
     fallbackPassword: 'TurningPoint@2026!',
     avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=150',
