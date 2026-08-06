@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, MessageSquare, Clock, Users, User, ShieldCheck, Sparkles, Lock, MessageCircle, Check, CheckCheck } from 'lucide-react';
+import { Send, MessageSquare, Clock, Users, User, ShieldCheck, Sparkles, Lock, MessageCircle, Check, CheckCheck, Headphones } from 'lucide-react';
 import { SYSTEM_USERS, fetchGlobalChatMessages, sendGlobalChatMessage } from '../services/googleSheets';
 
 const CHAT_STORAGE_KEY = 'tp_team_chat_messages_v3';
@@ -190,6 +190,7 @@ export default function TeamChatView({ currentUser }) {
   const getRoleBadgeStyle = (role) => {
     if (role === 'CEO') return { bg: '#FEF3C7', color: '#B45309', border: '#FDE68A' };
     if (role === 'Admin') return { bg: '#DBEAFE', color: '#1D4ED8', border: '#93C5FD' };
+    if (role === 'Support') return { bg: '#F5F3FF', color: '#7C3AED', border: '#DDD6FE' };
     return { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' };
   };
 
