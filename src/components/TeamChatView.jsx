@@ -12,7 +12,8 @@ export default function TeamChatView({ currentUser }) {
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef(null);
 
-  const otherUsers = SYSTEM_USERS.filter(u => u.email !== currentUser.email);
+  // All registered team members excluding current user for personal 1-on-1 DM selection
+  const otherUsers = SYSTEM_USERS.filter(u => u.email.toLowerCase() !== currentUser.email.toLowerCase());
 
   // Update current user's presence heartbeat
   const updatePresence = () => {
@@ -22,7 +23,7 @@ export default function TeamChatView({ currentUser }) {
       try { map = JSON.parse(saved); } catch (err) { map = {}; }
     }
 
-    map[currentUser.email] = {
+    map[currentUser.email.toLowerCase()] = {
       email: currentUser.email,
       name: currentUser.name,
       lastActive: Date.now()
@@ -64,7 +65,7 @@ export default function TeamChatView({ currentUser }) {
           senderName: 'Walter Dantis (CEO)',
           senderRole: 'CEO',
           senderAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-          text: 'Welcome team! Use this channel for public announcements or select any member for a private DM.',
+          text: 'Welcome team! Use this channel for public announcements or select any team member for a private DM.',
           timestamp: now - (2 * 60 * 60 * 1000),
           seenBy: ['walterdantis@turningpointretail.com', 'admin@turningpointretail.com', 'srelyang.thim@turningpointretail.com']
         },
@@ -92,8 +93,8 @@ export default function TeamChatView({ currentUser }) {
       const isForCurrentView = (
         (activeChannel === 'GROUP' && (msg.channel === 'GROUP' || !msg.receiverEmail)) ||
         (activeChannel.startsWith('dm:') && 
-          ((msg.senderEmail === activeChannel.replace('dm:', '') && msg.receiverEmail === currentUser.email) ||
-           (msg.senderEmail === currentUser.email && msg.receiverEmail === activeChannel.replace('dm:', ''))))
+          ((msg.senderEmail.toLowerCase() === activeChannel.replace('dm:', '').toLowerCase() && msg.receiverEmail?.toLowerCase() === currentUser.email.toLowerCase()) ||
+           (msg.senderEmail.toLowerCase() === currentUser.email.toLowerCase() && msg.receiverEmail?.toLowerCase() === activeChannel.replace('dm:', '').toLowerCase())))
       );
 
       const seenByList = msg.seenBy || [];
@@ -175,8 +176,8 @@ export default function TeamChatView({ currentUser }) {
   };
 
   const getUserOnlineStatus = (email) => {
-    if (email === currentUser.email) return { isOnline: true, statusText: 'Online Now' };
-    const p = presenceMap[email];
+    if (email.toLowerCase() === currentUser.email.toLowerCase()) return { isOnline: true, statusText: 'Online Now' };
+    const p = presenceMap[email.toLowerCase()];
     if (!p || !p.lastActive) return { isOnline: false, statusText: 'Offline' };
 
     const isOnline = (Date.now() - p.lastActive) < 35000;
@@ -197,17 +198,21 @@ export default function TeamChatView({ currentUser }) {
       return msg.channel === 'GROUP' || !msg.receiverEmail;
     }
     if (activeChannel.startsWith('dm:')) {
-      const targetEmail = activeChannel.replace('dm:', '');
+      const targetEmail = activeChannel.replace('dm:', '').toLowerCase();
+      const sEmail = (msg.senderEmail || '').toLowerCase();
+      const rEmail = (msg.receiverEmail || '').toLowerCase();
+      const cEmail = currentUser.email.toLowerCase();
+
       return (
-        (msg.senderEmail === currentUser.email && msg.receiverEmail === targetEmail) ||
-        (msg.senderEmail === targetEmail && msg.receiverEmail === currentUser.email)
+        (sEmail === cEmail && rEmail === targetEmail) ||
+        (sEmail === targetEmail && rEmail === cEmail)
       );
     }
     return false;
   });
 
   const activeDmUser = activeChannel.startsWith('dm:') 
-    ? SYSTEM_USERS.find(u => u.email === activeChannel.replace('dm:', '')) 
+    ? SYSTEM_USERS.find(u => u.email.toLowerCase() === activeChannel.replace('dm:', '').toLowerCase()) 
     : null;
 
   const activeDmStatus = activeDmUser ? getUserOnlineStatus(activeDmUser.email) : null;
@@ -257,13 +262,13 @@ export default function TeamChatView({ currentUser }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {otherUsers.map(user => {
               const dmKey = `dm:${user.email}`;
-              const isActive = activeChannel === dmKey;
+              const isActive = activeChannel.toLowerCase() === dmKey.toLowerCase();
               const presence = getUserOnlineStatus(user.email);
 
               // Check for unread message indicator from this user
               const unreadFromUser = messages.some(
-                m => m.senderEmail === user.email && 
-                     m.receiverEmail === currentUser.email && 
+                m => m.senderEmail?.toLowerCase() === user.email.toLowerCase() && 
+                     m.receiverEmail?.toLowerCase() === currentUser.email.toLowerCase() && 
                      !(m.seenBy || []).includes(currentUser.email)
               );
 
@@ -327,7 +332,7 @@ export default function TeamChatView({ currentUser }) {
         <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', padding: '10px', borderRadius: '8px', fontSize: '0.68rem', color: '#B45309', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
           <Clock size={15} style={{ flexShrink: 0, marginTop: '2px' }} />
           <span>
-            <strong>Cloud Global Sync:</strong> Messages sync across all hosted devices & auto-delete after 24h. Blue ticks ✔✔ indicate recipient has seen the message.
+            <strong>Cloud Global Sync:</strong> Messages sync for all 5 team members & auto-delete after 24h. Blue ticks ✔✔ indicate recipient has seen the message.
           </span>
         </div>
 
@@ -378,10 +383,10 @@ export default function TeamChatView({ currentUser }) {
             </div>
           ) : (
             visibleMessages.map((msg) => {
-              const isMine = msg.senderEmail === currentUser.email;
+              const isMine = msg.senderEmail.toLowerCase() === currentUser.email.toLowerCase();
               const roleStyle = getRoleBadgeStyle(msg.senderRole);
 
-              const seenByOthers = (msg.seenBy || []).filter(e => e !== msg.senderEmail);
+              const seenByOthers = (msg.seenBy || []).filter(e => e.toLowerCase() !== msg.senderEmail.toLowerCase());
               const isSeen = seenByOthers.length > 0;
 
               return (
