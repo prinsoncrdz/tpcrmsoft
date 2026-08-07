@@ -787,3 +787,27 @@ h4 { font-size: 0.9rem; font-weight: 700; }
     justify-content: center;
   }
 }
+
+/* Print Styles for Official Tax Invoices */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-invoice-paper, .printable-invoice-paper * {
+    visibility: visible;
+  }
+  .printable-invoice-paper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 10px 20px !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .no-print, .modal-overlay, .navbar, .toolbar {
+    display: none !important;
+  }
+}

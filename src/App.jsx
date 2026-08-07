@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import ProjectTable from './components/ProjectTable';
 import PettyCashView from './components/PettyCashView';
 import TeamChatView from './components/TeamChatView';
+import InvoiceTab from './components/InvoiceTab';
 import LoginModal from './components/LoginModal';
 import NewProjectModal from './components/NewProjectModal';
 import NewPettyCashModal from './components/NewPettyCashModal';
@@ -213,6 +214,10 @@ export default function App() {
             onCellEdit={handleCellEdit}
             onOpenNewProjectModal={() => setShowNewProjectModal(true)}
             onRefresh={loadData}
+          />
+        ) : activeTab === 'TAX_INVOICES' ? (
+          <InvoiceTab 
+            currentUser={currentUser}
           />
         ) : activeTab === 'TEAM_CHAT' ? (
           <TeamChatView 
