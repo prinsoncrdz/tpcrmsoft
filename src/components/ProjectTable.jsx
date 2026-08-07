@@ -468,21 +468,46 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                   )}
                 </div>
 
-                {/* Sub-Tasks Mobile Action Button */}
-                <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Sub-Tasks & CEO Review:</span>
-                  {(() => {
-                    const pTasks = subTasksMap[project.id] || [];
-                    const approvedCount = pTasks.filter(t => t.status === 'Approved').length;
-                    const submittedCount = pTasks.filter(t => t.status === 'Submitted').length;
+                {/* Sub-Tasks & CEO Financials Mobile Actions */}
+                <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>CRM Actions:</span>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {(() => {
+                      const pTasks = subTasksMap[project.id] || [];
+                      const approvedCount = pTasks.filter(t => t.status === 'Approved').length;
+                      const submittedCount = pTasks.filter(t => t.status === 'Submitted').length;
 
-                    return (
+                      return (
+                        <button
+                          onClick={() => setSubTaskProject(project)}
+                          style={{
+                            background: submittedCount > 0 ? '#7E22CE' : '#F3E8FF',
+                            color: submittedCount > 0 ? '#FFFFFF' : '#6B21A8',
+                            border: '1px solid ' + (submittedCount > 0 ? '#7E22CE' : '#D8B4FE'),
+                            borderRadius: '6px',
+                            padding: '4px 10px',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <ListTodo size={12} />
+                          <span>{pTasks.length > 0 ? `${approvedCount}/${pTasks.length} Done` : 'Sub-Tasks'}</span>
+                          {submittedCount > 0 && <span style={{ background: '#FFD700', color: '#000', fontSize: '0.6rem', padding: '1px 4px', borderRadius: '8px' }}>⚡ Review</span>}
+                        </button>
+                      );
+                    })()}
+
+                    {canEditAllFields && (
                       <button
-                        onClick={() => setSubTaskProject(project)}
+                        onClick={() => setFinancialsProject(project)}
                         style={{
-                          background: submittedCount > 0 ? '#7E22CE' : '#F3E8FF',
-                          color: submittedCount > 0 ? '#FFFFFF' : '#6B21A8',
-                          border: '1px solid ' + (submittedCount > 0 ? '#7E22CE' : '#D8B4FE'),
+                          background: '#ECFDF5',
+                          color: '#047857',
+                          border: '1px solid #A7F3D0',
                           borderRadius: '6px',
                           padding: '4px 10px',
                           fontSize: '0.72rem',
@@ -490,15 +515,14 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                           cursor: 'pointer',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '6px'
+                          gap: '4px'
                         }}
                       >
-                        <ListTodo size={12} />
-                        <span>{pTasks.length > 0 ? `${approvedCount}/${pTasks.length} Done` : 'Manage Sub-Tasks'}</span>
-                        {submittedCount > 0 && <span style={{ background: '#FFD700', color: '#000', fontSize: '0.6rem', padding: '1px 4px', borderRadius: '8px' }}>⚡ CEO Review</span>}
+                        <DollarSign size={12} />
+                        <span>Project Cost & Revenue</span>
                       </button>
-                    );
-                  })()}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
