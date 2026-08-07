@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus, CheckCircle2, Clock, AlertCircle, ShieldCheck, UserCheck, Send, ArrowRight, Sparkles, MessageSquare, Trash2, Check, RotateCcw } from 'lucide-react';
 import { SYSTEM_USERS } from '../services/googleSheets';
 import { createNotification } from '../services/notifications';
@@ -7,6 +7,11 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
   const [tasks, setTasks] = useState(subTasks);
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewTab, setViewTab] = useState('ACTIVE'); // 'ACTIVE' | 'COMPLETED'
+
+  // Keep internal tasks state in sync with subTasks prop
+  useEffect(() => {
+    setTasks(subTasks);
+  }, [subTasks]);
   
   // Find initial default assignee (prefer project assignee or first team member over CEO)
   const defaultAssignee = SYSTEM_USERS.find(u => u.name.toLowerCase().includes((project.assignee || '').toLowerCase()))

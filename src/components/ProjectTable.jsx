@@ -21,13 +21,15 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
     return {};
   });
 
-  // Global Cloud Sub-Tasks Sync
+  // Global Cloud Sub-Tasks Sync with functional state updater (prevents stale closure overwrites)
   const loadCloudSubTasks = async () => {
     const cloudMap = await fetchGlobalSubTasks();
-    if (cloudMap && typeof cloudMap === 'object') {
-      const mergedMap = { ...subTasksMap, ...cloudMap };
-      setSubTasksMap(mergedMap);
-      localStorage.setItem(SUBTASKS_STORAGE_KEY, JSON.stringify(mergedMap));
+    if (cloudMap && typeof cloudMap === 'object' && Object.keys(cloudMap).length > 0) {
+      setSubTasksMap(prevMap => {
+        const mergedMap = { ...prevMap, ...cloudMap };
+        localStorage.setItem(SUBTASKS_STORAGE_KEY, JSON.stringify(mergedMap));
+        return mergedMap;
+      });
     }
   };
 
@@ -38,12 +40,13 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
   }, []);
 
   const saveSubTasks = (projectId, tasks) => {
-    const updatedMap = { ...subTasksMap, [projectId]: tasks };
-    setSubTasksMap(updatedMap);
-    localStorage.setItem(SUBTASKS_STORAGE_KEY, JSON.stringify(updatedMap));
-
-    // Save to Cloud Endpoint for cross-device sync
-    saveGlobalSubTasks(null, projectId, tasks);
+    setSubTasksMap(prevMap => {
+      const updatedMap = { ...prevMap, [projectId]: tasks };
+      localStorage.setItem(SUBTASKS_STORAGE_KEY, JSON.stringify(updatedMap));
+      // Save to Cloud Endpoint for cross-device sync
+      saveGlobalSubTasks(null, projectId, tasks);
+      return updatedMap;
+    });
 
     // Calculate percentage of approved tasks for this project
     const projectObj = projects.find(p => p.id === projectId);
