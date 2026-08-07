@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Download, RefreshCw, ExternalLink, Edit2, AlertCircle, CheckCircle2, Clock, ShieldAlert, Sparkles, UserCheck, Lock, ListTodo, CheckSquare } from 'lucide-react';
+import { Search, Plus, Download, RefreshCw, ExternalLink, Edit2, AlertCircle, CheckCircle2, Clock, ShieldAlert, Sparkles, UserCheck, Lock, ListTodo, CheckSquare, DollarSign, TrendingUp, TrendingDown, Receipt } from 'lucide-react';
 import { SYSTEM_USERS, fetchGlobalSubTasks, saveGlobalSubTasks } from '../services/googleSheets';
 import SubTaskModal from './SubTaskModal';
+import ProjectFinancialsModal from './ProjectFinancialsModal';
 
 const SUBTASKS_STORAGE_KEY = 'tp_crm_subtasks_v2';
+const FINANCIALS_STORAGE_KEY = 'tp_crm_project_financials_v1';
 
 export default function ProjectTable({ projects, currentUser, onCellEdit, onOpenNewProjectModal, onRefresh }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -20,6 +22,22 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
     }
     return {};
   });
+
+  // Financials modal state
+  const [financialsProject, setFinancialsProject] = useState(null);
+  const [financialsMap, setFinancialsMap] = useState(() => {
+    const saved = localStorage.getItem(FINANCIALS_STORAGE_KEY);
+    if (saved) {
+      try { return JSON.parse(saved); } catch (err) { return {}; }
+    }
+    return {};
+  });
+
+  const saveProjectFinancials = (projectId, data) => {
+    const updatedMap = { ...financialsMap, [projectId]: data };
+    setFinancialsMap(updatedMap);
+    localStorage.setItem(FINANCIALS_STORAGE_KEY, JSON.stringify(updatedMap));
+  };
 
   // Global Cloud Sub-Tasks Sync with functional state updater (prevents stale closure overwrites)
   const loadCloudSubTasks = async () => {
@@ -70,6 +88,18 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
   const approvedSubTasksCount = allSubTasks.filter(t => t.status === 'Approved').length;
   const pendingReviewSubTasksCount = allSubTasks.filter(t => t.status === 'Submitted').length;
   const globalCeoProgressPct = totalSubTasksCount > 0 ? Math.round((approvedSubTasksCount / totalSubTasksCount) * 100) : 0;
+
+  // Calculate Portfolio Financials for CEO
+  const totalPortfolioRevenue = Object.values(financialsMap).reduce((sum, item) => sum + (parseFloat(item.revenue) || 0), 0);
+  const totalPortfolioSpent = Object.values(financialsMap).reduce((sum, item) => {
+    const itemSpent = (item.expenses || []).reduce((expSum, e) => expSum + (parseFloat(e.amount) || 0), 0);
+    return sum + itemSpent;
+  }, 0);
+  const netPortfolioProfit = totalPortfolioRevenue - totalPortfolioSpent;
+
+  const formatShortCurrency = (val) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+  };
 
   const [assignmentFilter, setAssignmentFilter] = useState('ALL'); // 'ALL' | 'MINE' | 'REVIEW'
 
@@ -203,6 +233,19 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
             </span>
             <span className="stat-label" style={{ color: '#065F46', fontWeight: 600 }}>
               CEO Work Progress ({approvedSubTasksCount}/{totalSubTasksCount} Approved)
+            </span>
+          </div>
+        </div>
+
+        {/* CEO FINANCIALS STAT CARD */}
+        <div className="stat-card" style={{ borderLeft: '4px solid #059669', background: '#F0FDF4' }}>
+          <div className="stat-icon emerald"><DollarSign /></div>
+          <div className="stat-details">
+            <span className="stat-value" style={{ color: '#047857' }}>
+              {formatShortCurrency(netPortfolioProfit)}
+            </span>
+            <span className="stat-label" style={{ color: '#065F46', fontWeight: 600 }}>
+              Net Portfolio Profit (Rev: {formatShortCurrency(totalPortfolioRevenue)} | Spent: {formatShortCurrency(totalPortfolioSpent)})
             </span>
           </div>
         </div>
@@ -694,12 +737,15 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                     )}
                   </td>
 
-                  {/* Sub-Tasks & CEO Review Action Cell */}
+                  {/* Sub-Tasks & CEO Financials Action Cell */}
                   <td style={{ background: '#FAF5FF' }}>
                     {(() => {
                       const pTasks = subTasksMap[project.id] || [];
                       const approvedCount = pTasks.filter(t => t.status === 'Approved').length;
                       const submittedCount = pTasks.filter(t => t.status === 'Submitted').length;
+
+                      const pFin = financialsMap[project.id] || { revenue: 0, expenses: [] };
+                      const pSpent = (pFin.expenses || []).reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
 
                       return (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -710,26 +756,49 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                               color: submittedCount > 0 ? '#FFFFFF' : '#6B21A8',
                               border: '1px solid ' + (submittedCount > 0 ? '#7E22CE' : '#D8B4FE'),
                               borderRadius: '6px',
-                              padding: '5px 10px',
+                              padding: '4px 8px',
                               fontSize: '0.72rem',
                               fontWeight: 700,
                               cursor: 'pointer',
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '6px',
+                              gap: '4px',
                               fontFamily: 'inherit',
                               boxShadow: submittedCount > 0 ? '0 2px 8px rgba(126,34,206,0.3)' : 'none'
                             }}
                           >
-                            <ListTodo size={13} />
+                            <ListTodo size={12} />
                             <span>
-                              {pTasks.length > 0 ? `${approvedCount}/${pTasks.length} Done` : 'Sub-Tasks'}
+                              {pTasks.length > 0 ? `${approvedCount}/${pTasks.length} Sub-tasks` : 'Sub-tasks'}
                             </span>
                             {submittedCount > 0 && (
                               <span style={{ background: '#FFD700', color: '#000000', fontSize: '0.62rem', fontWeight: 900, padding: '1px 5px', borderRadius: '10px' }}>
                                 {submittedCount} Review
                               </span>
                             )}
+                          </button>
+
+                          {/* CEO Financials & Expenses Button */}
+                          <button
+                            onClick={() => setFinancialsProject(project)}
+                            style={{
+                              background: '#ECFDF5',
+                              color: '#047857',
+                              border: '1px solid #A7F3D0',
+                              borderRadius: '6px',
+                              padding: '4px 8px',
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontFamily: 'inherit'
+                            }}
+                            title="CEO Financial Tracking: Revenue, Expenses & Net Profit"
+                          >
+                            <DollarSign size={12} />
+                            <span>Financials ({pSpent > 0 ? formatShortCurrency(pSpent) : 'Cost/Rev'})</span>
                           </button>
                         </div>
                       );
@@ -820,6 +889,17 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
           subTasks={subTasksMap[subTaskProject.id] || []}
           onSaveSubTasks={saveSubTasks}
           onClose={() => setSubTaskProject(null)}
+        />
+      )}
+
+      {/* CEO Financials & Expenses Modal */}
+      {financialsProject && (
+        <ProjectFinancialsModal 
+          project={financialsProject}
+          currentUser={currentUser}
+          financialsData={financialsMap[financialsProject.id] || { revenue: 0, expenses: [] }}
+          onSaveFinancials={saveProjectFinancials}
+          onClose={() => setFinancialsProject(null)}
         />
       )}
 
