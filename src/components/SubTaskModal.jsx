@@ -18,6 +18,8 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
   const [submissionNotes, setSubmissionNotes] = useState('');
 
   const isCeoOrAdmin = currentUser?.role === 'CEO' || currentUser?.role === 'Admin';
+  const isProjectOwner = currentUser?.role === 'Project Owner' || (project.owner && project.owner.toLowerCase().includes(currentUser?.name?.toLowerCase()));
+  const canManageSubTasks = isCeoOrAdmin || isProjectOwner;
 
   const categories = [
     'Hotel Booking',
@@ -381,7 +383,7 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {getStatusBadge(task.status)}
-                        {isCeoOrAdmin && (
+                        {canManageSubTasks && (
                           <button 
                             onClick={() => handleDeleteTask(task.id)}
                             style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '4px' }}

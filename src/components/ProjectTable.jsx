@@ -547,14 +547,28 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                         className="editable-cell" 
                         onClick={() => handleStartEdit(project, 'assignee', project.assignee, true)}
                         title={canEditAllFields ? 'Click to change Assignee' : 'Locked (CEO/Admin Only)'}
-                        style={{ cursor: canEditAllFields ? 'pointer' : 'default' }}
+                        style={{ cursor: canEditAllFields ? 'pointer' : 'default', flexDirection: 'column', alignItems: 'flex-start' }}
                       >
-                        <span style={{ fontWeight: 500, color: 'var(--text-main)' }}>{project.assignee}</span>
-                        {canEditAllFields ? (
-                          <Edit2 size={11} style={{ marginLeft: '4px', color: 'var(--text-muted)' }} />
-                        ) : (
-                          <Lock size={11} style={{ marginLeft: '4px', color: '#94A3B8' }} />
-                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{project.assignee}</span>
+                          {canEditAllFields ? (
+                            <Edit2 size={11} style={{ color: 'var(--text-muted)' }} />
+                          ) : (
+                            <Lock size={11} style={{ color: '#94A3B8' }} />
+                          )}
+                        </div>
+
+                        {/* Show sub-task assignees if multiple people assigned to this project */}
+                        {(() => {
+                          const pTasks = subTasksMap[project.id] || [];
+                          const otherAssignees = [...new Set(pTasks.map(t => t.assigneeName).filter(Boolean))];
+                          if (otherAssignees.length === 0) return null;
+                          return (
+                            <span style={{ fontSize: '0.64rem', color: '#7E22CE', fontWeight: 700, marginTop: '2px', background: '#F3E8FF', padding: '1px 5px', borderRadius: '4px' }}>
+                              👥 +{otherAssignees.length} Sub-task Team
+                            </span>
+                          );
+                        })()}
                       </div>
                     )}
                   </td>
