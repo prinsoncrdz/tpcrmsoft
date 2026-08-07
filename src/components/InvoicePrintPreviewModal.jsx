@@ -27,10 +27,20 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <FileText size={18} style={{ color: 'var(--brand-green)' }} />
             <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: '#FFF' }}>
-              Official Tax Invoice Preview: {invoice.taxInvoiceNo || 'TP-INV-2026-001'}
+              {invoice.includeVat !== false ? 'Official Tax Invoice Preview:' : 'Official Quotation Preview:'} {invoice.taxInvoiceNo || 'TP-INV-2026-001'}
             </h3>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            {invoice.driveLink && (
+              <a
+                href={invoice.driveLink}
+                target="_blank"
+                rel="noreferrer"
+                style={{ background: 'rgba(255,255,255,0.15)', color: '#FFF', padding: '8px 14px', borderRadius: '8px', fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                ☁️ Open Google Drive Backup
+              </a>
+            )}
             <button 
               onClick={handlePrint}
               style={{ background: 'var(--brand-green)', color: '#FFF', border: 'none', padding: '8px 18px', borderRadius: '8px', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -59,19 +69,19 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
               />
               <h2 style={{ fontSize: '1rem', fontWeight: 900, color: '#0F172A', margin: '0 0 2px 0' }}>Turning Point Retail Solutions</h2>
               <div style={{ fontSize: '0.75rem', color: '#475569', lineHeight: '1.4' }}>
-                <p style={{ margin: 0, fontWeight: 700 }}>VAT TIN: E000-2400000027</p>
-                <p style={{ margin: 0 }}>Office F 222, Arakawa Residence Sen Sok Phnom Penh Cambodia</p>
+                {invoice.includeVat !== false && <p style={{ margin: 0, fontWeight: 700 }}>VAT TIN: E000-2400000027</p>}
+                <p style={{ margin: 0 }}>{invoice.companyAddress || 'Office no:-#17F-10D, Morgan Towers, Sopheak Mongkul Street, Koh Pich, Phnom Penh, Cambodia'}</p>
                 <p style={{ margin: 0 }}>Tel: +855 (0) 86 844 464 | Email: info@turningpointretail.com | www.turningpointretail.com</p>
               </div>
             </div>
 
             <div style={{ textAlign: 'right' }}>
-              <div style={{ background: 'var(--brand-green)', color: '#FFFFFF', padding: '6px 16px', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', display: 'inline-block', marginBottom: '8px' }}>
-                TAX INVOICE
+              <div style={{ background: invoice.includeVat !== false ? 'var(--brand-green)' : '#0F172A', color: '#FFFFFF', padding: '6px 16px', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', display: 'inline-block', marginBottom: '8px' }}>
+                {invoice.includeVat !== false ? 'TAX INVOICE' : 'QUOTATION'}
               </div>
               <div style={{ fontSize: '0.82rem', color: '#334155' }}>
-                <p style={{ margin: 0 }}><strong>Invoice No:</strong> {invoice.taxInvoiceNo || 'TP-INV-2026-001'}</p>
-                <p style={{ margin: '2px 0 0 0' }}><strong>Invoice Date:</strong> {invoice.invoiceDate || new Date().toISOString().split('T')[0]}</p>
+                <p style={{ margin: 0 }}><strong>{invoice.includeVat !== false ? 'Invoice No:' : 'Quotation No:'}</strong> {invoice.taxInvoiceNo || 'TP-INV-2026-001'}</p>
+                <p style={{ margin: '2px 0 0 0' }}><strong>Date:</strong> {invoice.invoiceDate || new Date().toISOString().split('T')[0]}</p>
                 <p style={{ margin: '2px 0 0 0' }}><strong>Due Date:</strong> {invoice.dueDate || 'Upon Receipt'}</p>
               </div>
             </div>
@@ -120,17 +130,24 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
             </tbody>
           </table>
 
-          {/* Subtotal & 10% VAT Calculations Box */}
+          {/* Subtotal & Calculations Box */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '28px' }}>
             <div style={{ width: '320px', background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '10px', padding: '14px 18px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '6px' }}>
                 <span style={{ color: '#475569', fontWeight: 600 }}>Subtotal:</span>
                 <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatCurrency(subtotal)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '8px' }}>
-                <span style={{ color: '#475569', fontWeight: 600 }}>10% VAT:</span>
-                <span style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{formatCurrency(vatAmount)}</span>
-              </div>
+              {invoice.includeVat !== false ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '8px' }}>
+                  <span style={{ color: '#475569', fontWeight: 600 }}>10% VAT:</span>
+                  <span style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{formatCurrency(vatAmount)}</span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '8px' }}>
+                  <span style={{ color: '#475569', fontWeight: 600 }}>VAT Tax:</span>
+                  <span style={{ fontWeight: 700, color: '#64748B' }}>0% (No Tax)</span>
+                </div>
+              )}
               <div style={{ borderTop: '2px solid #0F172A', paddingTop: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 900, marginBottom: '6px' }}>
                 <span>Grand Total:</span>
                 <span style={{ color: '#0F172A' }}>{formatCurrency(grandTotal)}</span>
@@ -153,7 +170,7 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
               <li>This quotation is not a contract or a bill.</li>
               <li>The customer will be billed after indicating acceptance of this quote.</li>
               <li>Additional fee may be charged on work outside of scope mentioned above.</li>
-              <li><strong>Term of Payments:</strong> 50% advance for deposit and another 50% after completion of business registration.</li>
+              <li><strong>Term of Payments:</strong> {invoice.customPaymentTerms || '50% advance for deposit and another 50% after completion of business registration.'}</li>
               <li>
                 If you have any questions, please contact us:
                 <ul style={{ margin: '4px 0 0 0', paddingLeft: '16px', listStyleType: 'circle' }}>
@@ -164,7 +181,7 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
             </ul>
 
             <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '12px 16px', borderRadius: '8px', color: '#065F46', fontStyle: 'italic', fontWeight: 600, textAlign: 'center' }}>
-              “Thank you for your interest in our services. We are committed to supporting your business journey in Cambodia with reliability, transparency, and efficiency. We are looking forward to working with you.”
+              “{invoice.customClosingMessage || 'Thank you for your interest in our services. We are committed to supporting your business journey in Cambodia with reliability, transparency, and efficiency. We are looking forward to working with you.'}”
             </div>
 
             {/* Signature & Seal Block */}

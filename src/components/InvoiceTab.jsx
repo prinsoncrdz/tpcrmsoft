@@ -304,10 +304,17 @@ export default function InvoiceTab({ currentUser }) {
                       <span>Subtotal:</span>
                       <span>{formatCurrency(inv.subtotal)}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--brand-green)', marginBottom: '4px' }}>
-                      <span>10% VAT:</span>
-                      <span>+{formatCurrency(inv.vatAmount)}</span>
-                    </div>
+                    {inv.includeVat !== false ? (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--brand-green)', marginBottom: '4px' }}>
+                        <span>10% VAT:</span>
+                        <span>+{formatCurrency(inv.vatAmount)}</span>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#64748B', marginBottom: '4px' }}>
+                        <span>Tax Mode:</span>
+                        <span style={{ fontWeight: 600 }}>0% VAT (No Tax)</span>
+                      </div>
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', fontWeight: 900, color: '#0F172A', borderTop: '1px solid #E2E8F0', paddingTop: '4px', marginBottom: '4px' }}>
                       <span>Grand Total:</span>
                       <span>{formatCurrency(inv.grandTotal)}</span>
@@ -326,26 +333,52 @@ export default function InvoiceTab({ currentUser }) {
                 </div>
 
                 {/* Card Footer Actions */}
-                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                  <button
-                    onClick={() => setPreviewInvoice(inv)}
-                    style={{
-                      background: 'var(--brand-green)',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '6px 12px',
-                      fontSize: '0.75rem',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      boxShadow: '0 2px 6px rgba(16,185,129,0.2)'
-                    }}
-                  >
-                    <Printer size={13} /> Print / Download PDF
-                  </button>
+                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      onClick={() => setPreviewInvoice(inv)}
+                      style={{
+                        background: 'var(--brand-green)',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '6px 12px',
+                        fontSize: '0.75rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        boxShadow: '0 2px 6px rgba(16,185,129,0.2)'
+                      }}
+                    >
+                      <Printer size={13} /> Print PDF
+                    </button>
+
+                    {inv.driveLink && (
+                      <a
+                        href={inv.driveLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          background: '#EFF6FF',
+                          color: '#2563EB',
+                          border: '1px solid #BFDBFE',
+                          borderRadius: '6px',
+                          padding: '5px 8px',
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          textDecoration: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3px'
+                        }}
+                        title="Open Google Drive Backup Folder/File"
+                      >
+                        ☁️ Drive
+                      </a>
+                    )}
+                  </div>
 
                   {isCeoOrAdmin && (
                     <div style={{ display: 'flex', gap: '6px' }}>

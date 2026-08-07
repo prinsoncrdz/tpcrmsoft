@@ -13,6 +13,13 @@ export default function CreateInvoiceModal({ initialInvoice = null, currentUser,
   const [dueDate, setDueDate] = useState(initialInvoice?.dueDate || '');
   const [amountReceived, setAmountReceived] = useState(initialInvoice?.amountReceived || 0);
 
+  // New fields for Tax option, Custom terms/notes, Address & Drive Backup
+  const [includeVat, setIncludeVat] = useState(initialInvoice?.includeVat !== undefined ? initialInvoice.includeVat : true);
+  const [companyAddress, setCompanyAddress] = useState(initialInvoice?.companyAddress || 'Office no:-#17F-10D, Morgan Towers, Sopheak Mongkul Street, Koh Pich, Phnom Penh, Cambodia');
+  const [customPaymentTerms, setCustomPaymentTerms] = useState(initialInvoice?.customPaymentTerms || '50% advance for deposit and another 50% after completion of business registration.');
+  const [customClosingMessage, setCustomClosingMessage] = useState(initialInvoice?.customClosingMessage || 'Thank you for your interest in our services. We are committed to supporting your business journey in Cambodia with reliability, transparency, and efficiency. We are looking forward to working with you.');
+  const [driveLink, setDriveLink] = useState(initialInvoice?.driveLink || '');
+
   const [items, setItems] = useState(initialInvoice?.items || [
     { description: 'Business Registration & License Processing Service', quantity: 1, unitPrice: 2500 }
   ]);
@@ -34,7 +41,7 @@ export default function CreateInvoiceModal({ initialInvoice = null, currentUser,
 
   // Calculations
   const subtotal = items.reduce((sum, item) => sum + (parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || 0)), 0);
-  const vatAmount = subtotal * 0.10;
+  const vatAmount = includeVat ? subtotal * 0.10 : 0;
   const grandTotal = subtotal + vatAmount;
   const numAmountReceived = parseFloat(amountReceived || 0);
   const balanceDue = grandTotal - numAmountReceived;
@@ -53,6 +60,11 @@ export default function CreateInvoiceModal({ initialInvoice = null, currentUser,
       telephoneNumber: telephoneNumber.trim(),
       dueDate,
       amountReceived: numAmountReceived,
+      includeVat,
+      companyAddress: companyAddress.trim(),
+      customPaymentTerms: customPaymentTerms.trim(),
+      customClosingMessage: customClosingMessage.trim(),
+      driveLink: driveLink.trim(),
       items,
       subtotal,
       vatAmount,
@@ -104,6 +116,53 @@ export default function CreateInvoiceModal({ initialInvoice = null, currentUser,
         {/* Form Body */}
         <form onSubmit={handleSubmit} style={{ overflowY: 'auto', flex: 1, padding: '24px', background: '#F8FAFC' }}>
           
+          {/* Document Type & Tax Toggle Banner */}
+          <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0F172A', display: 'block', marginBottom: '2px' }}>
+                Document Billing Mode:
+              </label>
+              <span style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                Choose whether to include 10% VAT tax or generate a non-tax Quotation.
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', background: '#F1F5F9', padding: '4px', borderRadius: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setIncludeVat(true)}
+                style={{
+                  background: includeVat ? 'var(--brand-green)' : 'transparent',
+                  color: includeVat ? '#FFFFFF' : '#64748B',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '6px 14px',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  cursor: 'pointer'
+                }}
+              >
+                Tax Invoice (10% VAT)
+              </button>
+              <button
+                type="button"
+                onClick={() => setIncludeVat(false)}
+                style={{
+                  background: !includeVat ? '#0F172A' : 'transparent',
+                  color: !includeVat ? '#FFFFFF' : '#64748B',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '6px 14px',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  cursor: 'pointer'
+                }}
+              >
+                Quotation / Commercial Invoice (No Tax)
+              </button>
+            </div>
+          </div>
+
           {/* Customer Information Block */}
           <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '18px', marginBottom: '20px', boxShadow: '0 2px 6px rgba(0,0,0,0.02)' }}>
             <h4 style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0F172A', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -127,11 +186,11 @@ export default function CreateInvoiceModal({ initialInvoice = null, currentUser,
 
               <div>
                 <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-                  Tax Invoice No *
+                  {includeVat ? 'Tax Invoice No *' : 'Quotation / Invoice No *'}
                 </label>
                 <input 
                   type="text" 
-                  placeholder="e.g. TP-INV-2026-001"
+                  placeholder={includeVat ? 'e.g. TP-INV-2026-001' : 'e.g. TP-QTN-2026-001'}
                   value={taxInvoiceNo}
                   onChange={e => setTaxInvoiceNo(e.target.value)}
                   required
@@ -269,7 +328,7 @@ export default function CreateInvoiceModal({ initialInvoice = null, currentUser,
           </div>
 
           {/* Calculations & Amount Received Block */}
-          <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '18px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', boxShadow: '0 2px 6px rgba(0,0,0,0.02)' }}>
+          <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '18px', marginBottom: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', boxShadow: '0 2px 6px rgba(0,0,0,0.02)' }}>
             <div>
               <label style={{ fontSize: '0.72rem', fontWeight: 800, color: '#047857', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>
                 Amount Received (Deposit / Payment) ($ USD)
@@ -292,10 +351,17 @@ export default function CreateInvoiceModal({ initialInvoice = null, currentUser,
                 <span style={{ color: '#64748B' }}>Subtotal:</span>
                 <span style={{ fontWeight: 800 }}>${subtotal.toFixed(2)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '6px' }}>
-                <span style={{ color: '#64748B' }}>10% VAT:</span>
-                <span style={{ fontWeight: 800, color: 'var(--brand-green)' }}>+${vatAmount.toFixed(2)}</span>
-              </div>
+              {includeVat ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '6px' }}>
+                  <span style={{ color: '#64748B' }}>10% VAT:</span>
+                  <span style={{ fontWeight: 800, color: 'var(--brand-green)' }}>+${vatAmount.toFixed(2)}</span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '6px' }}>
+                  <span style={{ color: '#64748B' }}>Tax Mode:</span>
+                  <span style={{ fontWeight: 700, color: '#64748B' }}>No Tax / 0% VAT</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', fontWeight: 900, borderTop: '1.5px solid #0F172A', paddingTop: '6px', marginBottom: '6px' }}>
                 <span>Grand Total:</span>
                 <span>${grandTotal.toFixed(2)}</span>
@@ -304,6 +370,52 @@ export default function CreateInvoiceModal({ initialInvoice = null, currentUser,
                 <span>Balance Due:</span>
                 <span>${(balanceDue > 0 ? balanceDue : 0).toFixed(2)}</span>
               </div>
+            </div>
+          </div>
+
+          {/* 3. Google Drive Backup & Custom Terms Block */}
+          <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '18px', marginBottom: '20px', boxShadow: '0 2px 6px rgba(0,0,0,0.02)' }}>
+            <h4 style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0F172A', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              3. Google Drive Backup & Custom Note Terms (CEO Options)
+            </h4>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                ☁️ Google Drive Backup Link / Folder URL (Optional)
+              </label>
+              <input 
+                type="text" 
+                placeholder="e.g. https://drive.google.com/drive/folders/1abc... (Save backup PDF or scanned agreement)"
+                value={driveLink}
+                onChange={e => setDriveLink(e.target.value)}
+                style={{ width: '100%', padding: '8px 10px', fontSize: '0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                Custom Terms of Payment Note (Auto-filled default)
+              </label>
+              <input 
+                type="text" 
+                placeholder="e.g. 50% advance for deposit and another 50% after completion of business registration."
+                value={customPaymentTerms}
+                onChange={e => setCustomPaymentTerms(e.target.value)}
+                style={{ width: '100%', padding: '8px 10px', fontSize: '0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                Custom Closing Thank You Message
+              </label>
+              <textarea 
+                rows="2"
+                placeholder="Closing message printed at end of invoice..."
+                value={customClosingMessage}
+                onChange={e => setCustomClosingMessage(e.target.value)}
+                style={{ width: '100%', padding: '8px 10px', fontSize: '0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', resize: 'vertical' }}
+              />
             </div>
           </div>
 
