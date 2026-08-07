@@ -49,13 +49,15 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
   const pendingReviewSubTasksCount = allSubTasks.filter(t => t.status === 'Submitted').length;
   const globalCeoProgressPct = totalSubTasksCount > 0 ? Math.round((approvedSubTasksCount / totalSubTasksCount) * 100) : 0;
 
+  const [assignmentFilter, setAssignmentFilter] = useState('ALL'); // 'ALL' | 'MINE' | 'REVIEW'
+
   const sectors = ['ALL', 'HEALTHCARE', 'RETAIL & FRANCHISE', 'TECHNOLOGY & INNOVATION', 'EDUCATION', 'TRADING & DISTRIBUTION', 'CONSULTING'];
 
   // Role-Based Field Edit Permissions
   const canEditAllFields = currentUser?.role === 'CEO' || currentUser?.role === 'Admin';
   const canEditProgressUpdate = true; // Everyone assigned can edit Progress Update
 
-  // Filter projects by search query and sector tab
+  // Filter projects by search query, sector tab, and assignment tab
   const filteredProjects = projects.filter(p => {
     const matchesSearch = (
       p.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -66,7 +68,21 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
     );
 
     const matchesSector = selectedSector === 'ALL' || (p.sector && p.sector.toUpperCase().includes(selectedSector));
-    return matchesSearch && matchesSector;
+
+    // Check if user is assigned to project OR any of its sub-tasks
+    const pSubTasks = subTasksMap[p.id] || [];
+    const isAssignedToUser = 
+      p.assignee.toLowerCase().includes(currentUser.name.toLowerCase()) ||
+      p.owner.toLowerCase().includes(currentUser.name.toLowerCase()) ||
+      pSubTasks.some(st => st.assigneeEmail?.toLowerCase() === currentUser.email?.toLowerCase());
+
+    const hasPendingReview = pSubTasks.some(st => st.status === 'Submitted');
+
+    let matchesAssignment = true;
+    if (assignmentFilter === 'MINE') matchesAssignment = isAssignedToUser;
+    if (assignmentFilter === 'REVIEW') matchesAssignment = hasPendingReview;
+
+    return matchesSearch && matchesSector && matchesAssignment;
   });
 
   const handleStartEdit = (project, field, currentValue, requiresAdmin = false) => {
@@ -177,7 +193,74 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
       </div>
 
       {/* Toolbar & Filters */}
-      <div className="toolbar">
+      <div className="toolbar" style={{ flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '6px', background: '#F1F5F9', padding: '4px', borderRadius: '8px' }}>
+          <button
+            onClick={() => setAssignmentFilter('ALL')}
+            style={{
+              background: assignmentFilter === 'ALL' ? '#FFFFFF' : 'transparent',
+              color: assignmentFilter === 'ALL' ? 'var(--text-main)' : 'var(--text-muted)',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '6px 12px',
+              fontSize: '0.78rem',
+              fontWeight: assignmentFilter === 'ALL' ? 800 : 500,
+              cursor: 'pointer',
+              boxShadow: assignmentFilter === 'ALL' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+              fontFamily: 'inherit'
+            }}
+          >
+            All Projects
+          </button>
+
+          <button
+            onClick={() => setAssignmentFilter('MINE')}
+            style={{
+              background: assignmentFilter === 'MINE' ? '#ECFDF5' : 'transparent',
+              color: assignmentFilter === 'MINE' ? 'var(--brand-green)' : 'var(--text-muted)',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '6px 12px',
+              fontSize: '0.78rem',
+              fontWeight: assignmentFilter === 'MINE' ? 800 : 500,
+              cursor: 'pointer',
+              boxShadow: assignmentFilter === 'MINE' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+              fontFamily: 'inherit',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            <UserCheck size={14} /> Assigned to Me
+          </button>
+
+          <button
+            onClick={() => setAssignmentFilter('REVIEW')}
+            style={{
+              background: assignmentFilter === 'REVIEW' ? '#F3E8FF' : 'transparent',
+              color: assignmentFilter === 'REVIEW' ? '#7E22CE' : 'var(--text-muted)',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '6px 12px',
+              fontSize: '0.78rem',
+              fontWeight: assignmentFilter === 'REVIEW' ? 800 : 500,
+              cursor: 'pointer',
+              boxShadow: assignmentFilter === 'REVIEW' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+              fontFamily: 'inherit',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            <Sparkles size={14} /> Pending CEO Review
+            {pendingReviewSubTasksCount > 0 && (
+              <span style={{ background: '#7E22CE', color: '#FFF', fontSize: '0.62rem', padding: '1px 6px', borderRadius: '10px' }}>
+                {pendingReviewSubTasksCount}
+              </span>
+            )}
+          </button>
+        </div>
+
         <div className="search-box">
           <Search size={16} className="search-icon" />
           <input 

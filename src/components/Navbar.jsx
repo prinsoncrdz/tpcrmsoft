@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Building2, 
   DollarSign, 
@@ -9,8 +9,170 @@ import {
   LayoutDashboard,
   MessageSquare,
   Menu,
-  X
+  X,
+  Bell,
+  CheckCircle2,
+  Sparkles,
+  Clock,
+  Check
 } from 'lucide-react';
+import { getNotifications, markAllNotificationsAsRead, markNotificationAsRead } from '../services/notifications';
+
+function NotificationBell({ currentUser }) {
+  const [notifications, setNotifications] = useState([]);
+  const [open, setOpen] = useState(false);
+
+  const loadNotifs = () => {
+    if (currentUser?.email) {
+      setNotifications(getNotifications(currentUser.email));
+    }
+  };
+
+  useEffect(() => {
+    loadNotifs();
+
+    const handleCreated = () => loadNotifs();
+    const handleUpdated = () => loadNotifs();
+
+    window.addEventListener('tp_notification_created', handleCreated);
+    window.addEventListener('tp_notification_updated', handleUpdated);
+
+    // Also poll every 3 seconds
+    const timer = setInterval(loadNotifs, 3000);
+
+    return () => {
+      window.removeEventListener('tp_notification_created', handleCreated);
+      window.removeEventListener('tp_notification_updated', handleUpdated);
+      clearInterval(timer);
+    };
+  }, [currentUser?.email]);
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  const handleMarkAllRead = () => {
+    if (currentUser?.email) {
+      markAllNotificationsAsRead(currentUser.email);
+      loadNotifs();
+    }
+  };
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button 
+        className="btn-icon" 
+        onClick={() => setOpen(!open)}
+        title="Task & Approval Notifications"
+        style={{ position: 'relative', background: unreadCount > 0 ? '#ECFDF5' : undefined, borderColor: unreadCount > 0 ? 'var(--brand-green)' : undefined }}
+      >
+        <Bell size={16} style={{ color: unreadCount > 0 ? 'var(--brand-green)' : 'inherit' }} />
+        {unreadCount > 0 && (
+          <span 
+            style={{
+              position: 'absolute',
+              top: '-4px',
+              right: '-4px',
+              background: '#EF4444',
+              color: '#FFFFFF',
+              fontSize: '0.62rem',
+              fontWeight: 800,
+              width: '18px',
+              height: '18px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px solid #FFFFFF',
+              boxShadow: '0 2px 4px rgba(239, 68, 68, 0.4)'
+            }}
+          >
+            {unreadCount}
+          </span>
+        )}
+      </button>
+
+      {/* Notifications Dropdown Panel */}
+      {open && (
+        <div 
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 10px)',
+            right: 0,
+            width: '340px',
+            maxHeight: '420px',
+            background: '#FFFFFF',
+            border: '1.5px solid var(--border-color)',
+            borderRadius: '14px',
+            boxShadow: '0 12px 32px rgba(0,0,0,0.15)',
+            zIndex: 99999,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}
+        >
+          {/* Panel Header */}
+          <div style={{ padding: '12px 16px', background: '#F8FAFC', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Bell size={15} style={{ color: 'var(--brand-green)' }} />
+              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                Notifications ({unreadCount} unread)
+              </span>
+            </div>
+            {unreadCount > 0 && (
+              <button 
+                onClick={handleMarkAllRead}
+                style={{ background: 'none', border: 'none', color: 'var(--brand-green)', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Mark all read
+              </button>
+            )}
+          </div>
+
+          {/* Notifications List */}
+          <div style={{ overflowY: 'auto', flex: 1, padding: '8px' }}>
+            {notifications.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px 16px', color: 'var(--text-muted)' }}>
+                <Clock size={24} style={{ margin: '0 auto 8px auto', opacity: 0.5 }} />
+                <p style={{ fontSize: '0.78rem', margin: 0 }}>No notifications yet.</p>
+                <p style={{ fontSize: '0.68rem', margin: '4px 0 0 0' }}>Tasks assigned to you or submitted for CEO review will appear here.</p>
+              </div>
+            ) : (
+              notifications.map(n => (
+                <div 
+                  key={n.id}
+                  onClick={() => {
+                    markNotificationAsRead(n.id);
+                    loadNotifs();
+                  }}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    marginBottom: '6px',
+                    background: n.isRead ? '#FFFFFF' : '#ECFDF5',
+                    border: '1px solid ' + (n.isRead ? 'var(--border-color)' : '#A7F3D0'),
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3px' }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                      {n.title}
+                    </span>
+                    <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>
+                      {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>
+                    {n.message}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Navbar({ activeTab, setActiveTab, currentUser, onLogout, onOpenSettings, isSyncing }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -94,6 +256,9 @@ export default function Navbar({ activeTab, setActiveTab, currentUser, onLogout,
         <button className="btn-icon" onClick={onOpenSettings} title="Configure Endpoint">
           <Settings size={16} />
         </button>
+
+        {/* NOTIFICATION BELL & DROPDOWN PANEL */}
+        <NotificationBell currentUser={currentUser} />
 
         {/* PROMINENT RED LOGOUT BUTTON IN NAVBAR */}
         <button 

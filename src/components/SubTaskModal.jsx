@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Plus, CheckCircle2, Clock, AlertCircle, ShieldCheck, UserCheck, Send, ArrowRight, Sparkles, MessageSquare, Trash2, Check, RotateCcw } from 'lucide-react';
 import { SYSTEM_USERS } from '../services/googleSheets';
+import { createNotification } from '../services/notifications';
 
 export default function SubTaskModal({ project, currentUser, subTasks = [], onSaveSubTasks, onClose }) {
   const [tasks, setTasks] = useState(subTasks);
@@ -54,6 +55,19 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
     const updated = [newTask, ...tasks];
     setTasks(updated);
     onSaveSubTasks(project.id, updated);
+
+    // Notify assigned team member
+    if (assignedUser) {
+      createNotification({
+        recipientEmail: assignedUser.email,
+        title: `🎯 New Task Assigned: ${title.trim()}`,
+        message: `${currentUser?.name || 'Project Owner'} assigned you "${title.trim()}" in ${project.projectName} (${category}). Instructions: ${detail.trim() || 'Check assignment detail in dashboard.'}`,
+        projectId: project.id,
+        subTaskId: newTask.id,
+        type: 'ASSIGNMENT',
+        createdByName: currentUser?.name
+      });
+    }
     
     // Reset form
     setTitle('');
@@ -62,6 +76,7 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
   };
 
   const handleStatusChange = (taskId, newStatus, extra = {}) => {
+    let updatedTask = null;
     const updated = tasks.map(t => {
       if (t.id === taskId) {
         const item = { ...t, status: newStatus, ...extra };
@@ -72,12 +87,54 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
         if (newStatus === 'Submitted') {
           item.submittedAt = new Date().toISOString();
         }
+        updatedTask = item;
         return item;
       }
       return t;
     });
+
     setTasks(updated);
     onSaveSubTasks(project.id, updated);
+
+    // Trigger Notifications based on status change
+    if (updatedTask) {
+      if (newStatus === 'Submitted') {
+        // Notify CEO and Admin Managers for verification
+        ['walterdantis@turningpointretail.com', 'admin@turningpointretail.com'].forEach(ceoEmail => {
+          createNotification({
+            recipientEmail: ceoEmail,
+            title: `⚡ Sub-Task Submitted for Verification`,
+            message: `${currentUser?.name} finished & submitted sub-task "${updatedTask.title}" in ${project.projectName} for CEO verification! Notes: "${extra.submissionNotes || 'Task completed.'}"`,
+            projectId: project.id,
+            subTaskId: updatedTask.id,
+            type: 'SUBMISSION',
+            createdByName: currentUser?.name
+          });
+        });
+      } else if (newStatus === 'Approved') {
+        // Notify the assigned team member that CEO approved!
+        createNotification({
+          recipientEmail: updatedTask.assigneeEmail,
+          title: `✅ CEO Approved Your Sub-Task!`,
+          message: `CEO (${currentUser?.name}) verified & approved your sub-task "${updatedTask.title}" in ${project.projectName}. Excellent work!`,
+          projectId: project.id,
+          subTaskId: updatedTask.id,
+          type: 'APPROVAL',
+          createdByName: currentUser?.name
+        });
+      } else if (newStatus === 'Needs Revision') {
+        // Notify assignee that revision is requested
+        createNotification({
+          recipientEmail: updatedTask.assigneeEmail,
+          title: `🔄 CEO Requested Revision`,
+          message: `CEO (${currentUser?.name}) requested revision on sub-task "${updatedTask.title}" in ${project.projectName}. Please review instructions and re-submit.`,
+          projectId: project.id,
+          subTaskId: updatedTask.id,
+          type: 'REVISION',
+          createdByName: currentUser?.name
+        });
+      }
+    }
   };
 
   const handleDeleteTask = (taskId) => {
