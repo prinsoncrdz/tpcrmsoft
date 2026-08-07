@@ -237,18 +237,20 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
           </div>
         </div>
 
-        {/* CEO FINANCIALS STAT CARD */}
-        <div className="stat-card" style={{ borderLeft: '4px solid #059669', background: '#F0FDF4' }}>
-          <div className="stat-icon emerald"><DollarSign /></div>
-          <div className="stat-details">
-            <span className="stat-value" style={{ color: '#047857' }}>
-              {formatShortCurrency(netPortfolioProfit)}
-            </span>
-            <span className="stat-label" style={{ color: '#065F46', fontWeight: 600 }}>
-              Net Portfolio Profit (Rev: {formatShortCurrency(totalPortfolioRevenue)} | Spent: {formatShortCurrency(totalPortfolioSpent)})
-            </span>
+        {/* CEO FINANCIALS STAT CARD (CEO / ADMIN EXCLUSIVE) */}
+        {canEditAllFields && (
+          <div className="stat-card" style={{ borderLeft: '4px solid #059669', background: '#F0FDF4' }}>
+            <div className="stat-icon emerald"><DollarSign /></div>
+            <div className="stat-details">
+              <span className="stat-value" style={{ color: '#047857' }}>
+                {formatShortCurrency(netPortfolioProfit)}
+              </span>
+              <span className="stat-label" style={{ color: '#065F46', fontWeight: 600 }}>
+                Net Portfolio Profit (Rev: {formatShortCurrency(totalPortfolioRevenue)} | Spent: {formatShortCurrency(totalPortfolioSpent)})
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="stat-card">
           <div className="stat-icon purple"><ShieldAlert /></div>
@@ -778,28 +780,30 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                             )}
                           </button>
 
-                          {/* CEO Financials & Expenses Button */}
-                          <button
-                            onClick={() => setFinancialsProject(project)}
-                            style={{
-                              background: '#ECFDF5',
-                              color: '#047857',
-                              border: '1px solid #A7F3D0',
-                              borderRadius: '6px',
-                              padding: '4px 8px',
-                              fontSize: '0.7rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              fontFamily: 'inherit'
-                            }}
-                            title="CEO Financial Tracking: Revenue, Expenses & Net Profit"
-                          >
-                            <DollarSign size={12} />
-                            <span>Financials ({pSpent > 0 ? formatShortCurrency(pSpent) : 'Cost/Rev'})</span>
-                          </button>
+                          {/* CEO Financials & Expenses Button (CEO / ADMIN EXCLUSIVE) */}
+                          {canEditAllFields && (
+                            <button
+                              onClick={() => setFinancialsProject(project)}
+                              style={{
+                                background: '#ECFDF5',
+                                color: '#047857',
+                                border: '1px solid #A7F3D0',
+                                borderRadius: '6px',
+                                padding: '4px 8px',
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontFamily: 'inherit'
+                              }}
+                              title="CEO Financial Tracking: Revenue, Expenses & Net Profit"
+                            >
+                              <DollarSign size={12} />
+                              <span>Financials ({pSpent > 0 ? formatShortCurrency(pSpent) : 'Cost/Rev'})</span>
+                            </button>
+                          )}
                         </div>
                       );
                     })()}

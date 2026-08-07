@@ -15,6 +15,22 @@ export default function ProjectFinancialsModal({ project, currentUser, financial
 
   const isCeoOrAdmin = currentUser?.role === 'CEO' || currentUser?.role === 'Admin';
 
+  if (!isCeoOrAdmin) {
+    return (
+      <div className="modal-overlay" style={{ zIndex: 10000 }}>
+        <div className="modal-content" style={{ maxWidth: '400px', padding: '24px', textAlign: 'center', borderRadius: '12px' }}>
+          <h4 style={{ color: '#DC2626', fontSize: '1rem', fontWeight: 800, marginBottom: '8px' }}>🔒 CEO Confidential Access</h4>
+          <p style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '16px', lineHeight: '1.4' }}>
+            Project financials, costs, expenses, and revenue numbers are strictly confidential and accessible ONLY to the CEO.
+          </p>
+          <button className="btn-secondary" onClick={onClose} style={{ fontSize: '0.8rem' }}>
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const categories = [
     'Hotel & Accommodation',
     'Event Logistics & Freight',
