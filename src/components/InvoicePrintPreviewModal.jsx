@@ -27,20 +27,19 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
   };
 
   const handleDownloadAndSaveToDrive = () => {
-    // 1. Set page title so browser saves PDF as "[Invoice No] - [Customer Name].pdf"
     const origTitle = document.title;
     const backupName = `${invoice.taxInvoiceNo || 'TP-INV'} - ${invoice.companyName || 'Customer'}`;
     document.title = backupName;
 
-    // 2. Open Google Drive Backup folder
+    // 1. Open Google Drive Backup Folder
     const driveUrl = invoice.driveLink || 'https://drive.google.com/drive/folders/1yC_diQ2kUNra-aLgMJf7cWpMbDKFb233?usp=sharing';
     window.open(driveUrl, '_blank');
 
-    // 3. Trigger native print / PDF save dialog
+    // 2. Open print / save PDF dialog automatically
     setTimeout(() => {
       window.print();
       document.title = origTitle;
-    }, 400);
+    }, 300);
   };
 
   const handleOpenPrintTab = () => {
@@ -91,9 +90,9 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
             <button
               onClick={handleDownloadAndSaveToDrive}
               style={{ background: '#2563EB', color: '#FFF', border: 'none', padding: '7px 14px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 8px rgba(37,99,235,0.3)' }}
-              title="Save PDF as [Invoice No] - [Customer Name].pdf and open Google Drive folder to upload"
+              title="Save PDF and automatically open Google Drive folder to upload"
             >
-              ☁️ PDF & Save to Drive
+              ☁️ Save PDF & Open Google Drive
             </button>
             <button 
               onClick={handlePrint}
@@ -198,15 +197,10 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
                 <span style={{ color: '#475569', fontWeight: 600 }}>Subtotal:</span>
                 <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatCurrency(subtotal)}</span>
               </div>
-              {includeVat ? (
+              {includeVat && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '8px' }}>
                   <span style={{ color: '#475569', fontWeight: 600 }}>10% VAT:</span>
                   <span style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{formatCurrency(vatAmount)}</span>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '8px' }}>
-                  <span style={{ color: '#475569', fontWeight: 600 }}>VAT Tax:</span>
-                  <span style={{ fontWeight: 700, color: '#64748B' }}>0% (No Tax)</span>
                 </div>
               )}
               <div style={{ borderTop: '2px solid #0F172A', paddingTop: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 900, marginBottom: '6px' }}>

@@ -349,15 +349,10 @@ export default function InvoiceTab({ currentUser }) {
                       <span>Subtotal:</span>
                       <span>{formatCurrency(inv.subtotal)}</span>
                     </div>
-                    {inv.includeVat !== false ? (
+                    {inv.includeVat !== false && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--brand-green)', marginBottom: '4px' }}>
                         <span>10% VAT:</span>
                         <span>+{formatCurrency(inv.vatAmount)}</span>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#64748B', marginBottom: '4px' }}>
-                        <span>Tax Mode:</span>
-                        <span style={{ fontWeight: 600 }}>0% VAT (No Tax)</span>
                       </div>
                     )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', fontWeight: 900, color: '#0F172A', borderTop: '1px solid #E2E8F0', paddingTop: '4px', marginBottom: '4px' }}>

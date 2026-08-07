@@ -355,15 +355,10 @@ export default function CreateInvoiceModal({ initialInvoice = null, currentUser,
                 <span style={{ color: '#64748B' }}>Subtotal:</span>
                 <span style={{ fontWeight: 800 }}>${subtotal.toFixed(2)}</span>
               </div>
-              {includeVat ? (
+              {includeVat && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '6px' }}>
                   <span style={{ color: '#64748B' }}>10% VAT:</span>
                   <span style={{ fontWeight: 800, color: 'var(--brand-green)' }}>+${vatAmount.toFixed(2)}</span>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '6px' }}>
-                  <span style={{ color: '#64748B' }}>Tax Mode:</span>
-                  <span style={{ fontWeight: 700, color: '#64748B' }}>No Tax / 0% VAT</span>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', fontWeight: 900, borderTop: '1.5px solid #0F172A', paddingTop: '6px', marginBottom: '6px' }}>
