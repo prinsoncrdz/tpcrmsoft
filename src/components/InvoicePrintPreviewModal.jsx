@@ -20,7 +20,27 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
   };
 
   const handlePrint = () => {
+    const origTitle = document.title;
+    document.title = `${invoice.taxInvoiceNo || 'TP-INV'} - ${invoice.companyName || 'Customer'}`;
     window.print();
+    setTimeout(() => { document.title = origTitle; }, 1000);
+  };
+
+  const handleDownloadAndSaveToDrive = () => {
+    // 1. Set page title so browser saves PDF as "[Invoice No] - [Customer Name].pdf"
+    const origTitle = document.title;
+    const backupName = `${invoice.taxInvoiceNo || 'TP-INV'} - ${invoice.companyName || 'Customer'}`;
+    document.title = backupName;
+
+    // 2. Open Google Drive Backup folder
+    const driveUrl = invoice.driveLink || 'https://drive.google.com/drive/folders/1yC_diQ2kUNra-aLgMJf7cWpMbDKFb233?usp=sharing';
+    window.open(driveUrl, '_blank');
+
+    // 3. Trigger native print / PDF save dialog
+    setTimeout(() => {
+      window.print();
+      document.title = origTitle;
+    }, 400);
   };
 
   const handleOpenPrintTab = () => {
@@ -33,10 +53,11 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
         <!DOCTYPE html>
         <html>
           <head>
-            <title>${includeVat ? 'Tax Invoice' : 'Quotation'} - ${invoice.taxInvoiceNo || 'TP-INV'}</title>
+            <title>${invoice.taxInvoiceNo || 'TP-INV'} - ${invoice.companyName || 'Customer'}</title>
             <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
             <style>
-              body { font-family: 'Poppins', sans-serif; margin: 0; padding: 20px; background: #FFF; color: #1E293B; }
+              @page { size: A4 portrait; margin: 6mm 8mm; }
+              body { font-family: 'Poppins', sans-serif; margin: 0; padding: 15px; background: #FFF; color: #1E293B; font-size: 11px; }
               @media print { body { padding: 0; } }
             </style>
           </head>
@@ -56,50 +77,48 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
 
   return (
     <div className="modal-overlay invoice-modal-overlay" style={{ zIndex: 100000 }}>
-      <div className="modal-content invoice-preview-container" style={{ width: '92%', maxWidth: '900px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', padding: '0', overflow: 'hidden', borderRadius: '16px', background: '#FFFFFF' }}>
+      <div className="modal-content invoice-preview-container" style={{ width: '94%', maxWidth: '850px', maxHeight: '94vh', display: 'flex', flexDirection: 'column', padding: '0', overflow: 'hidden', borderRadius: '16px', background: '#FFFFFF' }}>
         
         {/* Modal Controls Bar (Hidden during window.print()) */}
-        <div className="no-print" style={{ background: '#0F172A', color: '#FFF', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="no-print" style={{ background: '#0F172A', color: '#FFF', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <FileText size={18} style={{ color: 'var(--brand-green)' }} />
-            <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: '#FFF' }}>
-              {includeVat ? 'Official Tax Invoice Preview:' : 'Official Quotation Preview:'} {invoice.taxInvoiceNo || 'TP-INV-2026-001'}
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 800, margin: 0, color: '#FFF' }}>
+              {includeVat ? 'Official Tax Invoice:' : 'Official Quotation:'} {invoice.taxInvoiceNo || 'TP-INV-2026-001'}
             </h3>
           </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <a
-              href={invoice.driveLink || 'https://drive.google.com/drive/folders/1yC_diQ2kUNra-aLgMJf7cWpMbDKFb233?usp=sharing'}
-              target="_blank"
-              rel="noreferrer"
-              style={{ background: 'rgba(255,255,255,0.15)', color: '#FFF', padding: '8px 14px', borderRadius: '8px', fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
-              title="Open Google Drive Backup folder for this invoice bill"
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleDownloadAndSaveToDrive}
+              style={{ background: '#2563EB', color: '#FFF', border: 'none', padding: '7px 14px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 8px rgba(37,99,235,0.3)' }}
+              title="Save PDF as [Invoice No] - [Customer Name].pdf and open Google Drive folder to upload"
             >
-              ☁️ Drive Backup
-            </a>
+              ☁️ PDF & Save to Drive
+            </button>
             <button 
               onClick={handlePrint}
-              style={{ background: 'var(--brand-green)', color: '#FFF', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ background: 'var(--brand-green)', color: '#FFF', border: 'none', padding: '7px 14px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              <Printer size={15} /> Print / Save PDF
+              <Printer size={14} /> Print PDF
             </button>
             <button 
               onClick={handleOpenPrintTab}
-              style={{ background: 'rgba(255,255,255,0.15)', color: '#FFF', border: '1px solid rgba(255,255,255,0.3)', padding: '8px 14px', borderRadius: '8px', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-              title="Open print layout in new window/tab"
+              style={{ background: 'rgba(255,255,255,0.15)', color: '#FFF', border: '1px solid rgba(255,255,255,0.3)', padding: '7px 12px', borderRadius: '8px', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              title="Open print layout in new window"
             >
-              📄 New Tab Print
+              📄 New Tab
             </button>
             <button 
               onClick={onClose} 
-              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#FFF', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#FFF', width: '30px', height: '30px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              <X size={18} />
+              <X size={16} />
             </button>
           </div>
         </div>
 
-        {/* Printable Official Invoice Document */}
-        <div className="printable-invoice-paper" style={{ padding: '32px 40px', overflowY: 'auto', flex: 1, background: '#FFFFFF', color: '#1E293B', fontFamily: 'Poppins, sans-serif' }}>
+        {/* Printable Official Invoice Document (Autofit 1 Page A4) */}
+        <div className="printable-invoice-paper" style={{ padding: '24px 32px', overflowY: 'auto', flex: 1, background: '#FFFFFF', color: '#1E293B', fontFamily: 'Poppins, sans-serif', fontSize: '0.8rem' }}>
           
           {/* Header Row: Company Brand Logo & Official Tax Invoice Label */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid var(--brand-green)', paddingBottom: '16px', marginBottom: '20px' }}>

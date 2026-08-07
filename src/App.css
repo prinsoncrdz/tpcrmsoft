@@ -788,10 +788,24 @@ h4 { font-size: 0.9rem; font-weight: 700; }
   }
 }
 
-/* Print Styles for Official Tax Invoices & Quotations */
+/* Print Styles for Official Tax Invoices & Quotations - A4 Single Page Autofit */
+@page {
+  size: A4 portrait;
+  margin: 5mm 8mm;
+}
+
 @media print {
+  html, body {
+    width: 210mm !important;
+    height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #FFFFFF !important;
+    font-size: 11px !important;
+  }
+
   /* Hide background elements */
-  .navbar, .toolbar, .stats-grid, .projects-table-container, .brand-section, .user-controls, .no-print {
+  .navbar, .toolbar, .stats-grid, .projects-table-container, .brand-section, .user-controls, .no-print, .modal-overlay:not(.invoice-modal-overlay) {
     display: none !important;
   }
   
@@ -805,6 +819,7 @@ h4 { font-size: 0.9rem; font-weight: 700; }
     height: auto !important;
     display: block !important;
     box-shadow: none !important;
+    border: none !important;
   }
 
   .invoice-preview-container {
@@ -822,10 +837,17 @@ h4 { font-size: 0.9rem; font-weight: 700; }
     position: static !important;
     width: 100% !important;
     max-width: 100% !important;
-    padding: 0 !important;
+    padding: 10px 15px !important;
     margin: 0 !important;
     background: #FFFFFF !important;
     color: #1E293B !important;
-    overflow: visible !important;
+    box-sizing: border-box !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Prevent page breaks inside critical blocks */
+  table, tr, td, th, .printable-invoice-paper * {
+    page-break-inside: avoid !important;
   }
 }
