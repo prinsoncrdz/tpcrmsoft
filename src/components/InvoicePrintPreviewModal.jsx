@@ -1,17 +1,22 @@
 import React from 'react';
-import { X, Printer, Download, Mail, Phone, Globe, MapPin, Building, FileText, CheckCircle2 } from 'lucide-react';
+import { X, Printer, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function InvoicePrintPreviewModal({ invoice, onClose }) {
   if (!invoice) return null;
 
-  const subtotal = (invoice.items || []).reduce((sum, item) => sum + (parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || 0)), 0);
-  const vatAmount = subtotal * 0.10; // 10% VAT
+  const signatureUrl = localStorage.getItem('tp_crm_ceo_signature_v1') || '';
+  const sealUrl = localStorage.getItem('tp_crm_company_seal_v1') || '';
+
+  const items = Array.isArray(invoice.items) ? invoice.items : [];
+  const subtotal = items.reduce((sum, item) => sum + (parseFloat(item?.quantity || 0) * parseFloat(item?.unitPrice || 0)), 0);
+  const includeVat = invoice.includeVat !== false;
+  const vatAmount = includeVat ? subtotal * 0.10 : 0;
   const grandTotal = subtotal + vatAmount;
   const amountReceived = parseFloat(invoice.amountReceived || 0);
   const balanceDue = grandTotal - amountReceived;
 
   const formatCurrency = (val) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val || 0);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(isNaN(val) ? 0 : val);
   };
 
   const handlePrint = () => {
@@ -20,14 +25,14 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
 
   return (
     <div className="modal-overlay invoice-modal-overlay" style={{ zIndex: 100000 }}>
-      <div className="modal-content invoice-preview-container" style={{ width: '92%', maxWidth: '900px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', padding: '0', overflow: 'hidden', borderRadius: '16px' }}>
+      <div className="modal-content invoice-preview-container" style={{ width: '92%', maxWidth: '900px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', padding: '0', overflow: 'hidden', borderRadius: '16px', background: '#FFFFFF' }}>
         
         {/* Modal Controls Bar (Hidden during window.print()) */}
         <div className="no-print" style={{ background: '#0F172A', color: '#FFF', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <FileText size={18} style={{ color: 'var(--brand-green)' }} />
             <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: '#FFF' }}>
-              {invoice.includeVat !== false ? 'Official Tax Invoice Preview:' : 'Official Quotation Preview:'} {invoice.taxInvoiceNo || 'TP-INV-2026-001'}
+              {includeVat ? 'Official Tax Invoice Preview:' : 'Official Quotation Preview:'} {invoice.taxInvoiceNo || 'TP-INV-2026-001'}
             </h3>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -68,18 +73,18 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
               />
               <h2 style={{ fontSize: '1rem', fontWeight: 900, color: '#0F172A', margin: '0 0 2px 0' }}>Turning Point Retail Solutions</h2>
               <div style={{ fontSize: '0.75rem', color: '#475569', lineHeight: '1.4' }}>
-                {invoice.includeVat !== false && <p style={{ margin: 0, fontWeight: 700 }}>VAT TIN: E000-2400000027</p>}
+                {includeVat && <p style={{ margin: 0, fontWeight: 700 }}>VAT TIN: E000-2400000027</p>}
                 <p style={{ margin: 0 }}>{invoice.companyAddress || 'Office no:-#17F-10D, Morgan Towers, Sopheak Mongkul Street, Koh Pich, Phnom Penh, Cambodia'}</p>
                 <p style={{ margin: 0 }}>Tel: +855 (0) 86 844 464 | Email: info@turningpointretail.com | www.turningpointretail.com</p>
               </div>
             </div>
 
             <div style={{ textAlign: 'right' }}>
-              <div style={{ background: invoice.includeVat !== false ? 'var(--brand-green)' : '#0F172A', color: '#FFFFFF', padding: '6px 16px', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', display: 'inline-block', marginBottom: '8px' }}>
-                {invoice.includeVat !== false ? 'TAX INVOICE' : 'QUOTATION'}
+              <div style={{ background: includeVat ? 'var(--brand-green)' : '#0F172A', color: '#FFFFFF', padding: '6px 16px', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', display: 'inline-block', marginBottom: '8px' }}>
+                {includeVat ? 'TAX INVOICE' : 'QUOTATION'}
               </div>
               <div style={{ fontSize: '0.82rem', color: '#334155' }}>
-                <p style={{ margin: 0 }}><strong>{invoice.includeVat !== false ? 'Invoice No:' : 'Quotation No:'}</strong> {invoice.taxInvoiceNo || 'TP-INV-2026-001'}</p>
+                <p style={{ margin: 0 }}><strong>{includeVat ? 'Invoice No:' : 'Quotation No:'}</strong> {invoice.taxInvoiceNo || 'TP-INV-2026-001'}</p>
                 <p style={{ margin: '2px 0 0 0' }}><strong>Date:</strong> {invoice.invoiceDate || new Date().toISOString().split('T')[0]}</p>
                 <p style={{ margin: '2px 0 0 0' }}><strong>Due Date:</strong> {invoice.dueDate || 'Upon Receipt'}</p>
               </div>
@@ -114,13 +119,13 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
               </tr>
             </thead>
             <tbody>
-              {(invoice.items || []).map((item, idx) => {
-                const itemTotal = (parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || 0));
+              {items.map((item, idx) => {
+                const itemTotal = (parseFloat(item?.quantity || 0) * parseFloat(item?.unitPrice || 0));
                 return (
                   <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0', fontSize: '0.8rem' }}>
                     <td style={{ padding: '10px 12px', fontWeight: 700, color: '#64748B' }}>{idx + 1}</td>
-                    <td style={{ padding: '10px 12px', fontWeight: 600, color: '#0F172A', lineHeight: '1.4' }}>{item.description}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 600 }}>{item.quantity}</td>
+                    <td style={{ padding: '10px 12px', fontWeight: 600, color: '#0F172A', lineHeight: '1.4' }}>{item.description || 'Scope of Service Item'}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 600 }}>{item.quantity || 1}</td>
                     <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 600 }}>{formatCurrency(item.unitPrice)}</td>
                     <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: '#0F172A' }}>{formatCurrency(itemTotal)}</td>
                   </tr>
@@ -136,7 +141,7 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
                 <span style={{ color: '#475569', fontWeight: 600 }}>Subtotal:</span>
                 <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatCurrency(subtotal)}</span>
               </div>
-              {invoice.includeVat !== false ? (
+              {includeVat ? (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '8px' }}>
                   <span style={{ color: '#475569', fontWeight: 600 }}>10% VAT:</span>
                   <span style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{formatCurrency(vatAmount)}</span>
@@ -184,51 +189,45 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
             </div>
 
             {/* Signature & Seal Block */}
-            {(() => {
-              const signatureUrl = localStorage.getItem('tp_crm_ceo_signature_v1') || '';
-              const sealUrl = localStorage.getItem('tp_crm_company_seal_v1') || '';
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '32px', position: 'relative' }}>
+              <div style={{ textAlign: 'center', width: '200px' }}>
+                <div style={{ borderBottom: '1px solid #94A3B8', height: '45px', marginBottom: '4px' }}></div>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>Customer Acceptance Signature</span>
+              </div>
 
-              return (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '32px', position: 'relative' }}>
-                  <div style={{ textAlign: 'center', width: '200px' }}>
-                    <div style={{ borderBottom: '1px solid #94A3B8', height: '45px', marginBottom: '4px' }}></div>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>Customer Acceptance Signature</span>
-                  </div>
+              <div style={{ textAlign: 'center', width: '240px', position: 'relative' }}>
+                {/* Company Seal Stamp Overlay (if uploaded) */}
+                {sealUrl && (
+                  <img 
+                    src={sealUrl} 
+                    alt="Official Company Stamp Seal" 
+                    style={{
+                      position: 'absolute',
+                      right: '-10px',
+                      bottom: '-10px',
+                      width: '100px',
+                      height: '100px',
+                      objectFit: 'contain',
+                      opacity: 0.85,
+                      pointerEvents: 'none',
+                      zIndex: 2
+                    }}
+                  />
+                )}
 
-                  <div style={{ textAlign: 'center', width: '240px', position: 'relative' }}>
-                    {/* Company Seal Stamp Overlay (if uploaded) */}
-                    {sealUrl && (
-                      <img 
-                        src={sealUrl} 
-                        alt="Official Company Stamp Seal" 
-                        style={{
-                          position: 'absolute',
-                          right: '-10px',
-                          bottom: '-10px',
-                          width: '100px',
-                          height: '100px',
-                          objectFit: 'contain',
-                          opacity: 0.85,
-                          pointerEvents: 'none',
-                          zIndex: 2
-                        }}
-                      />
-                    )}
-
-                    {/* CEO Signature */}
-                    <div style={{ borderBottom: '1.5px solid #0F172A', height: '50px', marginBottom: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
-                      {signatureUrl ? (
-                        <img src={signatureUrl} alt="Walter Dantis CEO Signature" style={{ maxHeight: '48px', maxWidth: '200px', objectFit: 'contain' }} />
-                      ) : (
-                        <span style={{ fontFamily: 'cursive', fontSize: '1.1rem', color: '#0F172A', fontWeight: 800 }}>Walter Dantis</span>
-                      )}
-                    </div>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0F172A', display: 'block' }}>Walter Dantis, CEO</span>
-                    <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 600 }}>Turning Point Retail Solutions</div>
-                  </div>
+                {/* CEO Signature */}
+                <div style={{ borderBottom: '1.5px solid #0F172A', height: '50px', marginBottom: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+                  {signatureUrl ? (
+                    <img src={signatureUrl} alt="Walter Dantis CEO Signature" style={{ maxHeight: '48px', maxWidth: '200px', objectFit: 'contain' }} />
+                  ) : (
+                    <span style={{ fontFamily: 'cursive', fontSize: '1.1rem', color: '#0F172A', fontWeight: 800 }}>Walter Dantis</span>
+                  )}
                 </div>
-              );
-            })()}
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0F172A', display: 'block' }}>Walter Dantis, CEO</span>
+                <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 600 }}>Turning Point Retail Solutions</div>
+              </div>
+            </div>
+
           </div>
 
         </div>

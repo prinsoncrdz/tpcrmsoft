@@ -6,13 +6,23 @@ import UploadSealSignatureModal from './UploadSealSignatureModal';
 
 export const OFFICIAL_GOOGLE_DRIVE_BACKUP_URL = 'https://drive.google.com/drive/folders/1yC_diQ2kUNra-aLgMJf7cWpMbDKFb233?usp=sharing';
 
+const INVOICES_STORAGE_KEY = 'tp_crm_tax_invoices_v1';
+
 export default function InvoiceTab({ currentUser }) {
-  const isCeoOrAdmin = currentUser?.role === 'CEO' || currentUser?.role === 'Admin';
+  const isCeoOrAdmin = currentUser?.role === 'CEO' || 
+                       currentUser?.role === 'Admin' || 
+                       currentUser?.name?.toLowerCase().includes('walter') || 
+                       currentUser?.role?.toLowerCase().includes('ceo');
 
   const [invoices, setInvoices] = useState(() => {
-    const saved = localStorage.getItem(INVOICES_STORAGE_KEY);
-    if (saved) {
-      try { return JSON.parse(saved); } catch (err) { return []; }
+    try {
+      const saved = localStorage.getItem(INVOICES_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (err) {
+      console.error('Error parsing saved invoices:', err);
     }
     return [
       {
@@ -25,6 +35,11 @@ export default function InvoiceTab({ currentUser }) {
         telephoneNumber: '+855 12 888 999',
         dueDate: '2026-08-15',
         amountReceived: 1375.00,
+        includeVat: true,
+        companyAddress: 'Office no:-#17F-10D, Morgan Towers, Sopheak Mongkul Street, Koh Pich, Phnom Penh, Cambodia',
+        customPaymentTerms: '50% advance for deposit and another 50% after completion of business registration.',
+        customClosingMessage: 'Thank you for your interest in our services. We are committed to supporting your business journey in Cambodia with reliability, transparency, and efficiency. We are looking forward to working with you.',
+        driveLink: OFFICIAL_GOOGLE_DRIVE_BACKUP_URL,
         items: [
           { description: 'Business Registration & License Processing Service in Cambodia', quantity: 1, unitPrice: 2500.00 }
         ],
