@@ -167,20 +167,52 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
               “Thank you for your interest in our services. We are committed to supporting your business journey in Cambodia with reliability, transparency, and efficiency. We are looking forward to working with you.”
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '32px' }}>
-              <div style={{ textAlign: 'center', width: '200px' }}>
-                <div style={{ borderBottom: '1px solid #94A3B8', height: '40px', marginBottom: '4px' }}></div>
-                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>Customer Acceptance Signature</span>
-              </div>
+            {/* Signature & Seal Block */}
+            {(() => {
+              const signatureUrl = localStorage.getItem('tp_crm_ceo_signature_v1') || '';
+              const sealUrl = localStorage.getItem('tp_crm_company_seal_v1') || '';
 
-              <div style={{ textAlign: 'center', width: '220px' }}>
-                <div style={{ borderBottom: '1px solid #0F172A', height: '40px', marginBottom: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontFamily: 'cursive', fontSize: '0.95rem', color: '#0F172A', fontWeight: 800 }}>Walter Dantis</span>
+              return (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '32px', position: 'relative' }}>
+                  <div style={{ textAlign: 'center', width: '200px' }}>
+                    <div style={{ borderBottom: '1px solid #94A3B8', height: '45px', marginBottom: '4px' }}></div>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>Customer Acceptance Signature</span>
+                  </div>
+
+                  <div style={{ textAlign: 'center', width: '240px', position: 'relative' }}>
+                    {/* Company Seal Stamp Overlay (if uploaded) */}
+                    {sealUrl && (
+                      <img 
+                        src={sealUrl} 
+                        alt="Official Company Stamp Seal" 
+                        style={{
+                          position: 'absolute',
+                          right: '-10px',
+                          bottom: '-10px',
+                          width: '100px',
+                          height: '100px',
+                          objectFit: 'contain',
+                          opacity: 0.85,
+                          pointerEvents: 'none',
+                          zIndex: 2
+                        }}
+                      />
+                    )}
+
+                    {/* CEO Signature */}
+                    <div style={{ borderBottom: '1.5px solid #0F172A', height: '50px', marginBottom: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+                      {signatureUrl ? (
+                        <img src={signatureUrl} alt="Walter Dantis CEO Signature" style={{ maxHeight: '48px', maxWidth: '200px', objectFit: 'contain' }} />
+                      ) : (
+                        <span style={{ fontFamily: 'cursive', fontSize: '1.1rem', color: '#0F172A', fontWeight: 800 }}>Walter Dantis</span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0F172A', display: 'block' }}>Walter Dantis, CEO</span>
+                    <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 600 }}>TBCG Partners Co., Ltd</div>
+                  </div>
                 </div>
-                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#0F172A' }}>Walter Dantis, CEO</span>
-                <div style={{ fontSize: '0.65rem', color: '#64748B' }}>TBCG Partners Co., Ltd</div>
-              </div>
-            </div>
+              );
+            })()}
           </div>
 
         </div>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, FileText, Printer, Edit2, Trash2, DollarSign, CheckCircle2, Clock, AlertCircle, Building, Calendar, Phone, Sparkles } from 'lucide-react';
+import { Plus, Search, FileText, Printer, Edit2, Trash2, DollarSign, CheckCircle2, Clock, AlertCircle, Building, Calendar, Phone, Sparkles, ShieldCheck } from 'lucide-react';
 import CreateInvoiceModal from './CreateInvoiceModal';
 import InvoicePrintPreviewModal from './InvoicePrintPreviewModal';
+import UploadSealSignatureModal from './UploadSealSignatureModal';
 
 const INVOICES_STORAGE_KEY = 'tp_crm_tax_invoices_v1';
 
@@ -13,7 +14,6 @@ export default function InvoiceTab({ currentUser }) {
     if (saved) {
       try { return JSON.parse(saved); } catch (err) { return []; }
     }
-    // Default initial template tax invoice for demonstration
     return [
       {
         id: 'inv-1001',
@@ -42,8 +42,14 @@ export default function InvoiceTab({ currentUser }) {
   const [filterStatus, setFilterStatus] = useState('ALL'); // 'ALL' | 'PAID' | 'PENDING' | 'PARTIAL'
   
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showSealModal, setShowSealModal] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [previewInvoice, setPreviewInvoice] = useState(null);
+
+  const handleSaveSealSignature = ({ signatureUrl, sealUrl }) => {
+    localStorage.setItem('tp_crm_ceo_signature_v1', signatureUrl || '');
+    localStorage.setItem('tp_crm_company_seal_v1', sealUrl || '');
+  };
 
   const saveInvoices = (newInvoices) => {
     setInvoices(newInvoices);
@@ -130,13 +136,23 @@ export default function InvoiceTab({ currentUser }) {
         </div>
 
         {isCeoOrAdmin && (
-          <button 
-            className="btn-primary"
-            onClick={() => { setEditingInvoice(null); setShowCreateModal(true); }}
-            style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: 800, background: 'var(--brand-green)', borderColor: 'var(--brand-green)', boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}
-          >
-            <Plus size={16} /> Create Tax Invoice
-          </button>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button 
+              className="btn-secondary"
+              onClick={() => setShowSealModal(true)}
+              style={{ padding: '10px 16px', fontSize: '0.82rem', fontWeight: 800, background: 'rgba(255,255,255,0.1)', color: '#FFF', border: '1px solid rgba(255,255,255,0.2)' }}
+            >
+              <ShieldCheck size={16} style={{ color: 'var(--brand-green)' }} /> CEO Signature & Seal Stamp
+            </button>
+
+            <button 
+              className="btn-primary"
+              onClick={() => { setEditingInvoice(null); setShowCreateModal(true); }}
+              style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: 800, background: 'var(--brand-green)', borderColor: 'var(--brand-green)', boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}
+            >
+              <Plus size={16} /> Create Tax Invoice
+            </button>
+          </div>
         )}
       </div>
 
@@ -386,6 +402,16 @@ export default function InvoiceTab({ currentUser }) {
         <InvoicePrintPreviewModal 
           invoice={previewInvoice}
           onClose={() => setPreviewInvoice(null)}
+        />
+      )}
+
+      {/* CEO Signature & Seal Upload Modal */}
+      {showSealModal && (
+        <UploadSealSignatureModal 
+          initialSignature={localStorage.getItem('tp_crm_ceo_signature_v1') || ''}
+          initialSeal={localStorage.getItem('tp_crm_company_seal_v1') || ''}
+          onSave={handleSaveSealSignature}
+          onClose={() => setShowSealModal(false)}
         />
       )}
 
