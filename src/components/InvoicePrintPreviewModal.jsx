@@ -23,6 +23,37 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
     window.print();
   };
 
+  const handleOpenPrintTab = () => {
+    const printElement = document.querySelector('.printable-invoice-paper');
+    if (!printElement) return;
+
+    const printWin = window.open('', '_blank', 'width=900,height=800');
+    if (printWin) {
+      printWin.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>${includeVat ? 'Tax Invoice' : 'Quotation'} - ${invoice.taxInvoiceNo || 'TP-INV'}</title>
+            <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+            <style>
+              body { font-family: 'Poppins', sans-serif; margin: 0; padding: 20px; background: #FFF; color: #1E293B; }
+              @media print { body { padding: 0; } }
+            </style>
+          </head>
+          <body>
+            ${printElement.innerHTML}
+            <script>
+              window.onload = function() {
+                window.print();
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      printWin.document.close();
+    }
+  };
+
   return (
     <div className="modal-overlay invoice-modal-overlay" style={{ zIndex: 100000 }}>
       <div className="modal-content invoice-preview-container" style={{ width: '92%', maxWidth: '900px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', padding: '0', overflow: 'hidden', borderRadius: '16px', background: '#FFFFFF' }}>
@@ -35,7 +66,7 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
               {includeVat ? 'Official Tax Invoice Preview:' : 'Official Quotation Preview:'} {invoice.taxInvoiceNo || 'TP-INV-2026-001'}
             </h3>
           </div>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <a
               href={invoice.driveLink || 'https://drive.google.com/drive/folders/1yC_diQ2kUNra-aLgMJf7cWpMbDKFb233?usp=sharing'}
               target="_blank"
@@ -43,13 +74,20 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
               style={{ background: 'rgba(255,255,255,0.15)', color: '#FFF', padding: '8px 14px', borderRadius: '8px', fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
               title="Open Google Drive Backup folder for this invoice bill"
             >
-              ☁️ Open Google Drive Backup
+              ☁️ Drive Backup
             </a>
             <button 
               onClick={handlePrint}
-              style={{ background: 'var(--brand-green)', color: '#FFF', border: 'none', padding: '8px 18px', borderRadius: '8px', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ background: 'var(--brand-green)', color: '#FFF', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              <Printer size={15} /> Print / Save as PDF
+              <Printer size={15} /> Print / Save PDF
+            </button>
+            <button 
+              onClick={handleOpenPrintTab}
+              style={{ background: 'rgba(255,255,255,0.15)', color: '#FFF', border: '1px solid rgba(255,255,255,0.3)', padding: '8px 14px', borderRadius: '8px', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              title="Open print layout in new window/tab"
+            >
+              📄 New Tab Print
             </button>
             <button 
               onClick={onClose} 

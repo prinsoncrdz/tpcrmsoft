@@ -788,26 +788,44 @@ h4 { font-size: 0.9rem; font-weight: 700; }
   }
 }
 
-/* Print Styles for Official Tax Invoices */
+/* Print Styles for Official Tax Invoices & Quotations */
 @media print {
-  body * {
-    visibility: hidden;
+  /* Hide background elements */
+  .navbar, .toolbar, .stats-grid, .projects-table-container, .brand-section, .user-controls, .no-print {
+    display: none !important;
   }
-  .printable-invoice-paper, .printable-invoice-paper * {
-    visibility: visible;
+  
+  /* Reset modal overlay for printing */
+  .modal-overlay.invoice-modal-overlay {
+    position: static !important;
+    background: #FFFFFF !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    box-shadow: none !important;
   }
-  .printable-invoice-paper {
-    position: absolute;
-    left: 0;
-    top: 0;
+
+  .invoice-preview-container {
+    position: static !important;
     width: 100% !important;
     max-width: 100% !important;
-    margin: 0 !important;
-    padding: 10px 20px !important;
+    max-height: none !important;
     box-shadow: none !important;
     border: none !important;
+    background: #FFFFFF !important;
+    display: block !important;
   }
-  .no-print, .modal-overlay, .navbar, .toolbar {
-    display: none !important;
+
+  .printable-invoice-paper {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #FFFFFF !important;
+    color: #1E293B !important;
+    overflow: visible !important;
   }
 }
