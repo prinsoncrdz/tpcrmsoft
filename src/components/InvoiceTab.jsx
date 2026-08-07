@@ -4,7 +4,7 @@ import CreateInvoiceModal from './CreateInvoiceModal';
 import InvoicePrintPreviewModal from './InvoicePrintPreviewModal';
 import UploadSealSignatureModal from './UploadSealSignatureModal';
 
-const INVOICES_STORAGE_KEY = 'tp_crm_tax_invoices_v1';
+export const OFFICIAL_GOOGLE_DRIVE_BACKUP_URL = 'https://drive.google.com/drive/folders/1yC_diQ2kUNra-aLgMJf7cWpMbDKFb233?usp=sharing';
 
 export default function InvoiceTab({ currentUser }) {
   const isCeoOrAdmin = currentUser?.role === 'CEO' || currentUser?.role === 'Admin';
@@ -135,25 +135,38 @@ export default function InvoiceTab({ currentUser }) {
           </p>
         </div>
 
-        {isCeoOrAdmin && (
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button 
-              className="btn-secondary"
-              onClick={() => setShowSealModal(true)}
-              style={{ padding: '10px 16px', fontSize: '0.82rem', fontWeight: 800, background: 'rgba(255,255,255,0.1)', color: '#FFF', border: '1px solid rgba(255,255,255,0.2)' }}
-            >
-              <ShieldCheck size={16} style={{ color: 'var(--brand-green)' }} /> CEO Signature & Seal Stamp
-            </button>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <a
+            href={OFFICIAL_GOOGLE_DRIVE_BACKUP_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-secondary"
+            style={{ padding: '10px 16px', fontSize: '0.82rem', fontWeight: 800, background: '#1E40AF', color: '#FFF', border: '1px solid #3B82F6', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            title="Open official Google Drive folder for invoice bill backups"
+          >
+            ☁️ Open Google Drive Bills Backup
+          </a>
 
-            <button 
-              className="btn-primary"
-              onClick={() => { setEditingInvoice(null); setShowCreateModal(true); }}
-              style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: 800, background: 'var(--brand-green)', borderColor: 'var(--brand-green)', boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}
-            >
-              <Plus size={16} /> Create Tax Invoice
-            </button>
-          </div>
-        )}
+          {isCeoOrAdmin && (
+            <>
+              <button 
+                className="btn-secondary"
+                onClick={() => setShowSealModal(true)}
+                style={{ padding: '10px 16px', fontSize: '0.82rem', fontWeight: 800, background: 'rgba(255,255,255,0.1)', color: '#FFF', border: '1px solid rgba(255,255,255,0.2)' }}
+              >
+                <ShieldCheck size={16} style={{ color: 'var(--brand-green)' }} /> CEO Signature & Seal Stamp
+              </button>
+
+              <button 
+                className="btn-primary"
+                onClick={() => { setEditingInvoice(null); setShowCreateModal(true); }}
+                style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: 800, background: 'var(--brand-green)', borderColor: 'var(--brand-green)', boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}
+              >
+                <Plus size={16} /> Create Tax Invoice
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Invoice Financial Stats Grid */}

@@ -31,16 +31,15 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
             </h3>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            {invoice.driveLink && (
-              <a
-                href={invoice.driveLink}
-                target="_blank"
-                rel="noreferrer"
-                style={{ background: 'rgba(255,255,255,0.15)', color: '#FFF', padding: '8px 14px', borderRadius: '8px', fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                ☁️ Open Google Drive Backup
-              </a>
-            )}
+            <a
+              href={invoice.driveLink || 'https://drive.google.com/drive/folders/1yC_diQ2kUNra-aLgMJf7cWpMbDKFb233?usp=sharing'}
+              target="_blank"
+              rel="noreferrer"
+              style={{ background: 'rgba(255,255,255,0.15)', color: '#FFF', padding: '8px 14px', borderRadius: '8px', fontWeight: 700, fontSize: '0.78rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+              title="Open Google Drive Backup folder for this invoice bill"
+            >
+              ☁️ Open Google Drive Backup
+            </a>
             <button 
               onClick={handlePrint}
               style={{ background: 'var(--brand-green)', color: '#FFF', border: 'none', padding: '8px 18px', borderRadius: '8px', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}

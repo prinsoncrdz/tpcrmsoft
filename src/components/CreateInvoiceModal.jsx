@@ -18,7 +18,8 @@ export default function CreateInvoiceModal({ initialInvoice = null, currentUser,
   const [companyAddress, setCompanyAddress] = useState(initialInvoice?.companyAddress || 'Office no:-#17F-10D, Morgan Towers, Sopheak Mongkul Street, Koh Pich, Phnom Penh, Cambodia');
   const [customPaymentTerms, setCustomPaymentTerms] = useState(initialInvoice?.customPaymentTerms || '50% advance for deposit and another 50% after completion of business registration.');
   const [customClosingMessage, setCustomClosingMessage] = useState(initialInvoice?.customClosingMessage || 'Thank you for your interest in our services. We are committed to supporting your business journey in Cambodia with reliability, transparency, and efficiency. We are looking forward to working with you.');
-  const [driveLink, setDriveLink] = useState(initialInvoice?.driveLink || '');
+  const DEFAULT_DRIVE_BACKUP = 'https://drive.google.com/drive/folders/1yC_diQ2kUNra-aLgMJf7cWpMbDKFb233?usp=sharing';
+  const [driveLink, setDriveLink] = useState(initialInvoice?.driveLink || DEFAULT_DRIVE_BACKUP);
 
   const [items, setItems] = useState(initialInvoice?.items || [
     { description: 'Business Registration & License Processing Service', quantity: 1, unitPrice: 2500 }
