@@ -27,6 +27,7 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
   // Submission notes state for assignee submitting to CEO
   const [submittingTaskId, setSubmittingTaskId] = useState(null);
   const [submissionNotes, setSubmissionNotes] = useState('');
+  const [delayReasonInput, setDelayReasonInput] = useState('');
 
   // CEO Rejection / Needs Revision feedback state
   const [rejectingTaskId, setRejectingTaskId] = useState(null);
@@ -161,16 +162,20 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
     setCeoFeedbackInput('');
   };
 
+  const handleConfirmSubmitForReview = (taskId) => {
+    handleStatusChange(taskId, 'Submitted', { 
+      submissionNotes: submissionNotes.trim(),
+      delayReason: delayReasonInput.trim()
+    });
+    setSubmittingTaskId(null);
+    setSubmissionNotes('');
+    setDelayReasonInput('');
+  };
+
   const handleDeleteTask = (taskId) => {
     const updated = tasks.filter(t => t.id !== taskId);
     setTasks(updated);
     onSaveSubTasks(project.id, updated);
-  };
-
-  const handleConfirmSubmitForReview = (taskId) => {
-    handleStatusChange(taskId, 'Submitted', { submissionNotes: submissionNotes.trim() });
-    setSubmittingTaskId(null);
-    setSubmissionNotes('');
   };
 
   // Aggregation Stats
@@ -498,6 +503,16 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
                         </div>
                       )}
 
+                      {/* Delay Reason / Remarks Box (if provided by assignee) */}
+                      {task.delayReason && (
+                        <div style={{ background: '#FFFBEB', padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #FDE68A', margin: '8px 0', fontSize: '0.75rem', color: '#92400E' }}>
+                          <strong style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px', color: '#B45309', fontWeight: 800 }}>
+                            <Clock size={13} /> Reason for Delay / Remarks:
+                          </strong>
+                          {task.delayReason}
+                        </div>
+                      )}
+
                       {/* Approval Info */}
                       {task.status === 'Approved' && (
                         <div style={{ fontSize: '0.7rem', color: '#047857', fontWeight: 600, marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -611,19 +626,35 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
                         </div>
                       )}
 
-                      {/* Inline Form to add submission notes when clicking Submit for Review */}
+                      {/* Inline Form to add submission notes & delay reasons when submitting */}
                       {isSubmittingThis && (
-                        <div style={{ marginTop: '10px', background: '#F3E8FF', padding: '12px', borderRadius: '8px', border: '1px solid #D8B4FE' }}>
-                          <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B21A8', display: 'block', marginBottom: '4px' }}>
-                            Add Completion Notes / Proof for CEO:
-                          </label>
-                          <input 
-                            type="text" 
-                            placeholder="e.g. Hotel reservation #1094 confirmed, confirmation PDF uploaded to Drive folder."
-                            value={submissionNotes}
-                            onChange={e => setSubmissionNotes(e.target.value)}
-                            style={{ width: '100%', padding: '6px 10px', fontSize: '0.78rem', borderRadius: '6px', border: '1px solid #C084FC', marginBottom: '8px' }}
-                          />
+                        <div style={{ marginTop: '10px', background: '#F3E8FF', padding: '14px', borderRadius: '10px', border: '1.5px solid #C084FC' }}>
+                          <div style={{ marginBottom: '10px' }}>
+                            <label style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B21A8', display: 'block', marginBottom: '4px' }}>
+                              Completion Notes & Proof for CEO:
+                            </label>
+                            <input 
+                              type="text" 
+                              placeholder="e.g. Hotel reservation #1094 confirmed, confirmation PDF uploaded to Drive."
+                              value={submissionNotes}
+                              onChange={e => setSubmissionNotes(e.target.value)}
+                              style={{ width: '100%', padding: '6px 10px', fontSize: '0.78rem', borderRadius: '6px', border: '1px solid #C084FC' }}
+                            />
+                          </div>
+
+                          <div style={{ marginBottom: '10px' }}>
+                            <label style={{ fontSize: '0.72rem', fontWeight: 800, color: '#92400E', display: 'block', marginBottom: '4px' }}>
+                              Reason for Delay / Remarks (if delayed or held up):
+                            </label>
+                            <input 
+                              type="text" 
+                              placeholder="e.g. Delayed by 1 day due to vendor hotel room confirmation delay."
+                              value={delayReasonInput}
+                              onChange={e => setDelayReasonInput(e.target.value)}
+                              style={{ width: '100%', padding: '6px 10px', fontSize: '0.78rem', borderRadius: '6px', border: '1px solid #FDE68A', background: '#FFFBEB' }}
+                            />
+                          </div>
+
                           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
                             <button className="btn-secondary" onClick={() => setSubmittingTaskId(null)} style={{ fontSize: '0.72rem', padding: '4px 8px' }}>
                               Cancel
@@ -631,9 +662,9 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
                             <button 
                               className="btn-primary" 
                               onClick={() => handleConfirmSubmitForReview(task.id)}
-                              style={{ fontSize: '0.72rem', padding: '4px 12px', background: '#7E22CE' }}
+                              style={{ fontSize: '0.72rem', padding: '4px 14px', background: '#7E22CE', borderColor: '#7E22CE' }}
                             >
-                              <Send size={12} /> Confirm & Submit to CEO
+                              <Send size={12} /> Confirm & Submit for Verification
                             </button>
                           </div>
                         </div>
