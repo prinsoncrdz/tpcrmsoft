@@ -1,3 +1,5 @@
+import { sendGlobalNotification, fetchGlobalNotifications } from './googleSheets';
+
 const NOTIFICATIONS_STORAGE_KEY = 'tp_crm_notifications_v1';
 
 export function getNotifications(userEmail) {
@@ -10,6 +12,34 @@ export function getNotifications(userEmail) {
   } catch (err) {
     return [];
   }
+}
+
+// Background sync from Cloud Endpoint
+export async function syncGlobalNotifications(userEmail) {
+  if (!userEmail) return [];
+  const cloudNotifs = await fetchGlobalNotifications();
+  if (Array.isArray(cloudNotifs)) {
+    const saved = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+    let localNotifs = [];
+    if (saved) {
+      try { localNotifs = JSON.parse(saved); } catch (err) { localNotifs = []; }
+    }
+
+    // Merge Cloud and Local using Map by ID
+    const notifMap = new Map();
+    localNotifs.forEach(n => notifMap.set(n.id, n));
+    cloudNotifs.forEach(n => {
+      if (!notifMap.has(n.id)) {
+        notifMap.set(n.id, n);
+      }
+    });
+
+    const merged = Array.from(notifMap.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 100);
+    localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(merged));
+    window.dispatchEvent(new CustomEvent('tp_notification_updated'));
+    return merged.filter(n => n.recipientEmail.toLowerCase() === userEmail.toLowerCase());
+  }
+  return getNotifications(userEmail);
 }
 
 export function createNotification({ recipientEmail, title, message, projectId, subTaskId, type = 'ASSIGNMENT', createdByName }) {
@@ -35,6 +65,9 @@ export function createNotification({ recipientEmail, title, message, projectId, 
   // Keep last 100 notifications
   allNotifs = [newNotif, ...allNotifs].slice(0, 100);
   localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(allNotifs));
+
+  // Push to Cloud API for cross-device instant sync
+  sendGlobalNotification(null, newNotif);
 
   // Trigger custom event so reactive UI components can update immediately
   window.dispatchEvent(new CustomEvent('tp_notification_created', { detail: newNotif }));

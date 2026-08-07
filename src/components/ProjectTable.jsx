@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Download, RefreshCw, ExternalLink, Edit2, AlertCircle, CheckCircle2, Clock, ShieldAlert, Sparkles, UserCheck, Lock, ListTodo, CheckSquare } from 'lucide-react';
-import { SYSTEM_USERS } from '../services/googleSheets';
+import { SYSTEM_USERS, fetchGlobalSubTasks, saveGlobalSubTasks } from '../services/googleSheets';
 import SubTaskModal from './SubTaskModal';
 
 const SUBTASKS_STORAGE_KEY = 'tp_crm_subtasks_v2';
@@ -21,10 +21,29 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
     return {};
   });
 
+  // Global Cloud Sub-Tasks Sync
+  const loadCloudSubTasks = async () => {
+    const cloudMap = await fetchGlobalSubTasks();
+    if (cloudMap && typeof cloudMap === 'object') {
+      const mergedMap = { ...subTasksMap, ...cloudMap };
+      setSubTasksMap(mergedMap);
+      localStorage.setItem(SUBTASKS_STORAGE_KEY, JSON.stringify(mergedMap));
+    }
+  };
+
+  useEffect(() => {
+    loadCloudSubTasks();
+    const interval = setInterval(loadCloudSubTasks, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   const saveSubTasks = (projectId, tasks) => {
     const updatedMap = { ...subTasksMap, [projectId]: tasks };
     setSubTasksMap(updatedMap);
     localStorage.setItem(SUBTASKS_STORAGE_KEY, JSON.stringify(updatedMap));
+
+    // Save to Cloud Endpoint for cross-device sync
+    saveGlobalSubTasks(null, projectId, tasks);
 
     // Calculate percentage of approved tasks for this project
     const projectObj = projects.find(p => p.id === projectId);

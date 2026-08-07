@@ -420,3 +420,76 @@ export async function sendGlobalChatMessage(gasUrl, message) {
   }
   return null;
 }
+
+// FETCH GLOBAL LIVE SUB-TASKS FROM CLOUD ENDPOINT
+export async function fetchGlobalSubTasks(gasUrl) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(`${targetUrl}?action=getSubTasks&t=${Date.now()}`);
+    if (!response.ok) throw new Error('Network response not ok');
+    const json = await response.json();
+    if (json.status === 'success' && json.data) {
+      return json.data;
+    }
+  } catch (err) {
+    console.warn('Global SubTasks fetch:', err);
+  }
+  return null;
+}
+
+// SAVE GLOBAL LIVE SUB-TASKS TO CLOUD ENDPOINT
+export async function saveGlobalSubTasks(gasUrl, projectId, subTasks) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'saveSubTasks',
+        projectId,
+        subTasks
+      })
+    });
+    const json = await response.json();
+    return json.data || null;
+  } catch (err) {
+    console.warn('Global SubTasks save:', err);
+  }
+  return null;
+}
+
+// FETCH GLOBAL LIVE NOTIFICATIONS FROM CLOUD ENDPOINT
+export async function fetchGlobalNotifications(gasUrl) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(`${targetUrl}?action=getNotifications&t=${Date.now()}`);
+    if (!response.ok) throw new Error('Network response not ok');
+    const json = await response.json();
+    if (json.status === 'success' && Array.isArray(json.data)) {
+      return json.data;
+    }
+  } catch (err) {
+    console.warn('Global Notifications fetch:', err);
+  }
+  return null;
+}
+
+// SEND GLOBAL LIVE NOTIFICATION TO CLOUD ENDPOINT
+export async function sendGlobalNotification(gasUrl, notification) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'sendNotification',
+        notification
+      })
+    });
+    const json = await response.json();
+    return json.data || null;
+  } catch (err) {
+    console.warn('Global Notification send:', err);
+  }
+  return null;
+}

@@ -16,15 +16,16 @@ import {
   Clock,
   Check
 } from 'lucide-react';
-import { getNotifications, markAllNotificationsAsRead, markNotificationAsRead } from '../services/notifications';
+import { getNotifications, markAllNotificationsAsRead, markNotificationAsRead, syncGlobalNotifications } from '../services/notifications';
 
 function NotificationBell({ currentUser }) {
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
 
-  const loadNotifs = () => {
+  const loadNotifs = async () => {
     if (currentUser?.email) {
-      setNotifications(getNotifications(currentUser.email));
+      const synced = await syncGlobalNotifications(currentUser.email);
+      setNotifications(synced || getNotifications(currentUser.email));
     }
   };
 
@@ -37,7 +38,7 @@ function NotificationBell({ currentUser }) {
     window.addEventListener('tp_notification_created', handleCreated);
     window.addEventListener('tp_notification_updated', handleUpdated);
 
-    // Also poll every 3 seconds
+    // Also poll every 3 seconds for cloud notifications
     const timer = setInterval(loadNotifs, 3000);
 
     return () => {

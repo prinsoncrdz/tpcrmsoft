@@ -49,6 +49,14 @@ function handleRequest(e) {
       return handleGetChatMessages();
     } else if (action === 'sendChatMessage') {
       return handleSendChatMessage(postData);
+    } else if (action === 'getSubTasks') {
+      return handleGetSubTasks();
+    } else if (action === 'saveSubTasks') {
+      return handleSaveSubTasks(postData);
+    } else if (action === 'getNotifications') {
+      return handleGetNotifications();
+    } else if (action === 'sendNotification') {
+      return handleSendNotification(postData);
     }
 
     return responseJSON({ status: 'success', message: 'Turning Point CRM API Operational' });
@@ -213,6 +221,74 @@ function handleSendChatMessage(data) {
   props.setProperty('TP_GLOBAL_CHAT_MESSAGES', JSON.stringify(validMessages));
 
   return responseJSON({ status: 'success', message: 'Chat message synced globally', data: validMessages });
+}
+
+// Global Sub-Tasks Cloud Read Handler
+function handleGetSubTasks() {
+  var props = PropertiesService.getScriptProperties();
+  var rawMap = props.getProperty('TP_GLOBAL_SUBTASKS') || '{}';
+  var subTasksMap = {};
+  try {
+    subTasksMap = JSON.parse(rawMap);
+  } catch (err) {
+    subTasksMap = {};
+  }
+  return responseJSON({ status: 'success', data: subTasksMap });
+}
+
+// Global Sub-Tasks Cloud Save Handler
+function handleSaveSubTasks(data) {
+  var props = PropertiesService.getScriptProperties();
+  var rawMap = props.getProperty('TP_GLOBAL_SUBTASKS') || '{}';
+  var subTasksMap = {};
+  try {
+    subTasksMap = JSON.parse(rawMap);
+  } catch (err) {
+    subTasksMap = {};
+  }
+
+  if (data.projectId && data.subTasks) {
+    subTasksMap[data.projectId] = data.subTasks;
+    props.setProperty('TP_GLOBAL_SUBTASKS', JSON.stringify(subTasksMap));
+  } else if (data.subTasksMap) {
+    props.setProperty('TP_GLOBAL_SUBTASKS', JSON.stringify(data.subTasksMap));
+    subTasksMap = data.subTasksMap;
+  }
+
+  return responseJSON({ status: 'success', message: 'Sub-tasks synced globally across devices', data: subTasksMap });
+}
+
+// Global Notifications Cloud Read Handler
+function handleGetNotifications() {
+  var props = PropertiesService.getScriptProperties();
+  var rawNotifs = props.getProperty('TP_GLOBAL_NOTIFICATIONS') || '[]';
+  var notifs = [];
+  try {
+    notifs = JSON.parse(rawNotifs);
+  } catch (err) {
+    notifs = [];
+  }
+  return responseJSON({ status: 'success', data: notifs });
+}
+
+// Global Notifications Cloud Send Handler
+function handleSendNotification(data) {
+  var props = PropertiesService.getScriptProperties();
+  var rawNotifs = props.getProperty('TP_GLOBAL_NOTIFICATIONS') || '[]';
+  var notifs = [];
+  try {
+    notifs = JSON.parse(rawNotifs);
+  } catch (err) {
+    notifs = [];
+  }
+
+  var notif = data.notification || {};
+  if (notif.title) {
+    notifs = [notif].concat(notifs).slice(0, 100);
+    props.setProperty('TP_GLOBAL_NOTIFICATIONS', JSON.stringify(notifs));
+  }
+
+  return responseJSON({ status: 'success', message: 'Notification dispatched globally', data: notifs });
 }
 
 function getSheetByGid(ss, gid) {
