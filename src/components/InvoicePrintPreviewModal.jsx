@@ -57,7 +57,7 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
                 alt="Turning Point Retail Solutions Logo" 
                 style={{ height: '54px', width: 'auto', marginBottom: '8px' }}
               />
-              <h2 style={{ fontSize: '1rem', fontWeight: 900, color: '#0F172A', margin: '0 0 2px 0' }}>TBCG Partners Co., Ltd</h2>
+              <h2 style={{ fontSize: '1rem', fontWeight: 900, color: '#0F172A', margin: '0 0 2px 0' }}>Turning Point Retail Solutions Co., Ltd</h2>
               <div style={{ fontSize: '0.75rem', color: '#475569', lineHeight: '1.4' }}>
                 <p style={{ margin: 0, fontWeight: 700 }}>VAT TIN: E000-2400000027</p>
                 <p style={{ margin: 0 }}>Office F 222, Arakawa Residence Sen Sok Phnom Penh Cambodia</p>
@@ -157,7 +157,7 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
               <li>
                 If you have any questions, please contact us:
                 <ul style={{ margin: '4px 0 0 0', paddingLeft: '16px', listStyleType: 'circle' }}>
-                  <li><strong>Walter Dantis</strong>, CEO of TBCG Partners Co., Ltd</li>
+                  <li><strong>Walter Dantis</strong>, CEO of Turning Point Retail Solutions Co., Ltd</li>
                   <li>Email: <strong>walter.dantis@turningpointretail.com</strong> | Phone: <strong>+855 868 444 64</strong></li>
                 </ul>
               </li>
@@ -208,7 +208,7 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
                       )}
                     </div>
                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0F172A', display: 'block' }}>Walter Dantis, CEO</span>
-                    <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 600 }}>TBCG Partners Co., Ltd</div>
+                    <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 600 }}>Turning Point Retail Solutions Co., Ltd</div>
                   </div>
                 </div>
               );
