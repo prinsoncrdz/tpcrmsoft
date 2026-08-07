@@ -3,6 +3,7 @@ import { Plus, Search, FileText, Printer, Edit2, Trash2, DollarSign, CheckCircle
 import CreateInvoiceModal from './CreateInvoiceModal';
 import InvoicePrintPreviewModal from './InvoicePrintPreviewModal';
 import UploadSealSignatureModal from './UploadSealSignatureModal';
+import { fetchGlobalTaxInvoices, saveGlobalTaxInvoices } from '../services/googleSheets';
 
 export const OFFICIAL_GOOGLE_DRIVE_BACKUP_URL = 'https://drive.google.com/drive/folders/1yC_diQ2kUNra-aLgMJf7cWpMbDKFb233?usp=sharing';
 
@@ -61,6 +62,21 @@ export default function InvoiceTab({ currentUser }) {
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [previewInvoice, setPreviewInvoice] = useState(null);
 
+  // Live sync with Google Apps Script cloud property backend
+  useEffect(() => {
+    let isMounted = true;
+    const syncCloudInvoices = async () => {
+      const cloudInvoices = await fetchGlobalTaxInvoices();
+      if (isMounted && Array.isArray(cloudInvoices) && cloudInvoices.length > 0) {
+        setInvoices(cloudInvoices);
+        localStorage.setItem(INVOICES_STORAGE_KEY, JSON.stringify(cloudInvoices));
+      }
+    };
+    syncCloudInvoices();
+    const interval = setInterval(syncCloudInvoices, 15000);
+    return () => { isMounted = false; clearInterval(interval); };
+  }, []);
+
   const handleSaveSealSignature = ({ signatureUrl, sealUrl }) => {
     localStorage.setItem('tp_crm_ceo_signature_v1', signatureUrl || '');
     localStorage.setItem('tp_crm_company_seal_v1', sealUrl || '');
@@ -69,6 +85,7 @@ export default function InvoiceTab({ currentUser }) {
   const saveInvoices = (newInvoices) => {
     setInvoices(newInvoices);
     localStorage.setItem(INVOICES_STORAGE_KEY, JSON.stringify(newInvoices));
+    saveGlobalTaxInvoices(null, newInvoices);
   };
 
   const handleSaveInvoice = (invoiceData) => {

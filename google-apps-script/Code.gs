@@ -57,6 +57,10 @@ function handleRequest(e) {
       return handleGetNotifications();
     } else if (action === 'sendNotification') {
       return handleSendNotification(postData);
+    } else if (action === 'getTaxInvoices') {
+      return handleGetTaxInvoices();
+    } else if (action === 'saveTaxInvoices') {
+      return handleSaveTaxInvoices(postData);
     }
 
     return responseJSON({ status: 'success', message: 'Turning Point CRM API Operational' });
@@ -289,6 +293,29 @@ function handleSendNotification(data) {
   }
 
   return responseJSON({ status: 'success', message: 'Notification dispatched globally', data: notifs });
+}
+
+// Global Tax Invoices Cloud Fetch Handler
+function handleGetTaxInvoices() {
+  var props = PropertiesService.getScriptProperties();
+  var rawInvoices = props.getProperty('TP_GLOBAL_TAX_INVOICES') || '[]';
+  var invoices = [];
+  try {
+    invoices = JSON.parse(rawInvoices);
+  } catch (err) {
+    invoices = [];
+  }
+  return responseJSON({ status: 'success', data: invoices });
+}
+
+// Global Tax Invoices Cloud Save Handler
+function handleSaveTaxInvoices(data) {
+  var props = PropertiesService.getScriptProperties();
+  var invoices = data.invoices || [];
+  if (Array.isArray(invoices)) {
+    props.setProperty('TP_GLOBAL_TAX_INVOICES', JSON.stringify(invoices));
+  }
+  return responseJSON({ status: 'success', message: 'Tax Invoices synced globally to cloud', data: invoices });
 }
 
 function getSheetByGid(ss, gid) {
