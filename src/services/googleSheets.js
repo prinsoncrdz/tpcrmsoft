@@ -546,3 +546,40 @@ export async function saveGlobalTaxInvoices(gasUrl, invoices) {
   }
   return null;
 }
+
+// FETCH GLOBAL CEO SEAL & SIGNATURE FROM CLOUD BACKEND
+export async function fetchGlobalSealSignature(gasUrl) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(`${targetUrl}?action=getSealSignature&t=${Date.now()}`);
+    if (!response.ok) throw new Error('Network response not ok');
+    const json = await response.json();
+    if (json.status === 'success' && json.data) {
+      return json.data;
+    }
+  } catch (err) {
+    console.warn('Global Seal Signature fetch error:', err);
+  }
+  return null;
+}
+
+// SAVE GLOBAL CEO SEAL & SIGNATURE TO CLOUD BACKEND
+export async function saveGlobalSealSignature(gasUrl, signatureUrl, sealUrl) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'saveSealSignature',
+        signatureUrl: signatureUrl || '',
+        sealUrl: sealUrl || ''
+      })
+    });
+    const json = await response.json();
+    return json.data || null;
+  } catch (err) {
+    console.warn('Global Seal Signature save error:', err);
+  }
+  return null;
+}

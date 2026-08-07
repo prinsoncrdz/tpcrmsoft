@@ -61,6 +61,10 @@ function handleRequest(e) {
       return handleGetTaxInvoices();
     } else if (action === 'saveTaxInvoices') {
       return handleSaveTaxInvoices(postData);
+    } else if (action === 'getSealSignature') {
+      return handleGetSealSignature();
+    } else if (action === 'saveSealSignature') {
+      return handleSaveSealSignature(postData);
     }
 
     return responseJSON({ status: 'success', message: 'Turning Point CRM API Operational' });
@@ -316,6 +320,30 @@ function handleSaveTaxInvoices(data) {
     props.setProperty('TP_GLOBAL_TAX_INVOICES', JSON.stringify(invoices));
   }
   return responseJSON({ status: 'success', message: 'Tax Invoices synced globally to cloud', data: invoices });
+}
+
+// Global CEO Seal & Signature Cloud Fetch Handler
+function handleGetSealSignature() {
+  var props = PropertiesService.getScriptProperties();
+  var rawSealSig = props.getProperty('TP_GLOBAL_SEAL_SIGNATURE') || '{}';
+  var data = {};
+  try {
+    data = JSON.parse(rawSealSig);
+  } catch (err) {
+    data = {};
+  }
+  return responseJSON({ status: 'success', data: data });
+}
+
+// Global CEO Seal & Signature Cloud Save Handler
+function handleSaveSealSignature(data) {
+  var props = PropertiesService.getScriptProperties();
+  var sealSigData = {
+    signatureUrl: data.signatureUrl || '',
+    sealUrl: data.sealUrl || ''
+  };
+  props.setProperty('TP_GLOBAL_SEAL_SIGNATURE', JSON.stringify(sealSigData));
+  return responseJSON({ status: 'success', message: 'CEO Seal & Signature synced globally to cloud', data: sealSigData });
 }
 
 function getSheetByGid(ss, gid) {
