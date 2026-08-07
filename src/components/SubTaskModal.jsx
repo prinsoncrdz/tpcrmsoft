@@ -6,6 +6,7 @@ import { createNotification } from '../services/notifications';
 export default function SubTaskModal({ project, currentUser, subTasks = [], onSaveSubTasks, onClose }) {
   const [tasks, setTasks] = useState(subTasks);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [viewTab, setViewTab] = useState('ACTIVE'); // 'ACTIVE' | 'COMPLETED'
   
   // New task form state
   const [title, setTitle] = useState('');
@@ -16,6 +17,10 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
   // Submission notes state for assignee submitting to CEO
   const [submittingTaskId, setSubmittingTaskId] = useState(null);
   const [submissionNotes, setSubmissionNotes] = useState('');
+
+  // CEO Rejection / Needs Revision feedback state
+  const [rejectingTaskId, setRejectingTaskId] = useState(null);
+  const [ceoFeedbackInput, setCeoFeedbackInput] = useState('');
 
   const isCeoOrAdmin = currentUser?.role === 'CEO' || currentUser?.role === 'Admin';
   const isProjectOwner = currentUser?.role === 'Project Owner' || (project.owner && project.owner.toLowerCase().includes(currentUser?.name?.toLowerCase()));
@@ -50,6 +55,7 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
       createdAt: new Date().toISOString(),
       submittedAt: null,
       submissionNotes: '',
+      ceoFeedback: '',
       approvedAt: null,
       approvedByName: null
     };
@@ -118,18 +124,18 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
         createNotification({
           recipientEmail: updatedTask.assigneeEmail,
           title: `✅ CEO Approved Your Sub-Task!`,
-          message: `CEO (${currentUser?.name}) verified & approved your sub-task "${updatedTask.title}" in ${project.projectName}. Excellent work!`,
+          message: `CEO (${currentUser?.name}) verified & approved your sub-task "${updatedTask.title}" in ${project.projectName}. Excellent work! Task is completed.`,
           projectId: project.id,
           subTaskId: updatedTask.id,
           type: 'APPROVAL',
           createdByName: currentUser?.name
         });
       } else if (newStatus === 'Needs Revision') {
-        // Notify assignee that revision is requested
+        // Notify assignee that revision is requested with CEO feedback
         createNotification({
           recipientEmail: updatedTask.assigneeEmail,
-          title: `🔄 CEO Requested Revision`,
-          message: `CEO (${currentUser?.name}) requested revision on sub-task "${updatedTask.title}" in ${project.projectName}. Please review instructions and re-submit.`,
+          title: `⚠️ CEO Requested Revision & Feedback`,
+          message: `CEO (${currentUser?.name}) rejected / requested revision on "${updatedTask.title}" in ${project.projectName}. Feedback: "${extra.ceoFeedback || 'Check details and resubmit.'}"`,
           projectId: project.id,
           subTaskId: updatedTask.id,
           type: 'REVISION',
@@ -137,6 +143,12 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
         });
       }
     }
+  };
+
+  const handleConfirmRejectWithFeedback = (taskId) => {
+    handleStatusChange(taskId, 'Needs Revision', { ceoFeedback: ceoFeedbackInput.trim() });
+    setRejectingTaskId(null);
+    setCeoFeedbackInput('');
   };
 
   const handleDeleteTask = (taskId) => {
@@ -217,7 +229,7 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
           </button>
         </div>
 
-        {/* CEO Work Progress Bar Header */}
+        {/* CEO Work Progress Bar Header & View Tabs */}
         <div style={{ background: '#F8FAFC', padding: '14px 24px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ flex: 1, minWidth: '220px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', fontWeight: 700, marginBottom: '6px', color: 'var(--text-main)' }}>
@@ -229,10 +241,47 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {/* View Tabs: Active vs Completed Archive */}
+            <div style={{ display: 'flex', background: '#E2E8F0', padding: '3px', borderRadius: '8px' }}>
+              <button
+                onClick={() => setViewTab('ACTIVE')}
+                style={{
+                  background: viewTab === 'ACTIVE' ? '#FFFFFF' : 'transparent',
+                  color: viewTab === 'ACTIVE' ? 'var(--text-main)' : 'var(--text-muted)',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '0.72rem',
+                  fontWeight: viewTab === 'ACTIVE' ? 800 : 500,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit'
+                }}
+              >
+                ⚡ Active ({tasks.filter(t => t.status !== 'Approved').length})
+              </button>
+
+              <button
+                onClick={() => setViewTab('COMPLETED')}
+                style={{
+                  background: viewTab === 'COMPLETED' ? '#ECFDF5' : 'transparent',
+                  color: viewTab === 'COMPLETED' ? 'var(--brand-green)' : 'var(--text-muted)',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '0.72rem',
+                  fontWeight: viewTab === 'COMPLETED' ? 800 : 500,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit'
+                }}
+              >
+                ✅ Approved ({approvedCount})
+              </button>
+            </div>
+
             {submittedCount > 0 && (
-              <div style={{ background: '#F3E8FF', color: '#7E22CE', padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Sparkles size={14} /> {submittedCount} Pending CEO Review
+              <div style={{ background: '#F3E8FF', color: '#7E22CE', padding: '5px 10px', borderRadius: '8px', fontSize: '0.72rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Sparkles size={13} /> {submittedCount} Pending CEO Review
               </div>
             )}
             <button 
@@ -325,195 +374,253 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
             </form>
           )}
 
-          {/* Sub-Task List */}
-          {tasks.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 20px', background: '#F8FAFC', borderRadius: '12px', border: '1px dashed var(--border-color)' }}>
-              <Clock size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 10px auto' }} />
-              <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-main)' }}>No Sub-Tasks Created Yet</h4>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '4px 0 14px 0' }}>
-                Create sub-tasks for hotel booking, logistics, shipping, venue setup, etc., and assign them to team members.
-              </p>
-              <button className="btn-primary" onClick={() => setShowAddForm(true)} style={{ fontSize: '0.78rem' }}>
-                <Plus size={14} /> Add First Sub-Task
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {tasks.map(task => {
-                const assignedUser = SYSTEM_USERS.find(u => u.email.toLowerCase() === task.assigneeEmail?.toLowerCase());
-                const isSubmittingThis = submittingTaskId === task.id;
+          {/* Sub-Task List Filtered by View Tab */}
+          {(() => {
+            const displayedTasks = tasks.filter(t => viewTab === 'COMPLETED' ? t.status === 'Approved' : t.status !== 'Approved');
 
-                return (
-                  <div 
-                    key={task.id} 
-                    style={{ 
-                      background: '#FFFFFF', 
-                      border: '1px solid ' + (task.status === 'Submitted' ? '#D8B4FE' : task.status === 'Approved' ? '#A7F3D0' : 'var(--border-color)'), 
-                      borderRadius: '12px', 
-                      padding: '16px', 
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    {/* Task Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                          <span style={{ background: '#ECFDF5', color: 'var(--brand-green)', fontSize: '0.65rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase' }}>
-                            {task.category || 'Task'}
-                          </span>
-                          <h4 style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-                            {task.title}
-                          </h4>
+            if (displayedTasks.length === 0) {
+              return (
+                <div style={{ textAlign: 'center', padding: '40px 20px', background: '#F8FAFC', borderRadius: '12px', border: '1px dashed var(--border-color)' }}>
+                  <Clock size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 10px auto' }} />
+                  <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                    {viewTab === 'COMPLETED' ? 'No Completed / Approved Tasks Yet' : 'No Active Sub-Tasks Currently'}
+                  </h4>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '4px 0 14px 0' }}>
+                    {viewTab === 'COMPLETED' ? 'Sub-tasks approved by CEO will appear here once verified.' : 'All assigned sub-tasks have been completed & verified by CEO!'}
+                  </p>
+                  {viewTab === 'ACTIVE' && (
+                    <button className="btn-primary" onClick={() => setShowAddForm(true)} style={{ fontSize: '0.78rem' }}>
+                      <Plus size={14} /> Add Sub-Task
+                    </button>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {displayedTasks.map(task => {
+                  const assignedUser = SYSTEM_USERS.find(u => u.email.toLowerCase() === task.assigneeEmail?.toLowerCase());
+                  const isSubmittingThis = submittingTaskId === task.id;
+                  const isRejectingThis = rejectingTaskId === task.id;
+
+                  return (
+                    <div 
+                      key={task.id} 
+                      style={{ 
+                        background: '#FFFFFF', 
+                        border: '1px solid ' + (task.status === 'Needs Revision' ? '#FCA5A5' : task.status === 'Submitted' ? '#D8B4FE' : task.status === 'Approved' ? '#A7F3D0' : 'var(--border-color)'), 
+                        borderRadius: '12px', 
+                        padding: '16px', 
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {/* Task Header */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                            <span style={{ background: '#ECFDF5', color: 'var(--brand-green)', fontSize: '0.65rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase' }}>
+                              {task.category || 'Task'}
+                            </span>
+                            <h4 style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+                              {task.title}
+                            </h4>
+                          </div>
+
+                          {/* Assignee pill */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            <span>Assigned to:</span>
+                            {assignedUser ? (
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#F1F5F9', padding: '2px 8px', borderRadius: '12px', color: 'var(--text-main)', fontWeight: 600 }}>
+                                <img src={assignedUser.avatar} alt={assignedUser.name} style={{ width: '16px', height: '16px', borderRadius: '50%' }} />
+                                <span>{assignedUser.name}</span>
+                              </div>
+                            ) : (
+                              <span style={{ fontWeight: 600 }}>{task.assigneeName || task.assigneeEmail}</span>
+                            )}
+                          </div>
                         </div>
 
-                        {/* Assignee pill */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          <span>Assigned to:</span>
-                          {assignedUser ? (
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#F1F5F9', padding: '2px 8px', borderRadius: '12px', color: 'var(--text-main)', fontWeight: 600 }}>
-                              <img src={assignedUser.avatar} alt={assignedUser.name} style={{ width: '16px', height: '16px', borderRadius: '50%' }} />
-                              <span>{assignedUser.name}</span>
-                            </div>
-                          ) : (
-                            <span style={{ fontWeight: 600 }}>{task.assigneeName || task.assigneeEmail}</span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {getStatusBadge(task.status)}
-                        {canManageSubTasks && (
-                          <button 
-                            onClick={() => handleDeleteTask(task.id)}
-                            style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '4px' }}
-                            title="Delete Sub-Task"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Assignment Detail & Instructions */}
-                    {task.detail && (
-                      <div style={{ background: '#F8FAFC', padding: '10px 12px', borderRadius: '8px', borderLeft: '3px solid var(--brand-green)', margin: '10px 0', fontSize: '0.78rem', color: 'var(--text-main)', lineHeight: '1.5' }}>
-                        <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.68rem', marginBottom: '2px', textTransform: 'uppercase' }}>
-                          Assignment Detail & Instructions:
-                        </div>
-                        {task.detail}
-                      </div>
-                    )}
-
-                    {/* Submission Notes (if submitted) */}
-                    {task.submissionNotes && (
-                      <div style={{ background: '#FAF5FF', padding: '8px 12px', borderRadius: '8px', border: '1px solid #E9D5FF', margin: '8px 0', fontSize: '0.75rem', color: '#6B21A8' }}>
-                        <strong style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px' }}>
-                          <MessageSquare size={12} /> Assignee Submission Notes:
-                        </strong>
-                        {task.submissionNotes}
-                      </div>
-                    )}
-
-                    {/* Approval Info */}
-                    {task.status === 'Approved' && (
-                      <div style={{ fontSize: '0.7rem', color: '#047857', fontWeight: 600, marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <UserCheck size={12} /> Approved by {task.approvedByName || 'CEO'} on {new Date(task.approvedAt).toLocaleDateString()}
-                      </div>
-                    )}
-
-                    {/* Workflow Actions */}
-                    <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                      
-                      {/* Status toggle for assignee or team */}
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        {task.status === 'Pending' && (
-                          <button 
-                            className="btn-secondary" 
-                            onClick={() => handleStatusChange(task.id, 'In Progress')}
-                            style={{ fontSize: '0.72rem', padding: '4px 10px' }}
-                          >
-                            Start Working →
-                          </button>
-                        )}
-
-                        {/* Assignee / Team member Submit for CEO Review */}
-                        {task.status !== 'Approved' && task.status !== 'Submitted' && (
-                          <button 
-                            className="btn-primary" 
-                            onClick={() => setSubmittingTaskId(task.id)}
-                            style={{ fontSize: '0.72rem', padding: '4px 12px', background: '#7E22CE', borderColor: '#7E22CE' }}
-                          >
-                            <Sparkles size={12} /> Submit for CEO Review
-                          </button>
-                        )}
-                      </div>
-
-                      {/* CEO / Admin Exclusive Approval Actions */}
-                      {isCeoOrAdmin && (
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          {task.status !== 'Approved' ? (
-                            <>
-                              <button 
-                                onClick={() => handleStatusChange(task.id, 'Needs Revision')}
-                                style={{ background: '#FEF2F2', color: '#991B1B', border: '1px solid #FCA5A5', borderRadius: '6px', padding: '4px 10px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                              >
-                                <RotateCcw size={12} /> Needs Revision
-                              </button>
-
-                              <button 
-                                onClick={() => handleStatusChange(task.id, 'Approved')}
-                                style={{ background: '#10B981', color: '#FFFFFF', border: 'none', borderRadius: '6px', padding: '5px 14px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 6px rgba(16,185,129,0.3)' }}
-                              >
-                                <CheckCircle2 size={14} /> CEO Approve Task
-                              </button>
-                            </>
-                          ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {getStatusBadge(task.status)}
+                          {canManageSubTasks && (
                             <button 
-                              onClick={() => handleStatusChange(task.id, 'In Progress')}
-                              style={{ background: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1', borderRadius: '6px', padding: '3px 8px', fontSize: '0.68rem', cursor: 'pointer' }}
+                              onClick={() => handleDeleteTask(task.id)}
+                              style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '4px' }}
+                              title="Delete Sub-Task"
                             >
-                              Re-open Task
+                              <Trash2 size={14} />
                             </button>
                           )}
+                        </div>
+                      </div>
+
+                      {/* Assignment Detail & Instructions */}
+                      {task.detail && (
+                        <div style={{ background: '#F8FAFC', padding: '10px 12px', borderRadius: '8px', borderLeft: '3px solid var(--brand-green)', margin: '10px 0', fontSize: '0.78rem', color: 'var(--text-main)', lineHeight: '1.5' }}>
+                          <div style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.68rem', marginBottom: '2px', textTransform: 'uppercase' }}>
+                            Assignment Detail & Instructions:
+                          </div>
+                          {task.detail}
+                        </div>
+                      )}
+
+                      {/* CEO REJECTION / REVISION FEEDBACK BOX (SHOWN TO MEMBER IF REJECTED BY CEO) */}
+                      {task.status === 'Needs Revision' && (
+                        <div style={{ background: '#FEF2F2', padding: '10px 12px', borderRadius: '8px', border: '1.5px solid #FCA5A5', margin: '10px 0', color: '#991B1B' }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                            <AlertCircle size={15} style={{ color: '#DC2626' }} /> CEO Rejection & Revision Feedback:
+                          </div>
+                          <p style={{ fontSize: '0.78rem', margin: 0, fontWeight: 600, lineHeight: '1.4' }}>
+                            "{task.ceoFeedback || 'CEO requested revision. Please review instructions, make fixes, and click Re-Submit to CEO.'}"
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Submission Notes (if submitted) */}
+                      {task.submissionNotes && (
+                        <div style={{ background: '#FAF5FF', padding: '8px 12px', borderRadius: '8px', border: '1px solid #E9D5FF', margin: '8px 0', fontSize: '0.75rem', color: '#6B21A8' }}>
+                          <strong style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px' }}>
+                            <MessageSquare size={12} /> Assignee Submission Notes:
+                          </strong>
+                          {task.submissionNotes}
+                        </div>
+                      )}
+
+                      {/* Approval Info */}
+                      {task.status === 'Approved' && (
+                        <div style={{ fontSize: '0.7rem', color: '#047857', fontWeight: 600, marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <UserCheck size={12} /> Verified & Approved by {task.approvedByName || 'CEO'} on {new Date(task.approvedAt).toLocaleDateString()}
+                        </div>
+                      )}
+
+                      {/* Workflow Actions */}
+                      <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                        
+                        {/* Status toggle for assignee or team */}
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          {task.status === 'Pending' && (
+                            <button 
+                              className="btn-secondary" 
+                              onClick={() => handleStatusChange(task.id, 'In Progress')}
+                              style={{ fontSize: '0.72rem', padding: '4px 10px' }}
+                            >
+                              Start Working →
+                            </button>
+                          )}
+
+                          {/* Assignee / Team member Submit for CEO Review */}
+                          {task.status !== 'Approved' && task.status !== 'Submitted' && (
+                            <button 
+                              className="btn-primary" 
+                              onClick={() => setSubmittingTaskId(task.id)}
+                              style={{ 
+                                fontSize: '0.72rem', 
+                                padding: '4px 12px', 
+                                background: task.status === 'Needs Revision' ? '#DC2626' : '#7E22CE', 
+                                borderColor: task.status === 'Needs Revision' ? '#DC2626' : '#7E22CE' 
+                              }}
+                            >
+                              <Sparkles size={12} /> {task.status === 'Needs Revision' ? 'Re-Submit to CEO' : 'Submit for CEO Review'}
+                            </button>
+                          )}
+                        </div>
+
+                        {/* CEO / Admin Exclusive Approval / Rejection Actions */}
+                        {isCeoOrAdmin && (
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            {task.status !== 'Approved' ? (
+                              <>
+                                <button 
+                                  onClick={() => setRejectingTaskId(task.id)}
+                                  style={{ background: '#FEF2F2', color: '#991B1B', border: '1px solid #FCA5A5', borderRadius: '6px', padding: '4px 10px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                >
+                                  <RotateCcw size={12} /> Reject / Needs Revision
+                                </button>
+
+                                <button 
+                                  onClick={() => handleStatusChange(task.id, 'Approved')}
+                                  style={{ background: '#10B981', color: '#FFFFFF', border: 'none', borderRadius: '6px', padding: '5px 14px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 6px rgba(16,185,129,0.3)' }}
+                                >
+                                  <CheckCircle2 size={14} /> CEO Verify & Approve
+                                </button>
+                              </>
+                            ) : (
+                              <button 
+                                onClick={() => handleStatusChange(task.id, 'In Progress')}
+                                style={{ background: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1', borderRadius: '6px', padding: '3px 8px', fontSize: '0.68rem', cursor: 'pointer' }}
+                              >
+                                Re-open Task
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                      </div>
+
+                      {/* Inline Form for CEO Rejection Feedback */}
+                      {isRejectingThis && (
+                        <div style={{ marginTop: '10px', background: '#FEF2F2', padding: '12px', borderRadius: '8px', border: '1px solid #FCA5A5' }}>
+                          <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#991B1B', display: 'block', marginBottom: '4px' }}>
+                            CEO Rejection Reason & Feedback for Assignee:
+                          </label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g., Hotel receipt PDF missing / Date must be updated to Aug 15..."
+                            value={ceoFeedbackInput}
+                            onChange={e => setCeoFeedbackInput(e.target.value)}
+                            style={{ width: '100%', padding: '6px 10px', fontSize: '0.78rem', borderRadius: '6px', border: '1px solid #F87171', marginBottom: '8px' }}
+                          />
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                            <button className="btn-secondary" onClick={() => setRejectingTaskId(null)} style={{ fontSize: '0.72rem', padding: '4px 8px' }}>
+                              Cancel
+                            </button>
+                            <button 
+                              className="btn-primary" 
+                              onClick={() => handleConfirmRejectWithFeedback(task.id)}
+                              style={{ fontSize: '0.72rem', padding: '4px 12px', background: '#DC2626', borderColor: '#DC2626' }}
+                            >
+                              <RotateCcw size={12} /> Confirm Rejection with Feedback
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Inline Form to add submission notes when clicking Submit for Review */}
+                      {isSubmittingThis && (
+                        <div style={{ marginTop: '10px', background: '#F3E8FF', padding: '12px', borderRadius: '8px', border: '1px solid #D8B4FE' }}>
+                          <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B21A8', display: 'block', marginBottom: '4px' }}>
+                            Add Completion Notes / Proof for CEO:
+                          </label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. Hotel reservation #1094 confirmed, confirmation PDF uploaded to Drive folder."
+                            value={submissionNotes}
+                            onChange={e => setSubmissionNotes(e.target.value)}
+                            style={{ width: '100%', padding: '6px 10px', fontSize: '0.78rem', borderRadius: '6px', border: '1px solid #C084FC', marginBottom: '8px' }}
+                          />
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                            <button className="btn-secondary" onClick={() => setSubmittingTaskId(null)} style={{ fontSize: '0.72rem', padding: '4px 8px' }}>
+                              Cancel
+                            </button>
+                            <button 
+                              className="btn-primary" 
+                              onClick={() => handleConfirmSubmitForReview(task.id)}
+                              style={{ fontSize: '0.72rem', padding: '4px 12px', background: '#7E22CE' }}
+                            >
+                              <Send size={12} /> Confirm & Submit to CEO
+                            </button>
+                          </div>
                         </div>
                       )}
 
                     </div>
-
-                    {/* Inline Form to add submission notes when clicking Submit for Review */}
-                    {isSubmittingThis && (
-                      <div style={{ marginTop: '10px', background: '#F3E8FF', padding: '12px', borderRadius: '8px', border: '1px solid #D8B4FE' }}>
-                        <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6B21A8', display: 'block', marginBottom: '4px' }}>
-                          Add Completion Notes / Proof for CEO:
-                        </label>
-                        <input 
-                          type="text" 
-                          placeholder="e.g. Hotel reservation #1094 confirmed, confirmation PDF uploaded to Drive folder."
-                          value={submissionNotes}
-                          onChange={e => setSubmissionNotes(e.target.value)}
-                          style={{ width: '100%', padding: '6px 10px', fontSize: '0.78rem', borderRadius: '6px', border: '1px solid #C084FC', marginBottom: '8px' }}
-                        />
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-                          <button className="btn-secondary" onClick={() => setSubmittingTaskId(null)} style={{ fontSize: '0.72rem', padding: '4px 8px' }}>
-                            Cancel
-                          </button>
-                          <button 
-                            className="btn-primary" 
-                            onClick={() => handleConfirmSubmitForReview(task.id)}
-                            style={{ fontSize: '0.72rem', padding: '4px 12px', background: '#7E22CE' }}
-                          >
-                            <Send size={12} /> Confirm & Submit to CEO
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            );
+          })()}
 
         </div>
 
