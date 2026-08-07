@@ -88,12 +88,18 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
 
     const matchesSector = selectedSector === 'ALL' || (p.sector && p.sector.toUpperCase().includes(selectedSector));
 
-    // Check if user is assigned to project OR any of its sub-tasks
+    // Check if user is assigned to project OR any of its sub-tasks (match by name or email)
     const pSubTasks = subTasksMap[p.id] || [];
+    const uEmail = (currentUser?.email || '').toLowerCase();
+    const uName = (currentUser?.name || '').toLowerCase();
+
     const isAssignedToUser = 
-      p.assignee.toLowerCase().includes(currentUser.name.toLowerCase()) ||
-      p.owner.toLowerCase().includes(currentUser.name.toLowerCase()) ||
-      pSubTasks.some(st => st.assigneeEmail?.toLowerCase() === currentUser.email?.toLowerCase());
+      p.assignee.toLowerCase().includes(uName) ||
+      p.owner.toLowerCase().includes(uName) ||
+      pSubTasks.some(st => 
+        (st.assigneeEmail && st.assigneeEmail.toLowerCase() === uEmail) ||
+        (st.assigneeName && st.assigneeName.toLowerCase().includes(uName))
+      );
 
     const hasPendingReview = pSubTasks.some(st => st.status === 'Submitted');
 

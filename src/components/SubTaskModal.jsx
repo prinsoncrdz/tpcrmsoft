@@ -8,10 +8,15 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewTab, setViewTab] = useState('ACTIVE'); // 'ACTIVE' | 'COMPLETED'
   
+  // Find initial default assignee (prefer project assignee or first team member over CEO)
+  const defaultAssignee = SYSTEM_USERS.find(u => u.name.toLowerCase().includes((project.assignee || '').toLowerCase()))
+    || SYSTEM_USERS.find(u => u.role !== 'CEO' && u.role !== 'Admin')
+    || SYSTEM_USERS[0];
+
   // New task form state
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Hotel Booking');
-  const [assigneeEmail, setAssigneeEmail] = useState(currentUser?.email || SYSTEM_USERS[0].email);
+  const [assigneeEmail, setAssigneeEmail] = useState(defaultAssignee?.email || SYSTEM_USERS[0].email);
   const [detail, setDetail] = useState('');
   
   // Submission notes state for assignee submitting to CEO
