@@ -505,67 +505,81 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
                         </div>
                       )}
 
-                      {/* Workflow Actions */}
+                      {/* Workflow Actions with Strict Role Separation */}
                       <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                         
-                        {/* Status toggle for assignee or team */}
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          {task.status === 'Pending' && (
-                            <button 
-                              className="btn-secondary" 
-                              onClick={() => handleStatusChange(task.id, 'In Progress')}
-                              style={{ fontSize: '0.72rem', padding: '4px 10px' }}
-                            >
-                              Start Working →
-                            </button>
-                          )}
+                        {(() => {
+                          const isAssignee = currentUser?.email?.toLowerCase() === task.assigneeEmail?.toLowerCase()
+                            || currentUser?.name?.toLowerCase().includes((task.assigneeName || '').toLowerCase());
 
-                          {/* Assignee / Team member Submit for CEO Review */}
-                          {task.status !== 'Approved' && task.status !== 'Submitted' && (
-                            <button 
-                              className="btn-primary" 
-                              onClick={() => setSubmittingTaskId(task.id)}
-                              style={{ 
-                                fontSize: '0.72rem', 
-                                padding: '4px 12px', 
-                                background: task.status === 'Needs Revision' ? '#DC2626' : '#7E22CE', 
-                                borderColor: task.status === 'Needs Revision' ? '#DC2626' : '#7E22CE' 
-                              }}
-                            >
-                              <Sparkles size={12} /> {task.status === 'Needs Revision' ? 'Re-Submit to CEO' : 'Submit for CEO Review'}
-                            </button>
-                          )}
-                        </div>
+                          return (
+                            <>
+                              {/* ASSIGNEE ACTIONS (e.g. Prinson Cardoza) */}
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                {isAssignee && task.status === 'Pending' && (
+                                  <button 
+                                    className="btn-secondary" 
+                                    onClick={() => handleStatusChange(task.id, 'In Progress')}
+                                    style={{ fontSize: '0.72rem', padding: '4px 10px' }}
+                                  >
+                                    Start Working →
+                                  </button>
+                                )}
 
-                        {/* CEO / Admin Exclusive Approval / Rejection Actions */}
-                        {isCeoOrAdmin && (
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            {task.status !== 'Approved' ? (
-                              <>
-                                <button 
-                                  onClick={() => setRejectingTaskId(task.id)}
-                                  style={{ background: '#FEF2F2', color: '#991B1B', border: '1px solid #FCA5A5', borderRadius: '6px', padding: '4px 10px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                                >
-                                  <RotateCcw size={12} /> Reject / Needs Revision
-                                </button>
+                                {isAssignee && task.status !== 'Approved' && task.status !== 'Submitted' && (
+                                  <button 
+                                    className="btn-primary" 
+                                    onClick={() => setSubmittingTaskId(task.id)}
+                                    style={{ 
+                                      fontSize: '0.72rem', 
+                                      padding: '4px 14px', 
+                                      background: task.status === 'Needs Revision' ? '#DC2626' : '#7E22CE', 
+                                      borderColor: task.status === 'Needs Revision' ? '#DC2626' : '#7E22CE' 
+                                    }}
+                                  >
+                                    <Sparkles size={13} /> {task.status === 'Needs Revision' ? 'Fix & Re-Submit for Approval' : 'Submit for CEO / Owner Approval'}
+                                  </button>
+                                )}
 
-                                <button 
-                                  onClick={() => handleStatusChange(task.id, 'Approved')}
-                                  style={{ background: '#10B981', color: '#FFFFFF', border: 'none', borderRadius: '6px', padding: '5px 14px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 6px rgba(16,185,129,0.3)' }}
-                                >
-                                  <CheckCircle2 size={14} /> CEO Verify & Approve
-                                </button>
-                              </>
-                            ) : (
-                              <button 
-                                onClick={() => handleStatusChange(task.id, 'In Progress')}
-                                style={{ background: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1', borderRadius: '6px', padding: '3px 8px', fontSize: '0.68rem', cursor: 'pointer' }}
-                              >
-                                Re-open Task
-                              </button>
-                            )}
-                          </div>
-                        )}
+                                {!isAssignee && task.status !== 'Approved' && task.status !== 'Submitted' && (
+                                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <Clock size={12} /> Awaiting {task.assigneeName || 'Assignee'} to complete & submit
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* VERIFIER ACTIONS (CEO & Project Owner) */}
+                              {canManageSubTasks && (
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                  {task.status === 'Submitted' ? (
+                                    <>
+                                      <button 
+                                        onClick={() => setRejectingTaskId(task.id)}
+                                        style={{ background: '#FEF2F2', color: '#991B1B', border: '1px solid #FCA5A5', borderRadius: '6px', padding: '4px 10px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                      >
+                                        <RotateCcw size={12} /> Reject / Needs Revision
+                                      </button>
+
+                                      <button 
+                                        onClick={() => handleStatusChange(task.id, 'Approved')}
+                                        style={{ background: '#10B981', color: '#FFFFFF', border: 'none', borderRadius: '6px', padding: '6px 16px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 6px rgba(16,185,129,0.3)' }}
+                                      >
+                                        <CheckCircle2 size={14} /> Verify & Approve Task
+                                      </button>
+                                    </>
+                                  ) : task.status === 'Approved' ? (
+                                    <button 
+                                      onClick={() => handleStatusChange(task.id, 'In Progress')}
+                                      style={{ background: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1', borderRadius: '6px', padding: '3px 8px', fontSize: '0.68rem', cursor: 'pointer' }}
+                                    >
+                                      Re-open Task
+                                    </button>
+                                  ) : null}
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
 
                       </div>
 
