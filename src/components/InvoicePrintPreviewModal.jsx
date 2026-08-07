@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Printer, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function InvoicePrintPreviewModal({ invoice, onClose }) {
@@ -18,6 +18,16 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
   const formatCurrency = (val) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(isNaN(val) ? 0 : val);
   };
+
+  // Auto trigger download & Google Drive backup when creating an invoice
+  useEffect(() => {
+    if (invoice?.autoDownload) {
+      const timer = setTimeout(() => {
+        handleDownloadAndSaveToDrive();
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [invoice]);
 
   const handlePrint = () => {
     const origTitle = document.title;

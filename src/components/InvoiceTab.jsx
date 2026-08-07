@@ -99,6 +99,9 @@ export default function InvoiceTab({ currentUser }) {
     saveInvoices(updated);
     setShowCreateModal(false);
     setEditingInvoice(null);
+
+    // AUTOMATICALLY open preview & trigger immediate PDF save & Google Drive folder popup!
+    setPreviewInvoice({ ...invoiceData, autoDownload: true });
   };
 
   const handleDeleteInvoice = (id) => {
