@@ -112,7 +112,7 @@ export default function UploadSealSignatureModal({ initialSignature = '', initia
           {/* Company Rubber Stamp Seal Upload Section */}
           <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
             <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-              <ShieldCheck size={16} style={{ color: '#DC2626' }} /> 2. Official Company Stamp / Seal Image (Turning Point Retail Solutions Co., Ltd)
+              <ShieldCheck size={16} style={{ color: '#DC2626' }} /> 2. Official Company Stamp / Seal Image (Turning Point Retail Solutions)
             </label>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', alignItems: 'center' }}>
