@@ -10,10 +10,11 @@ export const OFFICIAL_GOOGLE_DRIVE_BACKUP_URL = 'https://drive.google.com/drive/
 const INVOICES_STORAGE_KEY = 'tp_crm_tax_invoices_v1';
 
 export default function InvoiceTab({ currentUser }) {
-  const isCeoOrAdmin = currentUser?.role === 'CEO' || 
-                       currentUser?.role === 'Admin' || 
-                       currentUser?.name?.toLowerCase().includes('walter') || 
-                       currentUser?.role?.toLowerCase().includes('ceo');
+  const isCeo = currentUser?.role === 'CEO' || 
+                currentUser?.name?.toLowerCase().includes('walter') || 
+                currentUser?.role?.toLowerCase().includes('ceo');
+
+  const isCeoOrAdmin = isCeo || currentUser?.role === 'Admin';
 
   const [invoices, setInvoices] = useState(() => {
     try {
@@ -211,32 +212,39 @@ export default function InvoiceTab({ currentUser }) {
         </div>
       </div>
 
-      {/* Invoice Financial Stats Grid */}
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginBottom: '24px' }}>
-        <div className="stat-card">
-          <div className="stat-icon blue"><FileText /></div>
-          <div className="stat-details">
-            <span className="stat-value">{formatCurrency(totalBilled)}</span>
-            <span className="stat-label">Total Invoiced (Grand Total + 10% VAT)</span>
+      {/* Invoice Financial Stats Grid (CEO Only) */}
+      {isCeo ? (
+        <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginBottom: '24px' }}>
+          <div className="stat-card">
+            <div className="stat-icon blue"><FileText /></div>
+            <div className="stat-details">
+              <span className="stat-value">{formatCurrency(totalBilled)}</span>
+              <span className="stat-label">Total Invoiced (Grand Total)</span>
+            </div>
           </div>
-        </div>
 
-        <div className="stat-card" style={{ borderLeft: '4px solid #10B981', background: '#ECFDF5' }}>
-          <div className="stat-icon emerald"><CheckCircle2 /></div>
-          <div className="stat-details">
-            <span className="stat-value" style={{ color: '#047857' }}>{formatCurrency(totalReceived)}</span>
-            <span className="stat-label" style={{ color: '#065F46', fontWeight: 600 }}>Total Payments Received</span>
+          <div className="stat-card" style={{ borderLeft: '4px solid #10B981', background: '#ECFDF5' }}>
+            <div className="stat-icon emerald"><CheckCircle2 /></div>
+            <div className="stat-details">
+              <span className="stat-value" style={{ color: '#047857' }}>{formatCurrency(totalReceived)}</span>
+              <span className="stat-label" style={{ color: '#065F46', fontWeight: 600 }}>Total Payments Received</span>
+            </div>
           </div>
-        </div>
 
-        <div className="stat-card" style={{ borderLeft: '4px solid #EF4444', background: '#FEF2F2' }}>
-          <div className="stat-icon orange"><AlertCircle /></div>
-          <div className="stat-details">
-            <span className="stat-value" style={{ color: '#B91C1C' }}>{formatCurrency(totalOutstanding)}</span>
-            <span className="stat-label" style={{ color: '#991B1B', fontWeight: 600 }}>Outstanding Balance Due</span>
+          <div className="stat-card" style={{ borderLeft: '4px solid #EF4444', background: '#FEF2F2' }}>
+            <div className="stat-icon orange"><AlertCircle /></div>
+            <div className="stat-details">
+              <span className="stat-value" style={{ color: '#B91C1C' }}>{formatCurrency(totalOutstanding)}</span>
+              <span className="stat-label" style={{ color: '#991B1B', fontWeight: 600 }}>Outstanding Balance Due</span>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1', padding: '14px 20px', borderRadius: '12px', color: '#64748B', fontSize: '0.82rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
+          <ShieldCheck size={18} style={{ color: '#3B82F6' }} />
+          <span>🔒 <strong>Confidential CEO Financial Data:</strong> Total invoice revenue, payments received, and financial amounts are confidential and accessible only to CEO (Walter Dantis).</span>
+        </div>
+      )}
 
       {/* Toolbar Filters */}
       <div className="toolbar" style={{ marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
@@ -353,30 +361,38 @@ export default function InvoiceTab({ currentUser }) {
                     <span>Items: <strong>{(inv.items || []).length}</strong></span>
                   </div>
 
-                  {/* Pricing Breakdown */}
+                  {/* Pricing Breakdown (CEO Only) */}
                   <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '10px', marginBottom: '14px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#64748B', marginBottom: '4px' }}>
-                      <span>Subtotal:</span>
-                      <span>{formatCurrency(inv.subtotal)}</span>
-                    </div>
-                    {inv.includeVat !== false && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--brand-green)', marginBottom: '4px' }}>
-                        <span>10% VAT:</span>
-                        <span>+{formatCurrency(inv.vatAmount)}</span>
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', fontWeight: 900, color: '#0F172A', borderTop: '1px solid #E2E8F0', paddingTop: '4px', marginBottom: '4px' }}>
-                      <span>Grand Total:</span>
-                      <span>{formatCurrency(inv.grandTotal)}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#047857' }}>
-                      <span>Amount Received:</span>
-                      <span style={{ fontWeight: 800 }}>{formatCurrency(inv.amountReceived)}</span>
-                    </div>
-                    {inv.balanceDue > 0 && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 900, color: '#DC2626', marginTop: '2px' }}>
-                        <span>Balance Due:</span>
-                        <span>{formatCurrency(inv.balanceDue)}</span>
+                    {isCeo ? (
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#64748B', marginBottom: '4px' }}>
+                          <span>Subtotal:</span>
+                          <span>{formatCurrency(inv.subtotal)}</span>
+                        </div>
+                        {inv.includeVat !== false && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--brand-green)', marginBottom: '4px' }}>
+                            <span>10% VAT:</span>
+                            <span>+{formatCurrency(inv.vatAmount)}</span>
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', fontWeight: 900, color: '#0F172A', borderTop: '1px solid #E2E8F0', paddingTop: '4px', marginBottom: '4px' }}>
+                          <span>Grand Total:</span>
+                          <span>{formatCurrency(inv.grandTotal)}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#047857' }}>
+                          <span>Amount Received:</span>
+                          <span style={{ fontWeight: 800 }}>{formatCurrency(inv.amountReceived)}</span>
+                        </div>
+                        {inv.balanceDue > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 900, color: '#DC2626', marginTop: '2px' }}>
+                            <span>Balance Due:</span>
+                            <span>{formatCurrency(inv.balanceDue)}</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div style={{ background: '#F8FAFC', padding: '10px 12px', borderRadius: '8px', fontSize: '0.75rem', color: '#64748B', fontStyle: 'italic', textAlign: 'center' }}>
+                        🔒 Invoice monetary amounts restricted to CEO
                       </div>
                     )}
                   </div>
@@ -484,6 +500,7 @@ export default function InvoiceTab({ currentUser }) {
       {previewInvoice && (
         <InvoicePrintPreviewModal 
           invoice={previewInvoice}
+          currentUser={currentUser}
           onClose={() => setPreviewInvoice(null)}
         />
       )}

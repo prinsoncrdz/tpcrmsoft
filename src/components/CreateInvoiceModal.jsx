@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { X, Plus, Trash2, Save, FileText, DollarSign, Calculator, Send } from 'lucide-react';
 
 export default function CreateInvoiceModal({ initialInvoice = null, currentUser, onSaveInvoice, onClose }) {
-  const isCeoOrAdmin = currentUser?.role === 'CEO' || 
-                       currentUser?.role === 'Admin' || 
-                       currentUser?.name?.toLowerCase().includes('walter') || 
-                       currentUser?.role?.toLowerCase().includes('ceo');
+  const isCeo = currentUser?.role === 'CEO' || 
+                currentUser?.name?.toLowerCase().includes('walter') || 
+                currentUser?.role?.toLowerCase().includes('ceo');
+
+  const isCeoOrAdmin = isCeo || currentUser?.role === 'Admin';
 
   const [companyName, setCompanyName] = useState(initialInvoice?.companyName || '');
   const [taxInvoiceNo, setTaxInvoiceNo] = useState(initialInvoice?.taxInvoiceNo || `TP-INV-${Date.now().toString().slice(-4)}`);
@@ -306,18 +307,34 @@ export default function CreateInvoiceModal({ initialInvoice = null, currentUser,
                   required
                   style={{ padding: '8px 10px', fontSize: '0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', textAlign: 'center' }}
                 />
-                <input 
-                  type="number" 
-                  step="0.01"
-                  placeholder="Unit Price ($)"
-                  value={item.unitPrice}
-                  onChange={e => handleUpdateItem(idx, 'unitPrice', e.target.value)}
-                  required
-                  style={{ padding: '8px 10px', fontSize: '0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontWeight: 700 }}
-                />
-                <div style={{ padding: '8px 10px', fontSize: '0.82rem', fontWeight: 800, color: '#0F172A', background: '#F8FAFC', borderRadius: '6px', textAlign: 'right' }}>
-                  ${((parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || 0))).toFixed(2)}
-                </div>
+                {isCeo ? (
+                  <>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      placeholder="Unit Price ($)"
+                      value={item.unitPrice}
+                      onChange={e => handleUpdateItem(idx, 'unitPrice', e.target.value)}
+                      required
+                      style={{ padding: '8px 10px', fontSize: '0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontWeight: 700 }}
+                    />
+                    <div style={{ padding: '8px 10px', fontSize: '0.82rem', fontWeight: 800, color: '#0F172A', background: '#F8FAFC', borderRadius: '6px', textAlign: 'right' }}>
+                      ${((parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || 0))).toFixed(2)}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <input 
+                      type="text" 
+                      disabled
+                      value="🔒 CEO Only"
+                      style={{ padding: '8px 10px', fontSize: '0.75rem', borderRadius: '6px', border: '1px dashed #CBD5E1', background: '#F1F5F9', color: '#64748B', fontStyle: 'italic', textAlign: 'center' }}
+                    />
+                    <div style={{ padding: '8px 10px', fontSize: '0.75rem', fontWeight: 600, color: '#64748B', background: '#F8FAFC', borderRadius: '6px', textAlign: 'center', fontStyle: 'italic' }}>
+                      🔒 Restricted
+                    </div>
+                  </>
+                )}
                 {items.length > 1 && (
                   <button 
                     type="button" 
@@ -337,39 +354,54 @@ export default function CreateInvoiceModal({ initialInvoice = null, currentUser,
               <label style={{ fontSize: '0.72rem', fontWeight: 800, color: '#047857', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>
                 Amount Received (Deposit / Payment) ($ USD)
               </label>
-              <input 
-                type="number" 
-                step="0.01"
-                placeholder="e.g. 1250.00"
-                value={amountReceived}
-                onChange={e => setAmountReceived(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', fontSize: '1rem', fontWeight: 800, color: '#047857', borderRadius: '8px', border: '1.5px solid #A7F3D0', background: '#ECFDF5' }}
-              />
+              {isCeo ? (
+                <input 
+                  type="number" 
+                  step="0.01"
+                  placeholder="e.g. 1250.00"
+                  value={amountReceived}
+                  onChange={e => setAmountReceived(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', fontSize: '1rem', fontWeight: 800, color: '#047857', borderRadius: '8px', border: '1.5px solid #A7F3D0', background: '#ECFDF5' }}
+                />
+              ) : (
+                <input 
+                  type="text" 
+                  disabled
+                  value="🔒 Restricted to CEO"
+                  style={{ width: '100%', padding: '10px 12px', fontSize: '0.82rem', fontWeight: 600, color: '#64748B', borderRadius: '8px', border: '1px dashed #CBD5E1', background: '#F8FAFC', fontStyle: 'italic' }}
+                />
+              )}
               <span style={{ fontSize: '0.68rem', color: '#64748B', marginTop: '4px', display: 'block' }}>
                 Can be updated later when customer makes partial or full payments.
               </span>
             </div>
 
-            <div style={{ background: '#F8FAFC', padding: '12px 16px', borderRadius: '10px', border: '1px solid #CBD5E1' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '4px' }}>
-                <span style={{ color: '#64748B' }}>Subtotal:</span>
-                <span style={{ fontWeight: 800 }}>${subtotal.toFixed(2)}</span>
-              </div>
-              {includeVat && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '6px' }}>
-                  <span style={{ color: '#64748B' }}>10% VAT:</span>
-                  <span style={{ fontWeight: 800, color: 'var(--brand-green)' }}>+${vatAmount.toFixed(2)}</span>
+            {isCeo ? (
+              <div style={{ background: '#F8FAFC', padding: '12px 16px', borderRadius: '10px', border: '1px solid #CBD5E1' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '4px' }}>
+                  <span style={{ color: '#64748B' }}>Subtotal:</span>
+                  <span style={{ fontWeight: 800 }}>${subtotal.toFixed(2)}</span>
                 </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', fontWeight: 900, borderTop: '1.5px solid #0F172A', paddingTop: '6px', marginBottom: '6px' }}>
-                <span>Grand Total:</span>
-                <span>${grandTotal.toFixed(2)}</span>
+                {includeVat && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '6px' }}>
+                    <span style={{ color: '#64748B' }}>10% VAT:</span>
+                    <span style={{ fontWeight: 800, color: 'var(--brand-green)' }}>+${vatAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', fontWeight: 900, borderTop: '1.5px solid #0F172A', paddingTop: '6px', marginBottom: '6px' }}>
+                  <span>Grand Total:</span>
+                  <span>${grandTotal.toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', fontWeight: 900, color: balanceDue <= 0 ? '#047857' : '#DC2626', borderTop: '1px dashed #CBD5E1', paddingTop: '4px' }}>
+                  <span>Balance Due:</span>
+                  <span>${(balanceDue > 0 ? balanceDue : 0).toFixed(2)}</span>
+                </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', fontWeight: 900, color: balanceDue <= 0 ? '#047857' : '#DC2626', borderTop: '1px dashed #CBD5E1', paddingTop: '4px' }}>
-                <span>Balance Due:</span>
-                <span>${(balanceDue > 0 ? balanceDue : 0).toFixed(2)}</span>
+            ) : (
+              <div style={{ background: '#F8FAFC', padding: '14px 16px', borderRadius: '10px', border: '1px dashed #CBD5E1', color: '#64748B', fontSize: '0.78rem', fontStyle: 'italic', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                🔒 Pricing totals and financial amounts are confidential and configured exclusively by CEO (Walter Dantis).
               </div>
-            </div>
+            )}
           </div>
 
           {/* 3. Google Drive Backup & Custom Terms Block */}

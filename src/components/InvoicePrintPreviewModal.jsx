@@ -1,8 +1,12 @@
 import React, { useEffect } from 'react';
 import { X, Printer, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 
-export default function InvoicePrintPreviewModal({ invoice, onClose }) {
+export default function InvoicePrintPreviewModal({ invoice, currentUser, onClose }) {
   if (!invoice) return null;
+
+  const isCeo = currentUser?.role === 'CEO' || 
+                currentUser?.name?.toLowerCase().includes('walter') || 
+                currentUser?.role?.toLowerCase().includes('ceo');
 
   const signatureUrl = localStorage.getItem('tp_crm_ceo_signature_v1') || '';
   const sealUrl = localStorage.getItem('tp_crm_company_seal_v1') || '';
@@ -192,40 +196,46 @@ export default function InvoicePrintPreviewModal({ invoice, onClose }) {
                     <td style={{ padding: '10px 12px', fontWeight: 700, color: '#64748B' }}>{idx + 1}</td>
                     <td style={{ padding: '10px 12px', fontWeight: 600, color: '#0F172A', lineHeight: '1.4' }}>{item.description || 'Scope of Service Item'}</td>
                     <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 600 }}>{item.quantity || 1}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 600 }}>{formatCurrency(item.unitPrice)}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: '#0F172A' }}>{formatCurrency(itemTotal)}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 600 }}>{isCeo ? formatCurrency(item.unitPrice) : '🔒 CEO Set'}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: '#0F172A' }}>{isCeo ? formatCurrency(itemTotal) : '🔒 Confidential'}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
 
-          {/* Subtotal & Calculations Box */}
+          {/* Subtotal & Calculations Box (CEO Only) */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '28px' }}>
-            <div style={{ width: '320px', background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '10px', padding: '14px 18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '6px' }}>
-                <span style={{ color: '#475569', fontWeight: 600 }}>Subtotal:</span>
-                <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatCurrency(subtotal)}</span>
-              </div>
-              {includeVat && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '8px' }}>
-                  <span style={{ color: '#475569', fontWeight: 600 }}>10% VAT:</span>
-                  <span style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{formatCurrency(vatAmount)}</span>
+            {isCeo ? (
+              <div style={{ width: '320px', background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '10px', padding: '14px 18px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '6px' }}>
+                  <span style={{ color: '#475569', fontWeight: 600 }}>Subtotal:</span>
+                  <span style={{ fontWeight: 800, color: '#0F172A' }}>{formatCurrency(subtotal)}</span>
                 </div>
-              )}
-              <div style={{ borderTop: '2px solid #0F172A', paddingTop: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 900, marginBottom: '6px' }}>
-                <span>Grand Total:</span>
-                <span style={{ color: '#0F172A' }}>{formatCurrency(grandTotal)}</span>
+                {includeVat && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '8px' }}>
+                    <span style={{ color: '#475569', fontWeight: 600 }}>10% VAT:</span>
+                    <span style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{formatCurrency(vatAmount)}</span>
+                  </div>
+                )}
+                <div style={{ borderTop: '2px solid #0F172A', paddingTop: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 900, marginBottom: '6px' }}>
+                  <span>Grand Total:</span>
+                  <span style={{ color: '#0F172A' }}>{formatCurrency(grandTotal)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#047857', marginBottom: '4px' }}>
+                  <span>Amount Received:</span>
+                  <span style={{ fontWeight: 800 }}>{formatCurrency(amountReceived)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', fontWeight: 900, color: balanceDue <= 0 ? '#047857' : '#DC2626', borderTop: '1px dashed #CBD5E1', paddingTop: '6px' }}>
+                  <span>Balance Due:</span>
+                  <span>{formatCurrency(balanceDue > 0 ? balanceDue : 0)}</span>
+                </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#047857', marginBottom: '4px' }}>
-                <span>Amount Received:</span>
-                <span style={{ fontWeight: 800 }}>{formatCurrency(amountReceived)}</span>
+            ) : (
+              <div style={{ width: '320px', background: '#F8FAFC', border: '1px dashed #CBD5E1', borderRadius: '10px', padding: '14px 18px', textAlign: 'center', color: '#64748B', fontStyle: 'italic', fontSize: '0.78rem' }}>
+                🔒 Financial invoice monetary calculations are confidential and accessible only to CEO (Walter Dantis).
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', fontWeight: 900, color: balanceDue <= 0 ? '#047857' : '#DC2626', borderTop: '1px dashed #CBD5E1', paddingTop: '6px' }}>
-                <span>Balance Due:</span>
-                <span>{formatCurrency(balanceDue > 0 ? balanceDue : 0)}</span>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Official Footer Terms & Notes */}
