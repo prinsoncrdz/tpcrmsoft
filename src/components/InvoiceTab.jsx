@@ -160,6 +160,20 @@ export default function InvoiceTab({ currentUser }) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val || 0);
   };
 
+  if (!isCeoOrAdmin) {
+    return (
+      <div style={{ padding: '60px 20px', textAlign: 'center', background: '#FFFFFF', borderRadius: '16px', border: '1px solid var(--border-color)', margin: '24px 0' }}>
+        <div style={{ display: 'inline-flex', padding: '16px', background: '#FEF2F2', borderRadius: '50%', color: '#DC2626', marginBottom: '16px' }}>
+          <ShieldCheck size={32} />
+        </div>
+        <h3 style={{ color: '#0F172A', fontSize: '1.2rem', fontWeight: 800, margin: '0 0 8px 0' }}>🔒 Access Restricted to CEO & Admin</h3>
+        <p style={{ fontSize: '0.85rem', color: '#64748B', maxWidth: '480px', margin: '0 auto 16px auto', lineHeight: '1.5' }}>
+          Tax Invoices and Quotations management is restricted to CEO (Walter Dantis) and Admin accounts.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: '24px 0' }}>
       

@@ -178,17 +178,24 @@ function NotificationBell({ currentUser }) {
 
 export default function Navbar({ activeTab, setActiveTab, currentUser, onLogout, onOpenSettings, isSyncing }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const isExecutive = currentUser?.role === 'CEO' || currentUser?.role === 'Admin';
+  const isExecutive = currentUser?.role === 'CEO' || 
+                      currentUser?.role === 'Admin' || 
+                      currentUser?.name?.toLowerCase().includes('walter') || 
+                      currentUser?.role?.toLowerCase().includes('ceo');
 
   const navItems = [
     { id: 'CRM', label: 'Project CRM Sheet', icon: <Building2 size={15} />, restricted: false },
-    { id: 'TAX_INVOICES', label: 'Tax Invoices 🧾', icon: <FileText size={15} />, restricted: false },
+    { id: 'TAX_INVOICES', label: 'Tax Invoices 🧾', icon: <FileText size={15} />, ceoAdminOnly: true },
     { id: 'TEAM_CHAT', label: 'Team Chat 💬', icon: <MessageSquare size={15} />, restricted: false },
     { id: 'PETTY_CASH_DASHBOARD', label: 'Petty Cash Dashboard', icon: <LayoutDashboard size={15} />, restricted: true },
     { id: 'PETTY_CASH_JULY', label: 'July 2026', icon: <DollarSign size={15} />, restricted: true },
     { id: 'PETTY_CASH_AUG', label: 'August 2026', icon: <DollarSign size={15} />, restricted: true },
     { id: 'PETTY_CASH_SEPT', label: 'September 2026', icon: <DollarSign size={15} />, restricted: true }
-  ];
+  ].filter(item => {
+    // Tax Invoices is completely removed from dashboard for non-CEO / non-Admin users
+    if (item.ceoAdminOnly && !isExecutive) return false;
+    return true;
+  });
 
   return (
     <nav className="navbar">
