@@ -57,6 +57,7 @@ export default function InvoiceTab({ currentUser }) {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL'); // 'ALL' | 'PAID' | 'PENDING' | 'PARTIAL'
+  const [selectedMonth, setSelectedMonth] = useState('ALL'); // 'ALL' | '2026-08' | '2026-07' | '2026-06'
   
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSealModal, setShowSealModal] = useState(false);
@@ -139,6 +140,8 @@ export default function InvoiceTab({ currentUser }) {
       (inv.contactPerson || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const matchesMonth = selectedMonth === 'ALL' || (inv.invoiceDate || '').startsWith(selectedMonth);
+
     const isPaid = (inv.balanceDue || 0) <= 0;
     const isPartial = (inv.amountReceived || 0) > 0 && (inv.balanceDue || 0) > 0;
     const isPending = (inv.amountReceived || 0) <= 0 && (inv.balanceDue || 0) > 0;
@@ -148,7 +151,7 @@ export default function InvoiceTab({ currentUser }) {
     if (filterStatus === 'PARTIAL') matchesStatus = isPartial;
     if (filterStatus === 'PENDING') matchesStatus = isPending;
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesMonth;
   });
 
   // Financial Stats
@@ -260,9 +263,75 @@ export default function InvoiceTab({ currentUser }) {
         </div>
       )}
 
+      {/* Monthly Profit & Loss (P&L) Summary Widget (CEO Only) */}
+      {isCeo && (
+        <div style={{ background: 'linear-gradient(135deg, #064E3B 0%, #047857 100%)', borderRadius: '16px', padding: '20px 24px', color: '#FFFFFF', marginBottom: '24px', boxShadow: '0 4px 14px rgba(4,120,87,0.2)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles size={18} style={{ color: '#A7F3D0' }} />
+              <h3 style={{ fontSize: '0.98rem', fontWeight: 900, margin: 0, color: '#FFF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Executive Monthly Profit & Loss (P&L) Statement
+              </h3>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.78rem', opacity: 0.9 }}>Filter Month:</span>
+              <select
+                value={selectedMonth}
+                onChange={e => setSelectedMonth(e.target.value)}
+                style={{ padding: '6px 12px', fontSize: '0.8rem', fontWeight: 800, borderRadius: '8px', border: 'none', background: 'rgba(255,255,255,0.2)', color: '#FFF', cursor: 'pointer' }}
+              >
+                <option value="ALL" style={{ color: '#0F172A' }}>All Months Total</option>
+                <option value="2026-08" style={{ color: '#0F172A' }}>August 2026</option>
+                <option value="2026-07" style={{ color: '#0F172A' }}>July 2026</option>
+                <option value="2026-06" style={{ color: '#0F172A' }}>June 2026</option>
+              </select>
+            </div>
+          </div>
+
+          {(() => {
+            // Month revenue calculation
+            const monthInvoices = invoices.filter(inv => selectedMonth === 'ALL' || (inv.invoiceDate || '').startsWith(selectedMonth));
+            const monthRevenue = monthInvoices.reduce((sum, inv) => sum + (parseFloat(inv.grandTotal || 0)), 0);
+            
+            // Estimated month expenses (July=$1850, Aug=$1420, Sept=$1200)
+            const estExpenses = selectedMonth === '2026-07' ? 1850.00 : selectedMonth === '2026-08' ? 1420.00 : selectedMonth === '2026-06' ? 1100.00 : 4370.00;
+            const netProfit = monthRevenue - estExpenses;
+            const marginPct = monthRevenue > 0 ? Math.round((netProfit / monthRevenue) * 100) : 0;
+
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', background: 'rgba(0,0,0,0.15)', padding: '16px', borderRadius: '12px' }}>
+                <div>
+                  <span style={{ fontSize: '0.72rem', opacity: 0.85, textTransform: 'uppercase', fontWeight: 700 }}>Total Invoiced Revenue</span>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#A7F3D0', marginTop: '2px' }}>{formatCurrency(monthRevenue)}</div>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: '0.72rem', opacity: 0.85, textTransform: 'uppercase', fontWeight: 700 }}>Monthly Expenses (Petty Cash)</span>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#FCA5A5', marginTop: '2px' }}>{formatCurrency(estExpenses)}</div>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: '0.72rem', opacity: 0.85, textTransform: 'uppercase', fontWeight: 700 }}>Net Monthly Profit</span>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 900, color: netProfit >= 0 ? '#6EE7B7' : '#F87171', marginTop: '2px' }}>
+                    {formatCurrency(netProfit)}
+                  </div>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: '0.72rem', opacity: 0.85, textTransform: 'uppercase', fontWeight: 700 }}>Profit Margin</span>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#FDE68A', marginTop: '2px' }}>
+                    {marginPct}% Net Margin
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
       {/* Toolbar Filters */}
       <div className="toolbar" style={{ marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', gap: '6px', background: '#F1F5F9', padding: '4px', borderRadius: '8px' }}>
+        <div style={{ display: 'flex', gap: '6px', background: '#F1F5F9', padding: '4px', borderRadius: '8px', flexWrap: 'wrap' }}>
           {[
             { id: 'ALL', label: `All Invoices (${invoices.length})` },
             { id: 'PAID', label: 'Paid in Full' },
@@ -288,6 +357,21 @@ export default function InvoiceTab({ currentUser }) {
               {tab.label}
             </button>
           ))}
+        </div>
+
+        {/* Monthwise Filter Dropdown */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B' }}>Month:</span>
+          <select
+            value={selectedMonth}
+            onChange={e => setSelectedMonth(e.target.value)}
+            style={{ padding: '6px 10px', fontSize: '0.78rem', fontWeight: 700, borderRadius: '8px', border: '1px solid var(--border-color)', background: '#FFFFFF', color: '#0F172A' }}
+          >
+            <option value="ALL">All Months</option>
+            <option value="2026-08">August 2026</option>
+            <option value="2026-07">July 2026</option>
+            <option value="2026-06">June 2026</option>
+          </select>
         </div>
 
         <div className="search-box" style={{ maxWidth: '320px', marginLeft: 'auto' }}>

@@ -4,6 +4,7 @@ import ProjectTable from './components/ProjectTable';
 import PettyCashView from './components/PettyCashView';
 import TeamChatView from './components/TeamChatView';
 import InvoiceTab from './components/InvoiceTab';
+import WeeklyStaffTasksView from './components/WeeklyStaffTasksView';
 import LoginModal from './components/LoginModal';
 import NewProjectModal from './components/NewProjectModal';
 import NewPettyCashModal from './components/NewPettyCashModal';
@@ -214,6 +215,11 @@ export default function App() {
             onCellEdit={handleCellEdit}
             onOpenNewProjectModal={() => setShowNewProjectModal(true)}
             onRefresh={loadData}
+          />
+        ) : activeTab === 'WEEKLY_TASKS' ? (
+          <WeeklyStaffTasksView 
+            currentUser={currentUser}
+            projects={roleFilteredProjects}
           />
         ) : activeTab === 'TAX_INVOICES' ? (
           <InvoiceTab 

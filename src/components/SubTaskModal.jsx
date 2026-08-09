@@ -48,6 +48,15 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
     'Other / Custom'
   ];
 
+  const [weightScore, setWeightScore] = useState(20);
+
+  const calculateAutoProgress = (taskList) => {
+    if (!Array.isArray(taskList) || taskList.length === 0) return 0;
+    const totalWeight = taskList.reduce((sum, t) => sum + (parseFloat(t.weightScore || (100 / taskList.length))), 0);
+    const completedWeight = taskList.filter(t => t.status === 'Approved' || t.status === 'Completed').reduce((sum, t) => sum + (parseFloat(t.weightScore || (100 / taskList.length))), 0);
+    return Math.min(100, Math.round((completedWeight / (totalWeight || 1)) * 100));
+  };
+
   const handleAddTask = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
@@ -61,6 +70,7 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
       assigneeEmail: assignedUser?.email || assigneeEmail,
       assigneeName: assignedUser?.name || 'Assigned Member',
       detail: detail.trim(),
+      weightScore: parseFloat(weightScore || 20),
       status: 'Pending', // Pending | In Progress | Submitted | Approved | Needs Revision
       createdByName: currentUser?.name || 'User',
       createdAt: new Date().toISOString(),
@@ -73,7 +83,8 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
 
     const updated = [newTask, ...tasks];
     setTasks(updated);
-    onSaveSubTasks(project.id, updated);
+    const autoProgress = calculateAutoProgress(updated);
+    onSaveSubTasks(project.id, updated, autoProgress);
 
     // Notify assigned team member
     if (assignedUser) {
@@ -113,7 +124,8 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
     });
 
     setTasks(updated);
-    onSaveSubTasks(project.id, updated);
+    const autoProgress = calculateAutoProgress(updated);
+    onSaveSubTasks(project.id, updated, autoProgress);
 
     // Trigger Notifications based on status change
     if (updatedTask) {

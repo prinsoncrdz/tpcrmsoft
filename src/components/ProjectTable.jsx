@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Download, RefreshCw, ExternalLink, Edit2, AlertCircle, CheckCircle2, Clock, ShieldAlert, Sparkles, UserCheck, Lock, ListTodo, CheckSquare, DollarSign, TrendingUp, TrendingDown, Receipt } from 'lucide-react';
+import { Search, Plus, Download, RefreshCw, ExternalLink, Edit2, AlertCircle, CheckCircle2, Clock, ShieldAlert, Sparkles, UserCheck, Lock, ListTodo, CheckSquare, DollarSign, TrendingUp, TrendingDown, Receipt, Building, Building2 } from 'lucide-react';
 import { SYSTEM_USERS, fetchGlobalSubTasks, saveGlobalSubTasks } from '../services/googleSheets';
 import SubTaskModal from './SubTaskModal';
 import ProjectFinancialsModal from './ProjectFinancialsModal';
+import ProjectDetailsModal from './ProjectDetailsModal';
 
 const SUBTASKS_STORAGE_KEY = 'tp_crm_subtasks_v2';
 const FINANCIALS_STORAGE_KEY = 'tp_crm_project_financials_v1';
@@ -12,6 +13,9 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
   const [selectedSector, setSelectedSector] = useState('ALL');
   const [editingCell, setEditingCell] = useState(null); // { id, field }
   const [editValue, setEditValue] = useState('');
+
+  // Project details sheet modal state
+  const [detailsProject, setDetailsProject] = useState(null);
 
   // Sub-task modal state
   const [subTaskProject, setSubTaskProject] = useState(null);
@@ -804,6 +808,29 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                             )}
                           </button>
 
+                          {/* Full Project Details Sheet Button */}
+                          <button
+                            onClick={() => setDetailsProject(project)}
+                            style={{
+                              background: '#F8FAFC',
+                              color: '#0F172A',
+                              border: '1px solid #CBD5E1',
+                              borderRadius: '6px',
+                              padding: '4px 8px',
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontFamily: 'inherit'
+                            }}
+                            title="Open Full Project & Client Details Sheet with PDF/Word Export"
+                          >
+                            <Building size={12} />
+                            <span>Details</span>
+                          </button>
+
                           {/* CEO Financials & Expenses Button (CEO / ADMIN EXCLUSIVE) */}
                           {canEditAllFields && (
                             <button
@@ -931,7 +958,15 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
         />
       )}
 
+      {/* Full Project Details Sheet Modal */}
+      {detailsProject && (
+        <ProjectDetailsModal
+          project={detailsProject}
+          subTasks={subTasksMap[detailsProject.id] || []}
+          onClose={() => setDetailsProject(null)}
+        />
+      )}
+
     </div>
   );
 }
-
