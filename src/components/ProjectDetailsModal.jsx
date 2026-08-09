@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Building2, User, Phone, Mail, MapPin, Calendar, DollarSign, CheckCircle2, Clock, FileText, Printer, ShieldCheck, PieChart, Sparkles } from 'lucide-react';
 
-export default function ProjectDetailsModal({ project, subTasks = [], onClose, onDeleteProject }) {
+export default function ProjectDetailsModal({ project, subTasks = [], onClose, onDeleteProject, onCellEdit }) {
   if (!project) return null;
 
   const totalContract = parseFloat(project.totalContractValue || project.value || 0);
@@ -161,9 +161,35 @@ export default function ProjectDetailsModal({ project, subTasks = [], onClose, o
             </div>
 
             <div style={{ textAlign: 'right' }}>
-              <div style={{ background: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0', padding: '6px 14px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 800, display: 'inline-block', marginBottom: '6px' }}>
-                Status: {project.status || 'In Progress'}
-              </div>
+              <select
+                value={project.status || 'In Progress'}
+                onChange={(e) => {
+                  if (onCellEdit) {
+                    onCellEdit(project, 'status', 10, e.target.value);
+                    if (e.target.value === 'Completed') {
+                      onCellEdit(project, 'completion', 9, '100%');
+                    }
+                  }
+                }}
+                style={{
+                  background: '#ECFDF5',
+                  color: '#047857',
+                  border: '1px solid #A7F3D0',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.85rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  marginBottom: '6px'
+                }}
+              >
+                <option value="In Progress">Status: In Progress</option>
+                <option value="Review">Status: Review</option>
+                <option value="Completed">Status: Completed (100%)</option>
+                <option value="On Hold">Status: On Hold</option>
+                <option value="Cancelled">Status: Cancelled</option>
+                <option value="Planning">Status: Planning</option>
+              </select>
               <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
                 <p style={{ margin: 0 }}><strong>Progress:</strong> {calculatedProgress}% Completed</p>
                 <p style={{ margin: '2px 0 0 0' }}><strong>Target Date:</strong> {project.targetDate || project.dueDate || 'N/A'}</p>

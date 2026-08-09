@@ -811,9 +811,9 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                     )}
                   </td>
 
-                  {/* Status Cell (CEO / Admin Editable Only) */}
+                  {/* Status Cell (Editable by Assignees & CEO/Admin) */}
                   <td>
-                    {editingCell?.id === project.id && editingCell?.field === 'status' && canEditAllFields ? (
+                    {editingCell?.id === project.id && editingCell?.field === 'status' ? (
                       <select 
                         className="cell-input"
                         value={editValue}
@@ -843,9 +843,9 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                     ) : (
                       <div 
                         className="editable-cell" 
-                        onClick={() => handleStartEdit(project, 'status', project.status, true)}
-                        title={canEditAllFields ? 'Click to change status' : 'Locked (CEO/Admin Only)'}
-                        style={{ cursor: canEditAllFields ? 'pointer' : 'default' }}
+                        onClick={() => handleStartEdit(project, 'status', project.status, false)}
+                        title="Click to change project status"
+                        style={{ cursor: 'pointer' }}
                       >
                         <span className={getStatusClass(project.status)}>{project.status}</span>
                       </div>
@@ -1113,6 +1113,7 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
             setDetailsProject(null);
             openCeoDeleteModal(proj);
           }}
+          onCellEdit={onCellEdit}
         />
       )}
 
