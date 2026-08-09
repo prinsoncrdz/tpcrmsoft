@@ -557,6 +557,26 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                       );
                     })()}
 
+                    <button
+                      onClick={() => setDetailsProject(project)}
+                      style={{
+                        background: '#F8FAFC',
+                        color: '#0F172A',
+                        border: '1px solid #CBD5E1',
+                        borderRadius: '6px',
+                        padding: '4px 10px',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <Building size={12} />
+                      <span>Details</span>
+                    </button>
+
                     {canEditAllFields && (
                       <button
                         onClick={() => setFinancialsProject(project)}
@@ -575,7 +595,35 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                         }}
                       >
                         <DollarSign size={12} />
-                        <span>Project Cost & Revenue</span>
+                        <span>Financials</span>
+                      </button>
+                    )}
+
+                    {canDeleteProject && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setCeoDeleteModal({ project });
+                          setDeleteReasonInput('');
+                          setDeleteConfirmCodeInput('');
+                        }}
+                        style={{
+                          background: '#FEF2F2',
+                          color: '#DC2626',
+                          border: '1px solid #FECACA',
+                          borderRadius: '6px',
+                          padding: '4px 10px',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <ShieldAlert size={12} />
+                        <span>Delete</span>
                       </button>
                     )}
                   </div>
