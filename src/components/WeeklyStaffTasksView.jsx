@@ -18,7 +18,10 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
     { id: 'W4_AUG_2026', label: 'Week 4 (Aug 22 - Aug 31, 2026)' }
   ];
 
+  const daysList = ['ALL', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
   const [selectedWeek, setSelectedWeek] = useState('W2_AUG_2026');
+  const [selectedDay, setSelectedDay] = useState('ALL');
   const [selectedUserEmail, setSelectedUserEmail] = useState(currentUser?.email || SYSTEM_USERS[0].email);
 
   const [weeklyTasks, setWeeklyTasks] = useState(() => {
@@ -35,15 +38,17 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
       {
         id: 'wt-101',
         weekId: 'W2_AUG_2026',
+        dayOfWeek: 'Monday',
         userEmail: 'prinson@turningpointretail.com',
         userName: 'Prinson Cardozo',
         projectTitle: 'Cambodia Retail Ventures Co., Ltd',
         title: 'Business Registration Document Verification',
         details: 'Submitted tax TIN registration papers to the Ministry of Commerce & verified Phnom Penh Morgan Towers office lease contract.',
-        hoursSpent: 14,
-        status: 'Completed',
+        hoursSpent: 8,
+        status: 'Approved',
         submittedToCeo: true,
-        ceoFeedback: 'Great work! Document verified.',
+        submissionNotes: 'All document copies submitted to MOC portal.',
+        ceoFeedback: 'Verified & Approved by CEO Walter Dantis.',
         updatedAt: new Date().toISOString()
       }
     ];
@@ -54,7 +59,7 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
     let isMounted = true;
     const fetchCloudWeeklyTasks = async () => {
       try {
-        const res = await fetch(`${DEPLOYED_GAS_URL}?action=getNotifications&t=${Date.now()}`); // fallback endpoint read
+        const res = await fetch(`${DEPLOYED_GAS_URL}?action=getNotifications&t=${Date.now()}`);
       } catch (err) {}
     };
     fetchCloudWeeklyTasks();
@@ -64,9 +69,15 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [taskTitle, setTaskTitle] = useState('');
   const [selectedProject, setSelectedProject] = useState(projects[0]?.companyName || 'General Operations');
+  const [assignedStaffEmail, setAssignedStaffEmail] = useState(currentUser?.email || SYSTEM_USERS[0].email);
+  const [targetDay, setTargetDay] = useState('Monday');
   const [hoursSpent, setHoursSpent] = useState(8);
-  const [taskStatus, setTaskStatus] = useState('In Progress'); // In Progress | Completed
+  const [taskStatus, setTaskStatus] = useState('Pending'); // Pending | In Progress | Submitted | Approved | Needs Revision
   const [taskDetails, setTaskDetails] = useState('');
+
+  // Submission / CEO Verification state
+  const [submittingTaskId, setSubmittingTaskId] = useState(null);
+  const [submissionNotesInput, setSubmissionNotesInput] = useState('');
 
   const saveWeeklyTasks = (updated) => {
     setWeeklyTasks(updated);
@@ -77,17 +88,21 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
     e.preventDefault();
     if (!taskTitle.trim()) return;
 
+    const assignedUser = SYSTEM_USERS.find(u => u.email.toLowerCase() === assignedStaffEmail.toLowerCase()) || { name: 'Staff Member', email: assignedStaffEmail };
+
     const newTask = {
       id: `wt-${Date.now()}`,
       weekId: selectedWeek,
-      userEmail: (currentUser?.email || (selectedUserEmail !== 'ALL' ? selectedUserEmail : SYSTEM_USERS[0].email)).toLowerCase(),
-      userName: currentUser?.name || 'Staff Member',
+      dayOfWeek: targetDay,
+      userEmail: assignedUser.email.toLowerCase(),
+      userName: assignedUser.name,
       projectTitle: selectedProject,
       title: taskTitle.trim(),
       details: taskDetails.trim(),
       hoursSpent: parseFloat(hoursSpent || 0),
       status: taskStatus,
       submittedToCeo: false,
+      submissionNotes: '',
       ceoFeedback: '',
       updatedAt: new Date().toISOString()
     };
@@ -97,6 +112,15 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
     setShowAddModal(false);
     setTaskTitle('');
     setTaskDetails('');
+
+    // Notify staff member if assigned by CEO/Admin
+    createNotification({
+      recipientEmail: assignedUser.email,
+      title: `📅 New Weekly Task Assigned for ${targetDay}`,
+      message: `${currentUser?.name} assigned you "${taskTitle.trim()}" for ${targetDay} in ${selectedWeek}. Details: ${taskDetails.trim() || 'Check dashboard for instructions.'}`,
+      type: 'ASSIGNMENT',
+      createdByName: currentUser?.name
+    });
   };
 
   const handleDeleteTask = (id) => {
@@ -105,15 +129,97 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
     saveWeeklyTasks(updated);
   };
 
-  const handleToggleComplete = (id) => {
+  // Staff Submits Task to CEO for Verification
+  const handleConfirmSubmitTask = (e) => {
+    e.preventDefault();
+    if (!submittingTaskId) return;
+
     const updated = weeklyTasks.map(t => {
-      if (t.id === id) {
-        const nextStatus = t.status === 'Completed' ? 'In Progress' : 'Completed';
-        return { ...t, status: nextStatus, updatedAt: new Date().toISOString() };
+      if (t.id === submittingTaskId) {
+        return {
+          ...t,
+          status: 'Submitted',
+          submittedToCeo: true,
+          submissionNotes: submissionNotesInput.trim(),
+          updatedAt: new Date().toISOString()
+        };
       }
       return t;
     });
+
     saveWeeklyTasks(updated);
+    setSubmittingTaskId(null);
+    setSubmissionNotesInput('');
+
+    // Notify CEO & Admin for verification
+    ['walterdantis@turningpointretail.com', 'admin@turningpointretail.com'].forEach(ceoEmail => {
+      createNotification({
+        recipientEmail: ceoEmail,
+        title: `⚡ Weekly Task Submitted for CEO Verification`,
+        message: `${currentUser?.name} completed and submitted weekly task "${weeklyTasks.find(t => t.id === submittingTaskId)?.title}" for CEO verification!`,
+        type: 'SUBMISSION',
+        createdByName: currentUser?.name
+      });
+    });
+
+    alert('✅ Task submitted to CEO Walter Dantis for verification!');
+  };
+
+  // CEO Approves Task
+  const handleApproveTaskByCeo = (task) => {
+    const updated = weeklyTasks.map(t => {
+      if (t.id === task.id) {
+        return {
+          ...t,
+          status: 'Approved',
+          ceoFeedback: 'Verified & Approved by CEO Walter Dantis',
+          approvedAt: new Date().toISOString(),
+          approvedByName: currentUser?.name || 'Walter Dantis (CEO)',
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return t;
+    });
+
+    saveWeeklyTasks(updated);
+
+    // Notify assigned staff
+    createNotification({
+      recipientEmail: task.userEmail,
+      title: `🎉 CEO Approved Your Weekly Task!`,
+      message: `CEO Walter Dantis verified & approved your weekly task "${task.title}". Great job!`,
+      type: 'APPROVAL',
+      createdByName: currentUser?.name
+    });
+  };
+
+  // CEO Requests Revision
+  const handleRejectTaskByCeo = (task) => {
+    const reason = prompt(`Provide revision instructions for ${task.userName} on "${task.title}":`, 'Please review deliverable details and update attachments.');
+    if (!reason) return;
+
+    const updated = weeklyTasks.map(t => {
+      if (t.id === task.id) {
+        return {
+          ...t,
+          status: 'Needs Revision',
+          ceoFeedback: reason.trim(),
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return t;
+    });
+
+    saveWeeklyTasks(updated);
+
+    // Notify assigned staff
+    createNotification({
+      recipientEmail: task.userEmail,
+      title: `⚠️ CEO Requested Revision on Weekly Task`,
+      message: `CEO Walter Dantis requested revision on "${task.title}". Feedback: "${reason.trim()}"`,
+      type: 'REVISION',
+      createdByName: currentUser?.name
+    });
   };
 
   const handleSubmitWeeklyReport = () => {
@@ -200,12 +306,12 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
         </div>
       </div>
 
-      {/* Week Selector & Staff Filter Bar */}
+      {/* Week & Day Selector Bar */}
       <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '14px', padding: '16px 20px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Calendar size={18} style={{ color: 'var(--brand-green)' }} />
-            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0F172A' }}>Select Week:</span>
+            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0F172A' }}>Week:</span>
           </div>
           <select 
             value={selectedWeek} 
@@ -217,10 +323,33 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
             ))}
           </select>
 
+          {/* Day of Week Selector */}
+          <div style={{ display: 'flex', gap: '4px', background: '#F1F5F9', padding: '3px', borderRadius: '8px', flexWrap: 'wrap' }}>
+            {daysList.map(day => (
+              <button
+                key={day}
+                onClick={() => setSelectedDay(day)}
+                style={{
+                  background: selectedDay === day ? '#FFFFFF' : 'transparent',
+                  color: selectedDay === day ? '#0F172A' : '#64748B',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '5px 10px',
+                  fontSize: '0.75rem',
+                  fontWeight: selectedDay === day ? 800 : 600,
+                  cursor: 'pointer',
+                  boxShadow: selectedDay === day ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                }}
+              >
+                {day}
+              </button>
+            ))}
+          </div>
+
           {isCeoOrAdmin && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '8px' }}>
               <User size={18} style={{ color: '#2563EB' }} />
-              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0F172A' }}>Staff Member:</span>
+              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0F172A' }}>Filter Staff:</span>
               <select 
                 value={selectedUserEmail} 
                 onChange={e => setSelectedUserEmail(e.target.value)}
@@ -234,13 +363,6 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
             </div>
           )}
         </div>
-
-        <button 
-          onClick={handleSubmitWeeklyReport}
-          style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', color: '#FFF', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(16,185,129,0.25)' }}
-        >
-          <Send size={16} /> Submit Weekly Report to CEO
-        </button>
       </div>
 
       {/* Summary Cards */}
@@ -288,11 +410,13 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
             <thead>
               <tr style={{ background: '#0F172A', color: '#FFFFFF', textTransform: 'uppercase', textAlign: 'left' }}>
                 <th style={{ padding: '10px 12px', width: '40px' }}>No</th>
-                <th style={{ padding: '10px 12px' }}>Task Title & Deliverable Details</th>
+                <th style={{ padding: '10px 12px', width: '100px' }}>Schedule Day</th>
+                <th style={{ padding: '10px 12px' }}>Task Scope & Deliverable Details</th>
                 <th style={{ padding: '10px 12px' }}>Related Project</th>
-                <th style={{ padding: '10px 12px' }}>Staff Member</th>
-                <th style={{ padding: '10px 12px', textAlign: 'center', width: '100px' }}>Hours Logged</th>
-                <th style={{ padding: '10px 12px', textAlign: 'center', width: '120px' }}>Status</th>
+                <th style={{ padding: '10px 12px' }}>Assigned Staff</th>
+                <th style={{ padding: '10px 12px', textAlign: 'center', width: '90px' }}>Hours Logged</th>
+                <th style={{ padding: '10px 12px', textAlign: 'center', width: '130px' }}>Status</th>
+                <th style={{ padding: '10px 12px', textAlign: 'center', width: '160px' }}>CEO Verification</th>
               </tr>
             </thead>
             <tbody>
@@ -300,39 +424,85 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
                 <tr key={t.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
                   <td style={{ padding: '12px', fontWeight: 700, color: '#64748B' }}>{idx + 1}</td>
                   <td style={{ padding: '12px' }}>
+                    <span style={{ background: '#EFF6FF', color: '#1E40AF', padding: '3px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 800 }}>
+                      {t.dayOfWeek || 'Monday'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '12px' }}>
                     <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '0.88rem', marginBottom: '2px' }}>{t.title}</div>
                     {t.details && <div style={{ fontSize: '0.78rem', color: '#475569', lineHeight: '1.4' }}>{t.details}</div>}
+                    {t.submissionNotes && (
+                      <div style={{ fontSize: '0.72rem', color: '#2563EB', background: '#EFF6FF', padding: '4px 8px', borderRadius: '4px', marginTop: '4px' }}>
+                        💬 <strong>Staff Notes:</strong> {t.submissionNotes}
+                      </div>
+                    )}
+                    {t.ceoFeedback && (
+                      <div style={{ fontSize: '0.72rem', color: t.status === 'Approved' ? '#047857' : '#B45309', background: t.status === 'Approved' ? '#ECFDF5' : '#FFFBEB', padding: '4px 8px', borderRadius: '4px', marginTop: '4px' }}>
+                        📢 <strong>CEO Feedback:</strong> {t.ceoFeedback}
+                      </div>
+                    )}
                   </td>
                   <td style={{ padding: '12px', fontWeight: 600, color: '#334155' }}>{t.projectTitle || 'General Operations'}</td>
-                  <td style={{ padding: '12px', fontWeight: 600, color: '#0F172A' }}>{t.userName}</td>
+                  <td style={{ padding: '12px', fontWeight: 700, color: '#0F172A' }}>{t.userName}</td>
                   <td style={{ padding: '12px', textAlign: 'center', fontWeight: 800, color: '#2563EB' }}>{t.hoursSpent} hrs</td>
                   <td style={{ padding: '12px', textAlign: 'center' }}>
-                    <button
-                      onClick={() => handleToggleComplete(t.id)}
-                      style={{
-                        background: t.status === 'Completed' ? '#ECFDF5' : '#FFFBEB',
-                        color: t.status === 'Completed' ? '#047857' : '#B45309',
-                        border: '1px solid ' + (t.status === 'Completed' ? '#A7F3D0' : '#FDE68A'),
-                        borderRadius: '12px',
-                        padding: '4px 10px',
-                        fontSize: '0.72rem',
-                        fontWeight: 800,
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                    >
-                      {t.status === 'Completed' ? <CheckCircle2 size={12} /> : <Clock size={12} />}
+                    <span style={{
+                      background: t.status === 'Approved' ? '#ECFDF5' : t.status === 'Submitted' ? '#EFF6FF' : t.status === 'Needs Revision' ? '#FEF2F2' : '#FFFBEB',
+                      color: t.status === 'Approved' ? '#047857' : t.status === 'Submitted' ? '#1E40AF' : t.status === 'Needs Revision' ? '#DC2626' : '#B45309',
+                      border: '1px solid ' + (t.status === 'Approved' ? '#A7F3D0' : t.status === 'Submitted' ? '#BFDBFE' : t.status === 'Needs Revision' ? '#FECACA' : '#FDE68A'),
+                      borderRadius: '12px',
+                      padding: '4px 10px',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      {t.status === 'Approved' ? <CheckCircle2 size={12} /> : <Clock size={12} />}
                       {t.status}
-                    </button>
-                    <button
-                      onClick={() => handleDeleteTask(t.id)}
-                      style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '4px', marginLeft: '6px' }}
-                      title="Delete Task"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    </span>
+                  </td>
+                  <td style={{ padding: '12px', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      {/* Staff Submit Button */}
+                      {t.status !== 'Approved' && t.status !== 'Submitted' && (
+                        <button
+                          onClick={() => setSubmittingTaskId(t.id)}
+                          style={{ background: '#2563EB', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                          title="Submit Task to CEO for Verification"
+                        >
+                          <Send size={11} /> Submit
+                        </button>
+                      )}
+
+                      {/* CEO Verification & Approval Buttons */}
+                      {isCeoOrAdmin && t.status !== 'Approved' && (
+                        <>
+                          <button
+                            onClick={() => handleApproveTaskByCeo(t)}
+                            style={{ background: '#10B981', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                            title="CEO Verify & Approve Task"
+                          >
+                            <Check size={11} /> Approve
+                          </button>
+                          <button
+                            onClick={() => handleRejectTaskByCeo(t)}
+                            style={{ background: '#F59E0B', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                            title="Request Revision"
+                          >
+                            <AlertCircle size={11} /> Revision
+                          </button>
+                        </>
+                      )}
+
+                      <button
+                        onClick={() => handleDeleteTask(t.id)}
+                        style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '4px' }}
+                        title="Delete Task"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -345,9 +515,9 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
       {/* Add Weekly Task Modal */}
       {showAddModal && (
         <div className="modal-overlay" style={{ zIndex: 100000 }}>
-          <div className="modal-content" style={{ maxWidth: '520px', padding: '24px', borderRadius: '16px' }}>
+          <div className="modal-content" style={{ maxWidth: '540px', padding: '24px', borderRadius: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: '#0F172A' }}>Add New Weekly Deliverable Task</h3>
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: '#0F172A' }}>Assign Weekly Deliverable Task</h3>
               <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
             </div>
 
@@ -356,12 +526,40 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
                 <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '4px' }}>Task Title *</label>
                 <input 
                   type="text" 
-                  placeholder="e.g. Completed Ministry of Commerce License Application" 
+                  placeholder="e.g. Verify Ministry of Commerce License Application" 
                   value={taskTitle} 
                   onChange={e => setTaskTitle(e.target.value)} 
                   required 
                   style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem' }} 
                 />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '4px' }}>Assign To Staff Member *</label>
+                  <select 
+                    value={assignedStaffEmail} 
+                    onChange={e => setAssignedStaffEmail(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.82rem', fontWeight: 700 }}
+                  >
+                    {SYSTEM_USERS.map(u => (
+                      <option key={u.email} value={u.email}>{u.name} ({u.role})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '4px' }}>Day of Week *</label>
+                  <select 
+                    value={targetDay} 
+                    onChange={e => setTargetDay(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.82rem', fontWeight: 700 }}
+                  >
+                    {daysList.filter(d => d !== 'ALL').map(day => (
+                      <option key={day} value={day}>{day}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
@@ -391,23 +589,11 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
                 </div>
               </div>
 
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '4px' }}>Task Status</label>
-                <select 
-                  value={taskStatus} 
-                  onChange={e => setTaskStatus(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.82rem' }}
-                >
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
-                </select>
-              </div>
-
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '4px' }}>Deliverable Details / Notes</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '4px' }}>Task Scope & Instructions</label>
                 <textarea 
                   rows="3" 
-                  placeholder="Provide detailed summary of work completed or progress update..." 
+                  placeholder="Provide detailed instructions or deliverable notes for the assigned staff member..." 
                   value={taskDetails} 
                   onChange={e => setTaskDetails(e.target.value)} 
                   style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.82rem' }} 
@@ -416,7 +602,42 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button type="button" className="btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
-                <button type="submit" className="btn-primary" style={{ background: 'var(--brand-green)' }}>Save Deliverable</button>
+                <button type="submit" className="btn-primary" style={{ background: 'var(--brand-green)' }}>Assign Task</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Staff Submit Task Modal */}
+      {submittingTaskId && (
+        <div className="modal-overlay" style={{ zIndex: 100000 }}>
+          <div className="modal-content" style={{ maxWidth: '480px', padding: '24px', borderRadius: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: '#0F172A' }}>Submit Work to CEO Walter Dantis</h3>
+              <button onClick={() => setSubmittingTaskId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
+            </div>
+
+            <form onSubmit={handleConfirmSubmitTask}>
+              <p style={{ fontSize: '0.82rem', color: '#475569', marginBottom: '14px' }}>
+                You are submitting <strong>"{weeklyTasks.find(t => t.id === submittingTaskId)?.title}"</strong> to CEO Walter Dantis for verification and approval.
+              </p>
+
+              <div style={{ marginBottom: '18px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '4px' }}>Submission Notes / Deliverable Links *</label>
+                <textarea 
+                  rows="3" 
+                  placeholder="Provide completion summary or document links for CEO verification..." 
+                  value={submissionNotesInput} 
+                  onChange={e => setSubmissionNotesInput(e.target.value)} 
+                  required
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.82rem' }} 
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button type="button" className="btn-secondary" onClick={() => setSubmittingTaskId(null)}>Cancel</button>
+                <button type="submit" className="btn-primary" style={{ background: '#2563EB' }}>🚀 Submit to CEO</button>
               </div>
             </form>
           </div>
