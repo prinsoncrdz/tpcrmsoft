@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Plus, CheckCircle2, Clock, AlertCircle, Send, FileText, Printer, User, Building, Sparkles, ShieldCheck, Filter } from 'lucide-react';
-import { SYSTEM_USERS } from '../services/googleSheets';
+import { SYSTEM_USERS, DEPLOYED_GAS_URL } from '../services/googleSheets';
 import { createNotification } from '../services/notifications';
 
 const WEEKLY_TASKS_STORAGE_KEY = 'tp_crm_weekly_staff_tasks_v1';
-const DEPLOYED_GAS_URL = 'https://script.google.com/macros/s/AKfycbxkSG_aETzl_ZLMlGuDXryDhY7Y-Ih879XrMKqeBbYh2jJhjvRvEVpgrSMJ7OUVD2dk4Q/exec';
 
 export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
   const isCeoOrAdmin = currentUser?.role === 'CEO' || 
