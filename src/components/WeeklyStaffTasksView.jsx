@@ -23,6 +23,7 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
   const [selectedWeek, setSelectedWeek] = useState('W2_AUG_2026');
   const [selectedDay, setSelectedDay] = useState('ALL');
   const [selectedUserEmail, setSelectedUserEmail] = useState(currentUser?.email || SYSTEM_USERS[0].email);
+  const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'REMAINING' | 'SUBMITTED' | 'APPROVED'
 
   const [weeklyTasks, setWeeklyTasks] = useState(() => {
     try {
@@ -262,12 +263,19 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
   // Filter tasks
   const filteredTasks = weeklyTasks.filter(t => {
     const matchesWeek = t.weekId === selectedWeek;
+    const matchesDay = selectedDay === 'ALL' || t.dayOfWeek === selectedDay;
     const matchesUser = isCeoOrAdmin ? (t.userEmail.toLowerCase() === selectedUserEmail.toLowerCase() || selectedUserEmail === 'ALL') : (t.userEmail.toLowerCase() === currentUser?.email?.toLowerCase());
-    return matchesWeek && matchesUser;
+    
+    let matchesStatus = true;
+    if (statusFilter === 'REMAINING') matchesStatus = t.status === 'Pending' || t.status === 'In Progress' || t.status === 'Needs Revision';
+    if (statusFilter === 'SUBMITTED') matchesStatus = t.status === 'Submitted';
+    if (statusFilter === 'APPROVED') matchesStatus = t.status === 'Approved';
+
+    return matchesWeek && matchesDay && matchesUser && matchesStatus;
   });
 
   const totalHours = filteredTasks.reduce((sum, t) => sum + (parseFloat(t.hoursSpent || 0)), 0);
-  const completedCount = filteredTasks.filter(t => t.status === 'Completed').length;
+  const completedCount = filteredTasks.filter(t => t.status === 'Approved').length;
 
   return (
     <div style={{ padding: '24px 0' }}>
@@ -371,6 +379,34 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
               </select>
             </div>
           )}
+        </div>
+
+        {/* Status Filter Bar (All vs Remaining / Pending vs Submitted vs Approved) */}
+        <div style={{ display: 'flex', gap: '6px', background: '#F1F5F9', padding: '4px', borderRadius: '8px', width: '100%', marginTop: '10px', flexWrap: 'wrap' }}>
+          {[
+            { id: 'ALL', label: `All Weekly Tasks (${weeklyTasks.length})` },
+            { id: 'REMAINING', label: `Remaining / Pending Work (${weeklyTasks.filter(t => t.status === 'Pending' || t.status === 'In Progress' || t.status === 'Needs Revision').length})` },
+            { id: 'SUBMITTED', label: `Submitted for CEO Verification (${weeklyTasks.filter(t => t.status === 'Submitted').length})` },
+            { id: 'APPROVED', label: `CEO Approved (${weeklyTasks.filter(t => t.status === 'Approved').length})` }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setStatusFilter(tab.id)}
+              style={{
+                background: statusFilter === tab.id ? '#FFFFFF' : 'transparent',
+                color: statusFilter === tab.id ? '#0F172A' : '#64748B',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '6px 12px',
+                fontSize: '0.78rem',
+                fontWeight: statusFilter === tab.id ? 800 : 600,
+                cursor: 'pointer',
+                boxShadow: statusFilter === tab.id ? '0 1px 4px rgba(0,0,0,0.1)' : 'none'
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
