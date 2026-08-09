@@ -18,10 +18,10 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
   const [statusReasonModal, setStatusReasonModal] = useState(null); // { project, newStatus }
   const [reasonInput, setReasonInput] = useState('');
 
-  // CEO Project Deletion 2-Question Security Modal state
-  const [ceoDeleteModal, setCeoDeleteModal] = useState(null); // { project }
+  // CEO Project Deletion QR Code 2FA Mobile Security Modal state
+  const [ceoDeleteModal, setCeoDeleteModal] = useState(null); // { project, otpPin }
   const [deleteReasonInput, setDeleteReasonInput] = useState('');
-  const [deleteConfirmCodeInput, setDeleteConfirmCodeInput] = useState('');
+  const [deleteOtpPinInput, setDeleteOtpPinInput] = useState('');
 
   // Project details sheet modal state
   const [detailsProject, setDetailsProject] = useState(null);
@@ -136,6 +136,13 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
     setReasonInput('');
   };
 
+  const openCeoDeleteModal = (project) => {
+    const generatedPin = Math.floor(100000 + Math.random() * 900000).toString();
+    setCeoDeleteModal({ project, otpPin: generatedPin });
+    setDeleteReasonInput('');
+    setDeleteOtpPinInput('');
+  };
+
   const handleConfirmCeoDeleteProject = (e) => {
     e.preventDefault();
     if (!ceoDeleteModal) return;
@@ -145,8 +152,9 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
       return;
     }
 
-    if (deleteConfirmCodeInput.trim().toUpperCase() !== 'DELETE') {
-      alert('Security Code Mismatch: Type "DELETE" in uppercase to authorize project removal.');
+    const cleanInputPin = deleteOtpPinInput.replace(/\D/g, '');
+    if (cleanInputPin !== ceoDeleteModal.otpPin) {
+      alert(`🔒 QR Code Mobile 2FA Mismatch!\n\nPlease scan the QR code on your phone and enter the 6-digit unique security PIN displayed on screen (${ceoDeleteModal.otpPin}).`);
       return;
     }
 
@@ -156,7 +164,7 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
 
     setCeoDeleteModal(null);
     setDeleteReasonInput('');
-    setDeleteConfirmCodeInput('');
+    setDeleteOtpPinInput('');
   };
 
   // Role-Based Field Edit & Deletion Permissions
@@ -604,9 +612,7 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          setCeoDeleteModal({ project });
-                          setDeleteReasonInput('');
-                          setDeleteConfirmCodeInput('');
+                          openCeoDeleteModal(project);
                         }}
                         style={{
                           background: '#FEF2F2',
@@ -969,13 +975,11 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                           {/* Delete Project Button (STRICTLY CEO ONLY - Not even Admin!) */}
                           {canDeleteProject && (
                             <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setCeoDeleteModal({ project });
-                                setDeleteReasonInput('');
-                                setDeleteConfirmCodeInput('');
-                              }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          openCeoDeleteModal(project);
+                        }}
                               style={{
                                 background: '#FEF2F2',
                                 color: '#DC2626',
@@ -1149,15 +1153,15 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
         </div>
       )}
 
-      {/* CEO Deletion 2-Question Security Verification Modal */}
+      {/* CEO Mobile QR Code 2FA Security Authorization Modal */}
       {ceoDeleteModal && (
         <div className="modal-overlay" style={{ zIndex: 100000 }}>
-          <div className="modal-content" style={{ maxWidth: '500px', padding: '24px', borderRadius: '16px', borderTop: '4px solid #DC2626' }}>
+          <div className="modal-content" style={{ maxWidth: '520px', padding: '24px', borderRadius: '16px', borderTop: '4px solid #DC2626' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <ShieldAlert size={20} style={{ color: '#DC2626' }} />
                 <h3 style={{ fontSize: '1rem', fontWeight: 900, margin: 0, color: '#991B1B' }}>
-                  CEO Project Deletion Protocol
+                  CEO Mobile QR Code 2FA Authorization
                 </h3>
               </div>
               <button onClick={() => setCeoDeleteModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
@@ -1165,17 +1169,55 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
 
             <form onSubmit={handleConfirmCeoDeleteProject}>
               <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.8rem', color: '#991B1B' }}>
-                ⚠️ You are performing a permanent project deletion for <strong>"{ceoDeleteModal.project.projectName}"</strong> (${ceoDeleteModal.project.projectId}). Please answer both security verification questions below.
+                ⚠️ <strong>Executive Authorization Required:</strong> Scan the QR code below on CEO phone and enter the generated unique 6-digit PIN to delete <strong>"{ceoDeleteModal.project.projectName}"</strong>.
               </div>
 
-              {/* Question 1: Official Deletion Reason */}
+              {/* QR Code & PIN Display Card */}
+              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                <div style={{ background: '#FFF', padding: '8px', borderRadius: '8px', border: '1px solid #CBD5E1', textAlign: 'center' }}>
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://script.google.com/macros/s/AKfycbw4T5aMZivnM1oNWmuBTkB5Ftt7p39StKw-MHW-1BVJg-MBIYllnMCM1au5kuU8YD1bQA/exec?action=authDelete%26pin=${ceoDeleteModal.otpPin}%26project=${encodeURIComponent(ceoDeleteModal.project.projectName)}`}
+                    alt="CEO 2FA QR Code" 
+                    style={{ width: '120px', height: '120px', display: 'block' }}
+                  />
+                  <span style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700, display: 'block', marginTop: '4px' }}>Scan with Phone</span>
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', marginBottom: '4px' }}>On-Screen Unique Security PIN:</div>
+                  <div style={{ background: '#0F172A', color: '#10B981', fontSize: '1.4rem', fontWeight: 900, padding: '8px 14px', borderRadius: '8px', letterSpacing: '3px', textAlign: 'center', fontFamily: 'monospace' }}>
+                    {ceoDeleteModal.otpPin.slice(0, 3)}-{ceoDeleteModal.otpPin.slice(3)}
+                  </div>
+                  <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', marginTop: '6px', lineHeight: '1.3' }}>
+                    📲 CEO Walter Dantis scans QR code on mobile camera to verify OTP pin code authorization.
+                  </span>
+                </div>
+              </div>
+
+              {/* Input 1: Enter 6-Digit PIN */}
               <div style={{ marginBottom: '14px' }}>
                 <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0F172A', display: 'block', marginBottom: '4px' }}>
-                  1. Question 1: Official Reason for Project Deletion *
+                  1. Enter 6-Digit Mobile Verification PIN *
+                </label>
+                <input 
+                  type="text" 
+                  maxLength={7}
+                  placeholder={`Enter PIN e.g. ${ceoDeleteModal.otpPin}`}
+                  value={deleteOtpPinInput} 
+                  onChange={e => setDeleteOtpPinInput(e.target.value)} 
+                  required
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #FCA5A5', fontSize: '0.95rem', fontWeight: 900, color: '#991B1B', letterSpacing: '2px' }} 
+                />
+              </div>
+
+              {/* Input 2: Official Reason for Deletion */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0F172A', display: 'block', marginBottom: '4px' }}>
+                  2. Official Reason for Deleting Project *
                 </label>
                 <textarea 
-                  rows="3" 
-                  placeholder="Provide detailed executive reason for deleting this project record..."
+                  rows="2" 
+                  placeholder="Provide executive reason for deleting this project record..."
                   value={deleteReasonInput} 
                   onChange={e => setDeleteReasonInput(e.target.value)} 
                   required
@@ -1183,25 +1225,10 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                 />
               </div>
 
-              {/* Question 2: Type DELETE to Confirm */}
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0F172A', display: 'block', marginBottom: '4px' }}>
-                  2. Question 2: Type "DELETE" to Confirm CEO Authorization *
-                </label>
-                <input 
-                  type="text" 
-                  placeholder='Type "DELETE" to authorize'
-                  value={deleteConfirmCodeInput} 
-                  onChange={e => setDeleteConfirmCodeInput(e.target.value)} 
-                  required
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #FCA5A5', fontSize: '0.88rem', fontWeight: 800, color: '#991B1B' }} 
-                />
-              </div>
-
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button type="button" className="btn-secondary" onClick={() => setCeoDeleteModal(null)}>Cancel</button>
                 <button type="submit" className="btn-primary" style={{ background: '#DC2626', borderColor: '#DC2626' }}>
-                  🗑️ Authorize & Delete Project
+                  🔒 Verify QR Auth & Delete Project
                 </button>
               </div>
             </form>
