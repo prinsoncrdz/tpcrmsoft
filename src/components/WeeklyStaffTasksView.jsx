@@ -18,7 +18,7 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
     { id: 'W4_AUG_2026', label: 'Week 4 (Aug 22 - Aug 31, 2026)' }
   ];
 
-  const daysList = ['ALL', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const daysList = ['ALL', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
   const [selectedWeek, setSelectedWeek] = useState('W2_AUG_2026');
   const [selectedDay, setSelectedDay] = useState('ALL');
@@ -279,11 +279,14 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
             <span style={{ background: 'var(--brand-green)', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>
               Weekly Staff Tasks & Submission Portal
             </span>
+            <span style={{ background: '#3B82F6', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
+              ⏰ Schedule: Monday – Friday (8:00 AM – 5:00 PM)
+            </span>
             <span style={{ fontSize: '0.78rem', color: '#94A3B8' }}>Live Cloud Sync</span>
           </div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#FFFFFF', margin: 0 }}>Weekly Staff Tasks & Deliverables Report</h2>
           <p style={{ fontSize: '0.82rem', color: '#94A3B8', margin: '4px 0 0 0' }}>
-            Update weekly task accomplishments, log hours spent, and submit report directly to CEO Walter Dantis.
+            Official working hours: 8:00 AM – 5:00 PM (Monday to Friday). Assign daily tasks, log deliverables, and submit to CEO Walter Dantis for approval.
           </p>
         </div>
 
@@ -386,8 +389,8 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
         <div className="stat-card" style={{ borderLeft: '4px solid #3B82F6', background: '#EFF6FF' }}>
           <div className="stat-icon blue"><Clock /></div>
           <div className="stat-details">
-            <span className="stat-value" style={{ color: '#1E40AF' }}>{totalHours} Hours</span>
-            <span className="stat-label" style={{ color: '#1E3A8A', fontWeight: 600 }}>Total Weekly Hours Logged</span>
+            <span className="stat-value" style={{ color: '#1E40AF' }}>{totalHours} / 40.0 Hrs</span>
+            <span className="stat-label" style={{ color: '#1E3A8A', fontWeight: 600 }}>Weekly Work Hours (Mon–Fri 8AM–5PM)</span>
           </div>
         </div>
       </div>
