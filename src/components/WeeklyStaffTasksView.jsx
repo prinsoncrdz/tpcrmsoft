@@ -89,7 +89,9 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
     e.preventDefault();
     if (!taskTitle.trim()) return;
 
-    const assignedUser = SYSTEM_USERS.find(u => u.email.toLowerCase() === assignedStaffEmail.toLowerCase()) || { name: 'Staff Member', email: assignedStaffEmail };
+    const assignedUser = isCeoOrAdmin
+      ? (SYSTEM_USERS.find(u => u.email.toLowerCase() === assignedStaffEmail.toLowerCase()) || { name: currentUser?.name || 'Staff Member', email: currentUser?.email })
+      : { name: currentUser?.name || 'Staff Member', email: currentUser?.email };
 
     const newTask = {
       id: `wt-${Date.now()}`,
@@ -597,15 +599,24 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '4px' }}>Assign To Staff Member *</label>
-                  <select 
-                    value={assignedStaffEmail} 
-                    onChange={e => setAssignedStaffEmail(e.target.value)}
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.82rem', fontWeight: 700 }}
-                  >
-                    {SYSTEM_USERS.map(u => (
-                      <option key={u.email} value={u.email}>{u.name} ({u.role})</option>
-                    ))}
-                  </select>
+                  {isCeoOrAdmin ? (
+                    <select 
+                      value={assignedStaffEmail} 
+                      onChange={e => setAssignedStaffEmail(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.82rem', fontWeight: 700 }}
+                    >
+                      {SYSTEM_USERS.map(u => (
+                        <option key={u.email} value={u.email}>{u.name} ({u.role})</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input 
+                      type="text" 
+                      disabled 
+                      value={`${currentUser?.name || 'My Work'} (${currentUser?.role || 'Staff'})`} 
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.82rem', fontWeight: 700, background: '#F8FAFC', color: '#0F172A' }} 
+                    />
+                  )}
                 </div>
 
                 <div>
