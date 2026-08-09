@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Plus, CheckCircle2, Clock, AlertCircle, Send, FileText, Printer, User, Building, Sparkles, ShieldCheck, Filter } from 'lucide-react';
+import { Calendar, Plus, CheckCircle2, Clock, AlertCircle, Send, FileText, Printer, User, Building, Sparkles, ShieldCheck, Filter, X, Trash2, Check } from 'lucide-react';
 import { SYSTEM_USERS, DEPLOYED_GAS_URL } from '../services/googleSheets';
 import { createNotification } from '../services/notifications';
 
@@ -80,7 +80,7 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
     const newTask = {
       id: `wt-${Date.now()}`,
       weekId: selectedWeek,
-      userEmail: currentUser?.email || selectedUserEmail,
+      userEmail: (currentUser?.email || (selectedUserEmail !== 'ALL' ? selectedUserEmail : SYSTEM_USERS[0].email)).toLowerCase(),
       userName: currentUser?.name || 'Staff Member',
       projectTitle: selectedProject,
       title: taskTitle.trim(),
@@ -97,6 +97,12 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
     setShowAddModal(false);
     setTaskTitle('');
     setTaskDetails('');
+  };
+
+  const handleDeleteTask = (id) => {
+    if (!window.confirm('Are you sure you want to delete this weekly deliverable task?')) return;
+    const updated = weeklyTasks.filter(t => t.id !== id);
+    saveWeeklyTasks(updated);
   };
 
   const handleToggleComplete = (id) => {
@@ -319,6 +325,13 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
                     >
                       {t.status === 'Completed' ? <CheckCircle2 size={12} /> : <Clock size={12} />}
                       {t.status}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTask(t.id)}
+                      style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '4px', marginLeft: '6px' }}
+                      title="Delete Task"
+                    >
+                      <Trash2 size={14} />
                     </button>
                   </td>
                 </tr>
