@@ -280,13 +280,16 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
               Weekly Staff Tasks & Submission Portal
             </span>
             <span style={{ background: '#3B82F6', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
-              ⏰ Schedule: Monday – Friday (8:00 AM – 5:00 PM)
+              ⏰ Mon–Fri 8:00 AM – 5:00 PM
+            </span>
+            <span style={{ background: '#F59E0B', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
+              🍱 1 Hr Lunch Break (12:00 PM – 1:00 PM)
             </span>
             <span style={{ fontSize: '0.78rem', color: '#94A3B8' }}>Live Cloud Sync</span>
           </div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#FFFFFF', margin: 0 }}>Weekly Staff Tasks & Deliverables Report</h2>
           <p style={{ fontSize: '0.82rem', color: '#94A3B8', margin: '4px 0 0 0' }}>
-            Official working hours: 8:00 AM – 5:00 PM (Monday to Friday). Assign daily tasks, log deliverables, and submit to CEO Walter Dantis for approval.
+            Official working schedule: 8:00 AM – 5:00 PM (Monday to Friday) with 1 Hour Lunch Break (12:00 PM – 1:00 PM). Net working time: 8.0 Hours / Day (40.0 Hours / Week).
           </p>
         </div>
 
