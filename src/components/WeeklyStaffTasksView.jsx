@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Plus, CheckCircle2, Clock, AlertCircle, Send, FileText, Printer, User, Building, Sparkles, ShieldCheck, Filter, X, Trash2, Check } from 'lucide-react';
+import { Calendar, Plus, CheckCircle2, Clock, AlertCircle, Send, FileText, Printer, User, Building, Sparkles, ShieldCheck, Filter, X, Trash2, Check, Edit2 } from 'lucide-react';
 import { SYSTEM_USERS, DEPLOYED_GAS_URL } from '../services/googleSheets';
 import { createNotification } from '../services/notifications';
 
@@ -80,6 +80,9 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
   const [submittingTaskId, setSubmittingTaskId] = useState(null);
   const [submissionNotesInput, setSubmissionNotesInput] = useState('');
 
+  // Edit Task state
+  const [editingTask, setEditingTask] = useState(null);
+
   const saveWeeklyTasks = (updated) => {
     setWeeklyTasks(updated);
     localStorage.setItem(WEEKLY_TASKS_STORAGE_KEY, JSON.stringify(updated));
@@ -130,6 +133,31 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
     if (!window.confirm('Are you sure you want to delete this weekly deliverable task?')) return;
     const updated = weeklyTasks.filter(t => t.id !== id);
     saveWeeklyTasks(updated);
+  };
+
+  const handleOpenEditModal = (task) => {
+    setEditingTask({ ...task });
+  };
+
+  const handleSaveEditTask = (e) => {
+    e.preventDefault();
+    if (!editingTask || !editingTask.title.trim()) return;
+
+    const updated = weeklyTasks.map(t => {
+      if (t.id === editingTask.id) {
+        return {
+          ...editingTask,
+          title: editingTask.title.trim(),
+          details: (editingTask.details || '').trim(),
+          hoursSpent: parseFloat(editingTask.hoursSpent || 0),
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return t;
+    });
+
+    saveWeeklyTasks(updated);
+    setEditingTask(null);
   };
 
   // Staff Submits Task to CEO for Verification
@@ -568,6 +596,17 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
                             </>
                           )}
 
+                          {/* Staff (or CEO/Admin) Edit Task Button */}
+                          {(isAssignedStaff || isCeoOrAdmin) && t.status !== 'Approved' && (
+                            <button
+                              onClick={() => handleOpenEditModal(t)}
+                              style={{ background: '#F8FAFC', color: '#0F172A', border: '1px solid #CBD5E1', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                              title="Edit Daily Deliverable Work Details"
+                            >
+                              <Edit2 size={11} /> Edit Work
+                            </button>
+                          )}
+
                           {isCeoOrAdmin && (
                             <button
                               onClick={() => handleDeleteTask(t.id)}
@@ -728,6 +767,86 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button type="button" className="btn-secondary" onClick={() => setSubmittingTaskId(null)}>Cancel</button>
                 <button type="submit" className="btn-primary" style={{ background: '#2563EB' }}>🚀 Submit to CEO</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Deliverable Task Modal */}
+      {editingTask && (
+        <div className="modal-overlay" style={{ zIndex: 100000 }}>
+          <div className="modal-content" style={{ maxWidth: '540px', padding: '24px', borderRadius: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: '#0F172A' }}>Edit Daily Deliverable Work</h3>
+              <button onClick={() => setEditingTask(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
+            </div>
+
+            <form onSubmit={handleSaveEditTask}>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '4px' }}>Task Title *</label>
+                <input 
+                  type="text" 
+                  value={editingTask.title} 
+                  onChange={e => setEditingTask({ ...editingTask, title: e.target.value })} 
+                  required 
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem' }} 
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '4px' }}>Target Schedule Day *</label>
+                  <select 
+                    value={editingTask.dayOfWeek || 'Monday'} 
+                    onChange={e => setEditingTask({ ...editingTask, dayOfWeek: e.target.value })}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.82rem', fontWeight: 700 }}
+                  >
+                    {daysList.filter(d => d !== 'ALL').map(day => (
+                      <option key={day} value={day}>{day}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '4px' }}>Hours Logged</label>
+                  <input 
+                    type="number" 
+                    step="0.5" 
+                    value={editingTask.hoursSpent} 
+                    onChange={e => setEditingTask({ ...editingTask, hoursSpent: e.target.value })} 
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem' }} 
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '4px' }}>Related Project</label>
+                <select 
+                  value={editingTask.projectTitle || 'General Operations'} 
+                  onChange={e => setEditingTask({ ...editingTask, projectTitle: e.target.value })}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.82rem' }}
+                >
+                  <option value="General Operations">General Operations</option>
+                  {projects.map(p => (
+                    <option key={p.id} value={p.companyName || p.projectName}>{p.companyName || p.projectName}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '4px' }}>Task Deliverable Scope & Progress Notes</label>
+                <textarea 
+                  rows="3" 
+                  value={editingTask.details || ''} 
+                  onChange={e => setEditingTask({ ...editingTask, details: e.target.value })} 
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.82rem' }} 
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button type="button" className="btn-secondary" onClick={() => setEditingTask(null)}>Cancel</button>
+                <button type="submit" className="btn-primary" style={{ background: 'var(--brand-green)' }}>Save Changes</button>
               </div>
             </form>
           </div>
