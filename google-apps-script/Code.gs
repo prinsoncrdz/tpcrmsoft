@@ -65,6 +65,10 @@ function handleRequest(e) {
       return handleGetSealSignature();
     } else if (action === 'saveSealSignature') {
       return handleSaveSealSignature(postData);
+    } else if (action === 'getWeeklyTasks') {
+      return handleGetWeeklyTasks();
+    } else if (action === 'saveWeeklyTasks') {
+      return handleSaveWeeklyTasks(postData);
     }
 
     return responseJSON({ status: 'success', message: 'Turning Point CRM API Operational' });
@@ -344,6 +348,29 @@ function handleSaveSealSignature(data) {
   };
   props.setProperty('TP_GLOBAL_SEAL_SIGNATURE', JSON.stringify(sealSigData));
   return responseJSON({ status: 'success', message: 'CEO Seal & Signature synced globally to cloud', data: sealSigData });
+}
+
+// Global Weekly Staff Tasks Cloud Fetch Handler
+function handleGetWeeklyTasks() {
+  var props = PropertiesService.getScriptProperties();
+  var rawWeeklyTasks = props.getProperty('TP_GLOBAL_WEEKLY_TASKS') || '[]';
+  var tasks = [];
+  try {
+    tasks = JSON.parse(rawWeeklyTasks);
+  } catch (err) {
+    tasks = [];
+  }
+  return responseJSON({ status: 'success', data: tasks });
+}
+
+// Global Weekly Staff Tasks Cloud Save Handler
+function handleSaveWeeklyTasks(data) {
+  var props = PropertiesService.getScriptProperties();
+  var tasks = data.tasks || [];
+  if (Array.isArray(tasks)) {
+    props.setProperty('TP_GLOBAL_WEEKLY_TASKS', JSON.stringify(tasks));
+  }
+  return responseJSON({ status: 'success', message: 'Weekly tasks synced globally to cloud', data: tasks });
 }
 
 function getSheetByGid(ss, gid) {
