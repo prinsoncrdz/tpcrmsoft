@@ -285,11 +285,14 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
             <span style={{ background: '#F59E0B', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
               🍱 1 Hr Lunch Break (12:00 PM – 1:00 PM)
             </span>
+            <span style={{ background: '#8B5CF6', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
+              📅 Submit Every Friday by 5:00 PM
+            </span>
             <span style={{ fontSize: '0.78rem', color: '#94A3B8' }}>Live Cloud Sync</span>
           </div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#FFFFFF', margin: 0 }}>Weekly Staff Tasks & Deliverables Report</h2>
           <p style={{ fontSize: '0.82rem', color: '#94A3B8', margin: '4px 0 0 0' }}>
-            Official working schedule: 8:00 AM – 5:00 PM (Monday to Friday) with 1 Hour Lunch Break (12:00 PM – 1:00 PM). Net working time: 8.0 Hours / Day (40.0 Hours / Week).
+            Working schedule: 8:00 AM – 5:00 PM (Monday to Friday). Assigned staff submit completed deliverables every Friday by 5:00 PM for CEO Walter Dantis to verify & approve.
           </p>
         </div>
 
@@ -469,46 +472,54 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
                     </span>
                   </td>
                   <td style={{ padding: '12px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      {/* Staff Submit Button */}
-                      {t.status !== 'Approved' && t.status !== 'Submitted' && (
-                        <button
-                          onClick={() => setSubmittingTaskId(t.id)}
-                          style={{ background: '#2563EB', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
-                          title="Submit Task to CEO for Verification"
-                        >
-                          <Send size={11} /> Submit
-                        </button>
-                      )}
+                    {(() => {
+                      const isAssignedStaff = currentUser?.email && t.userEmail && currentUser.email.toLowerCase() === t.userEmail.toLowerCase();
 
-                      {/* CEO Verification & Approval Buttons */}
-                      {isCeoOrAdmin && t.status !== 'Approved' && (
-                        <>
-                          <button
-                            onClick={() => handleApproveTaskByCeo(t)}
-                            style={{ background: '#10B981', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
-                            title="CEO Verify & Approve Task"
-                          >
-                            <Check size={11} /> Approve
-                          </button>
-                          <button
-                            onClick={() => handleRejectTaskByCeo(t)}
-                            style={{ background: '#F59E0B', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
-                            title="Request Revision"
-                          >
-                            <AlertCircle size={11} /> Revision
-                          </button>
-                        </>
-                      )}
+                      return (
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          {/* ONLY Assigned Staff Member (or CEO/Admin) can Submit work to CEO */}
+                          {(isAssignedStaff || isCeoOrAdmin) && t.status !== 'Approved' && t.status !== 'Submitted' && (
+                            <button
+                              onClick={() => setSubmittingTaskId(t.id)}
+                              style={{ background: '#2563EB', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                              title="Submit Task to CEO for Verification (Friday Deadline)"
+                            >
+                              <Send size={11} /> Submit to CEO
+                            </button>
+                          )}
 
-                      <button
-                        onClick={() => handleDeleteTask(t.id)}
-                        style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '4px' }}
-                        title="Delete Task"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                          {/* ONLY CEO & Admin can Verify & Approve or Request Revision */}
+                          {isCeoOrAdmin && t.status !== 'Approved' && (
+                            <>
+                              <button
+                                onClick={() => handleApproveTaskByCeo(t)}
+                                style={{ background: '#10B981', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                                title="CEO Verify & Approve Task"
+                              >
+                                <Check size={11} /> CEO Approve
+                              </button>
+                              <button
+                                onClick={() => handleRejectTaskByCeo(t)}
+                                style={{ background: '#F59E0B', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                                title="Request Revision"
+                              >
+                                <AlertCircle size={11} /> Revision
+                              </button>
+                            </>
+                          )}
+
+                          {isCeoOrAdmin && (
+                            <button
+                              onClick={() => handleDeleteTask(t.id)}
+                              style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '4px' }}
+                              title="Delete Task"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}
