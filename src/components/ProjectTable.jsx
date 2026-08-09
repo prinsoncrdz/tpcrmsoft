@@ -18,6 +18,11 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
   const [statusReasonModal, setStatusReasonModal] = useState(null); // { project, newStatus }
   const [reasonInput, setReasonInput] = useState('');
 
+  // CEO Project Deletion 2-Question Security Modal state
+  const [ceoDeleteModal, setCeoDeleteModal] = useState(null); // { project }
+  const [deleteReasonInput, setDeleteReasonInput] = useState('');
+  const [deleteConfirmCodeInput, setDeleteConfirmCodeInput] = useState('');
+
   // Project details sheet modal state
   const [detailsProject, setDetailsProject] = useState(null);
 
@@ -129,6 +134,29 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
 
     setStatusReasonModal(null);
     setReasonInput('');
+  };
+
+  const handleConfirmCeoDeleteProject = (e) => {
+    e.preventDefault();
+    if (!ceoDeleteModal) return;
+
+    if (!deleteReasonInput.trim()) {
+      alert('Please state the official reason for deleting this project.');
+      return;
+    }
+
+    if (deleteConfirmCodeInput.trim().toUpperCase() !== 'DELETE') {
+      alert('Security Code Mismatch: Type "DELETE" in uppercase to authorize project removal.');
+      return;
+    }
+
+    if (onDeleteProject) {
+      onDeleteProject(ceoDeleteModal.project.id, deleteReasonInput.trim());
+    }
+
+    setCeoDeleteModal(null);
+    setDeleteReasonInput('');
+    setDeleteConfirmCodeInput('');
   };
 
   // Role-Based Field Edit & Deletion Permissions
@@ -893,7 +921,11 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                           {/* Delete Project Button (STRICTLY CEO ONLY - Not even Admin!) */}
                           {canDeleteProject && (
                             <button
-                              onClick={() => onDeleteProject && onDeleteProject(project.id)}
+                              onClick={() => {
+                                setCeoDeleteModal({ project });
+                                setDeleteReasonInput('');
+                                setDeleteConfirmCodeInput('');
+                              }}
                               style={{
                                 background: '#FEF2F2',
                                 color: '#DC2626',
@@ -1060,6 +1092,66 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                 <button type="button" className="btn-secondary" onClick={() => setStatusReasonModal(null)}>Cancel</button>
                 <button type="submit" className="btn-primary" style={{ background: statusReasonModal.newStatus === 'Cancelled' ? '#DC2626' : '#F59E0B' }}>
                   Confirm Status: {statusReasonModal.newStatus}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CEO Deletion 2-Question Security Verification Modal */}
+      {ceoDeleteModal && (
+        <div className="modal-overlay" style={{ zIndex: 100000 }}>
+          <div className="modal-content" style={{ maxWidth: '500px', padding: '24px', borderRadius: '16px', borderTop: '4px solid #DC2626' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShieldAlert size={20} style={{ color: '#DC2626' }} />
+                <h3 style={{ fontSize: '1rem', fontWeight: 900, margin: 0, color: '#991B1B' }}>
+                  CEO Project Deletion Protocol
+                </h3>
+              </div>
+              <button onClick={() => setCeoDeleteModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
+            </div>
+
+            <form onSubmit={handleConfirmCeoDeleteProject}>
+              <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.8rem', color: '#991B1B' }}>
+                ⚠️ You are performing a permanent project deletion for <strong>"{ceoDeleteModal.project.projectName}"</strong> (${ceoDeleteModal.project.projectId}). Please answer both security verification questions below.
+              </div>
+
+              {/* Question 1: Official Deletion Reason */}
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0F172A', display: 'block', marginBottom: '4px' }}>
+                  1. Question 1: Official Reason for Project Deletion *
+                </label>
+                <textarea 
+                  rows="3" 
+                  placeholder="Provide detailed executive reason for deleting this project record..."
+                  value={deleteReasonInput} 
+                  onChange={e => setDeleteReasonInput(e.target.value)} 
+                  required
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.82rem' }} 
+                />
+              </div>
+
+              {/* Question 2: Type DELETE to Confirm */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0F172A', display: 'block', marginBottom: '4px' }}>
+                  2. Question 2: Type "DELETE" to Confirm CEO Authorization *
+                </label>
+                <input 
+                  type="text" 
+                  placeholder='Type "DELETE" to authorize'
+                  value={deleteConfirmCodeInput} 
+                  onChange={e => setDeleteConfirmCodeInput(e.target.value)} 
+                  required
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #FCA5A5', fontSize: '0.88rem', fontWeight: 800, color: '#991B1B' }} 
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button type="button" className="btn-secondary" onClick={() => setCeoDeleteModal(null)}>Cancel</button>
+                <button type="submit" className="btn-primary" style={{ background: '#DC2626', borderColor: '#DC2626' }}>
+                  🗑️ Authorize & Delete Project
                 </button>
               </div>
             </form>

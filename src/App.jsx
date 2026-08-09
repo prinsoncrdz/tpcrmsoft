@@ -138,20 +138,16 @@ export default function App() {
     confetti({ particleCount: 60, spread: 60 });
   };
 
-  const handleDeleteProject = (projectId) => {
+  const handleDeleteProject = (projectId, deleteReason) => {
     const isCeo = currentUser?.role === 'CEO' || (currentUser?.name || '').toLowerCase().includes('walter') || (currentUser?.role || '').toLowerCase().includes('ceo');
     if (!isCeo) {
       alert('🔒 Access Denied: ONLY CEO Walter Dantis can delete projects from Turning Point CRM!');
       return;
     }
 
-    if (!window.confirm('⚠️ Are you sure you want to delete this project from Turning Point CRM? Only CEO Walter Dantis can execute project deletions.')) {
-      return;
-    }
-
     const updated = projects.filter(p => p.id !== projectId);
     setProjects(updated);
-    showToast('Project deleted by CEO Walter Dantis.');
+    showToast(`Project deleted by CEO Walter Dantis. Reason logged: "${deleteReason || 'Executive Cleanup'}"`);
   };
 
   if (!currentUser) {
