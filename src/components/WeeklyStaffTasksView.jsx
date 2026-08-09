@@ -284,10 +284,85 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
   };
 
   const handlePrintPDF = () => {
+    const targetStaff = selectedUserEmail === 'ALL' ? 'All Staff Members' : (SYSTEM_USERS.find(u => u.email.toLowerCase() === selectedUserEmail.toLowerCase())?.name || selectedUserEmail);
     const origTitle = document.title;
-    document.title = `Weekly Staff Tasks Report - ${currentUser?.name} (${selectedWeek})`;
+    document.title = `Friday Executive Report - ${targetStaff} (${selectedWeek})`;
     window.print();
     setTimeout(() => { document.title = origTitle; }, 1000);
+  };
+
+  const handleExportWordReport = () => {
+    const targetStaff = selectedUserEmail === 'ALL' ? 'All Staff Members' : (SYSTEM_USERS.find(u => u.email.toLowerCase() === selectedUserEmail.toLowerCase())?.name || selectedUserEmail);
+    const weekLabel = weeksList.find(w => w.id === selectedWeek)?.label || selectedWeek;
+
+    const content = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <title>Friday Executive Weekly Task Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #1E293B; }
+          h1 { color: #0F172A; border-bottom: 2px solid #10B981; padding-bottom: 8px; }
+          h2 { color: #1E293B; margin-top: 20px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+          th, td { border: 1px solid #CBD5E1; padding: 8px 12px; text-align: left; }
+          th { background-color: #0F172A; color: #FFFFFF; }
+          .badge { padding: 4px 8px; background: #ECFDF5; color: #047857; font-weight: bold; border-radius: 4px; }
+        </style>
+      </head>
+      <body>
+        <h1>Turning Point Retail Solutions - Friday Executive Staff Weekly Report</h1>
+        <p><strong>Period:</strong> ${weekLabel} | <strong>Working Schedule:</strong> Mon–Fri (8:00 AM – 5:00 PM, 1 Hr Lunch 12–1 PM)</p>
+        <p><strong>Filter Scope:</strong> ${targetStaff} | <strong>Report Generated:</strong> Friday Executive Review (${new Date().toLocaleDateString()})</p>
+
+        <h2>Weekly Task Deliverables Breakdown (${completedCount} / ${filteredTasks.length} Approved)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Schedule Day</th>
+              <th>Staff Member</th>
+              <th>Task Title & Deliverable Details</th>
+              <th>Related Project</th>
+              <th>Hours</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredTasks.map((t, idx) => `
+              <tr>
+                <td>${idx + 1}</td>
+                <td><strong>${t.dayOfWeek || 'Monday'}</strong></td>
+                <td><strong>${t.userName || 'Staff'}</strong></td>
+                <td>
+                  <strong>${t.title}</strong>
+                  ${t.details ? `<br/><em>${t.details}</em>` : ''}
+                  ${t.submissionNotes ? `<br/><span style="color:#2563EB;">💬 Staff Notes: ${t.submissionNotes}</span>` : ''}
+                  ${t.ceoFeedback ? `<br/><span style="color:#047857;">📢 CEO Feedback: ${t.ceoFeedback}</span>` : ''}
+                </td>
+                <td>${t.projectTitle || 'General Operations'}</td>
+                <td>${t.hoursSpent || 8} hrs</td>
+                <td><span class="badge">${t.status}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <p style="margin-top: 30px; font-size: 0.8rem; color: #64748B;">
+          Turning Point Retail Solutions • Phnom Penh, Cambodia • Executive CEO Verification Approved Report
+        </p>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\ufeff' + content], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Friday_Weekly_Staff_Report_${targetStaff.replace(/\s+/g, '_')}_${selectedWeek}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // Security Privacy Filter: Regular Staff sees ONLY their own tasks. CEO/Admin sees everyone's tasks.
@@ -343,11 +418,21 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
 
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button 
+            onClick={handleExportWordReport}
+            className="btn-secondary"
+            style={{ padding: '10px 16px', fontSize: '0.82rem', fontWeight: 800, background: 'rgba(255,255,255,0.1)', color: '#FFF', border: '1px solid rgba(255,255,255,0.2)' }}
+            title="Download Word (.doc) Staff-Wise Weekly Deliverables Report"
+          >
+            <FileText size={15} /> Export Word (.doc)
+          </button>
+
+          <button 
             onClick={handlePrintPDF}
             className="btn-secondary"
             style={{ padding: '10px 16px', fontSize: '0.82rem', fontWeight: 800, background: 'rgba(255,255,255,0.1)', color: '#FFF', border: '1px solid rgba(255,255,255,0.2)' }}
+            title="Download / Print PDF Staff-Wise Weekly Report"
           >
-            <Printer size={15} /> Print / Export PDF
+            <Printer size={15} /> Export PDF
           </button>
 
           <button 
