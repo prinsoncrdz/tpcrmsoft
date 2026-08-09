@@ -137,6 +137,7 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
   };
 
   const openCeoDeleteModal = (project) => {
+    if (!project) return;
     const generatedPin = Math.floor(100000 + Math.random() * 900000).toString();
     setCeoDeleteModal({ project, otpPin: generatedPin });
     setDeleteReasonInput('');
@@ -145,7 +146,7 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
 
   const handleConfirmCeoDeleteProject = (e) => {
     e.preventDefault();
-    if (!ceoDeleteModal) return;
+    if (!ceoDeleteModal || !ceoDeleteModal.project) return;
 
     if (!deleteReasonInput.trim()) {
       alert('Please state the official reason for deleting this project.');
@@ -153,12 +154,12 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
     }
 
     const cleanInputPin = deleteOtpPinInput.replace(/\D/g, '');
-    if (cleanInputPin !== ceoDeleteModal.otpPin) {
-      alert(`🔒 QR Code Mobile 2FA Mismatch!\n\nPlease scan the QR code on your phone and enter the 6-digit unique security PIN displayed on screen (${ceoDeleteModal.otpPin}).`);
+    if (cleanInputPin !== (ceoDeleteModal.otpPin || '')) {
+      alert(`🔒 QR Code Mobile 2FA Mismatch!\n\nPlease scan the QR code on your phone and enter the 6-digit unique security PIN displayed on screen (${ceoDeleteModal.otpPin || ''}).`);
       return;
     }
 
-    if (onDeleteProject) {
+    if (onDeleteProject && ceoDeleteModal.project.id) {
       onDeleteProject(ceoDeleteModal.project.id, deleteReasonInput.trim());
     }
 
@@ -1159,86 +1160,94 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
       )}
 
       {/* CEO Mobile QR Code 2FA Security Authorization Modal */}
-      {ceoDeleteModal && (
-        <div className="modal-overlay" style={{ zIndex: 100000 }}>
-          <div className="modal-content" style={{ maxWidth: '520px', padding: '24px', borderRadius: '16px', borderTop: '4px solid #DC2626' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ShieldAlert size={20} style={{ color: '#DC2626' }} />
-                <h3 style={{ fontSize: '1rem', fontWeight: 900, margin: 0, color: '#991B1B' }}>
-                  CEO Mobile QR Code 2FA Authorization
-                </h3>
-              </div>
-              <button onClick={() => setCeoDeleteModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
-            </div>
+      {ceoDeleteModal && ceoDeleteModal.project && (
+        (() => {
+          const targetProjName = ceoDeleteModal.project.projectName || ceoDeleteModal.project.companyName || 'Project';
+          const pinStr = (ceoDeleteModal.otpPin || '123456').toString();
+          const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent('https://script.google.com/macros/s/AKfycbw4T5aMZivnM1oNWmuBTkB5Ftt7p39StKw-MHW-1BVJg-MBIYllnMCM1au5kuU8YD1bQA/exec?action=authDelete&pin=' + pinStr + '&project=' + targetProjName)}`;
 
-            <form onSubmit={handleConfirmCeoDeleteProject}>
-              <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.8rem', color: '#991B1B' }}>
-                ⚠️ <strong>Executive Authorization Required:</strong> Scan the QR code below on CEO phone and enter the generated unique 6-digit PIN to delete <strong>"{ceoDeleteModal.project.projectName}"</strong>.
-              </div>
-
-              {/* QR Code & PIN Display Card */}
-              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                <div style={{ background: '#FFF', padding: '8px', borderRadius: '8px', border: '1px solid #CBD5E1', textAlign: 'center' }}>
-                  <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://script.google.com/macros/s/AKfycbw4T5aMZivnM1oNWmuBTkB5Ftt7p39StKw-MHW-1BVJg-MBIYllnMCM1au5kuU8YD1bQA/exec?action=authDelete%26pin=${ceoDeleteModal.otpPin}%26project=${encodeURIComponent(ceoDeleteModal.project.projectName)}`}
-                    alt="CEO 2FA QR Code" 
-                    style={{ width: '120px', height: '120px', display: 'block' }}
-                  />
-                  <span style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700, display: 'block', marginTop: '4px' }}>Scan with Phone</span>
-                </div>
-
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', marginBottom: '4px' }}>On-Screen Unique Security PIN:</div>
-                  <div style={{ background: '#0F172A', color: '#10B981', fontSize: '1.4rem', fontWeight: 900, padding: '8px 14px', borderRadius: '8px', letterSpacing: '3px', textAlign: 'center', fontFamily: 'monospace' }}>
-                    {ceoDeleteModal.otpPin.slice(0, 3)}-{ceoDeleteModal.otpPin.slice(3)}
+          return (
+            <div className="modal-overlay" style={{ zIndex: 100000 }}>
+              <div className="modal-content" style={{ maxWidth: '520px', padding: '24px', borderRadius: '16px', borderTop: '4px solid #DC2626' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <ShieldAlert size={20} style={{ color: '#DC2626' }} />
+                    <h3 style={{ fontSize: '1rem', fontWeight: 900, margin: 0, color: '#991B1B' }}>
+                      CEO Mobile QR Code 2FA Authorization
+                    </h3>
                   </div>
-                  <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', marginTop: '6px', lineHeight: '1.3' }}>
-                    📲 CEO Walter Dantis scans QR code on mobile camera to verify OTP pin code authorization.
-                  </span>
+                  <button onClick={() => setCeoDeleteModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
                 </div>
-              </div>
 
-              {/* Input 1: Enter 6-Digit PIN */}
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0F172A', display: 'block', marginBottom: '4px' }}>
-                  1. Enter 6-Digit Mobile Verification PIN *
-                </label>
-                <input 
-                  type="text" 
-                  maxLength={7}
-                  placeholder={`Enter PIN e.g. ${ceoDeleteModal.otpPin}`}
-                  value={deleteOtpPinInput} 
-                  onChange={e => setDeleteOtpPinInput(e.target.value)} 
-                  required
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #FCA5A5', fontSize: '0.95rem', fontWeight: 900, color: '#991B1B', letterSpacing: '2px' }} 
-                />
-              </div>
+                <form onSubmit={handleConfirmCeoDeleteProject}>
+                  <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.8rem', color: '#991B1B' }}>
+                    ⚠️ <strong>Executive Authorization Required:</strong> Scan the QR code below on CEO phone and enter the generated unique 6-digit PIN to delete <strong>"{targetProjName}"</strong>.
+                  </div>
 
-              {/* Input 2: Official Reason for Deletion */}
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0F172A', display: 'block', marginBottom: '4px' }}>
-                  2. Official Reason for Deleting Project *
-                </label>
-                <textarea 
-                  rows="2" 
-                  placeholder="Provide executive reason for deleting this project record..."
-                  value={deleteReasonInput} 
-                  onChange={e => setDeleteReasonInput(e.target.value)} 
-                  required
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.82rem' }} 
-                />
-              </div>
+                  {/* QR Code & PIN Display Card */}
+                  <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                    <div style={{ background: '#FFF', padding: '8px', borderRadius: '8px', border: '1px solid #CBD5E1', textAlign: 'center' }}>
+                      <img 
+                        src={qrDataUrl}
+                        alt="CEO 2FA QR Code" 
+                        style={{ width: '120px', height: '120px', display: 'block' }}
+                      />
+                      <span style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700, display: 'block', marginTop: '4px' }}>Scan with Phone</span>
+                    </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                <button type="button" className="btn-secondary" onClick={() => setCeoDeleteModal(null)}>Cancel</button>
-                <button type="submit" className="btn-primary" style={{ background: '#DC2626', borderColor: '#DC2626' }}>
-                  🔒 Verify QR Auth & Delete Project
-                </button>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', marginBottom: '4px' }}>On-Screen Unique Security PIN:</div>
+                      <div style={{ background: '#0F172A', color: '#10B981', fontSize: '1.4rem', fontWeight: 900, padding: '8px 14px', borderRadius: '8px', letterSpacing: '3px', textAlign: 'center', fontFamily: 'monospace' }}>
+                        {pinStr.length >= 6 ? `${pinStr.slice(0, 3)}-${pinStr.slice(3)}` : pinStr}
+                      </div>
+                      <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', marginTop: '6px', lineHeight: '1.3' }}>
+                        📲 CEO Walter Dantis scans QR code on mobile camera to verify OTP pin code authorization.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Input 1: Enter 6-Digit PIN */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0F172A', display: 'block', marginBottom: '4px' }}>
+                      1. Enter 6-Digit Mobile Verification PIN *
+                    </label>
+                    <input 
+                      type="text" 
+                      maxLength={7}
+                      placeholder={`Enter PIN e.g. ${pinStr}`}
+                      value={deleteOtpPinInput} 
+                      onChange={e => setDeleteOtpPinInput(e.target.value)} 
+                      required
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #FCA5A5', fontSize: '0.95rem', fontWeight: 900, color: '#991B1B', letterSpacing: '2px' }} 
+                    />
+                  </div>
+
+                  {/* Input 2: Official Reason for Deletion */}
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0F172A', display: 'block', marginBottom: '4px' }}>
+                      2. Official Reason for Deleting Project *
+                    </label>
+                    <textarea 
+                      rows="2" 
+                      placeholder="Provide executive reason for deleting this project record..."
+                      value={deleteReasonInput} 
+                      onChange={e => setDeleteReasonInput(e.target.value)} 
+                      required
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.82rem' }} 
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                    <button type="button" className="btn-secondary" onClick={() => setCeoDeleteModal(null)}>Cancel</button>
+                    <button type="submit" className="btn-primary" style={{ background: '#DC2626', borderColor: '#DC2626' }}>
+                      🔒 Verify QR Auth & Delete Project
+                    </button>
+                  </div>
+                </form>
               </div>
-            </form>
-          </div>
-        </div>
+            </div>
+          );
+        })()
       )}
 
     </div>
