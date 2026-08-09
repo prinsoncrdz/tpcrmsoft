@@ -260,11 +260,18 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
     setTimeout(() => { document.title = origTitle; }, 1000);
   };
 
-  // Filter tasks
-  const filteredTasks = weeklyTasks.filter(t => {
+  // Security Privacy Filter: Regular Staff sees ONLY their own tasks. CEO/Admin sees everyone's tasks.
+  const userRoleEmail = (currentUser?.email || '').toLowerCase();
+  const roleFilteredTasks = weeklyTasks.filter(t => {
+    if (isCeoOrAdmin) return true;
+    return (t.userEmail || '').toLowerCase() === userRoleEmail;
+  });
+
+  // Filter tasks for active view
+  const filteredTasks = roleFilteredTasks.filter(t => {
     const matchesWeek = t.weekId === selectedWeek;
     const matchesDay = selectedDay === 'ALL' || t.dayOfWeek === selectedDay;
-    const matchesUser = isCeoOrAdmin ? (t.userEmail.toLowerCase() === selectedUserEmail.toLowerCase() || selectedUserEmail === 'ALL') : (t.userEmail.toLowerCase() === currentUser?.email?.toLowerCase());
+    const matchesUser = isCeoOrAdmin ? (t.userEmail.toLowerCase() === selectedUserEmail.toLowerCase() || selectedUserEmail === 'ALL') : (t.userEmail.toLowerCase() === userRoleEmail);
     
     let matchesStatus = true;
     if (statusFilter === 'REMAINING') matchesStatus = t.status === 'Pending' || t.status === 'In Progress' || t.status === 'Needs Revision';
@@ -384,10 +391,10 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
         {/* Status Filter Bar (All vs Remaining / Pending vs Submitted vs Approved) */}
         <div style={{ display: 'flex', gap: '6px', background: '#F1F5F9', padding: '4px', borderRadius: '8px', width: '100%', marginTop: '10px', flexWrap: 'wrap' }}>
           {[
-            { id: 'ALL', label: `All Weekly Tasks (${weeklyTasks.length})` },
-            { id: 'REMAINING', label: `Remaining / Pending Work (${weeklyTasks.filter(t => t.status === 'Pending' || t.status === 'In Progress' || t.status === 'Needs Revision').length})` },
-            { id: 'SUBMITTED', label: `Submitted for CEO Verification (${weeklyTasks.filter(t => t.status === 'Submitted').length})` },
-            { id: 'APPROVED', label: `CEO Approved (${weeklyTasks.filter(t => t.status === 'Approved').length})` }
+            { id: 'ALL', label: `All My Weekly Tasks (${roleFilteredTasks.length})` },
+            { id: 'REMAINING', label: `Remaining / Pending Work (${roleFilteredTasks.filter(t => t.status === 'Pending' || t.status === 'In Progress' || t.status === 'Needs Revision').length})` },
+            { id: 'SUBMITTED', label: `Submitted for CEO Verification (${roleFilteredTasks.filter(t => t.status === 'Submitted').length})` },
+            { id: 'APPROVED', label: `CEO Approved (${roleFilteredTasks.filter(t => t.status === 'Approved').length})` }
           ].map(tab => (
             <button
               key={tab.id}
