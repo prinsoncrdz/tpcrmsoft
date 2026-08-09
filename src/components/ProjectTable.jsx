@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Download, RefreshCw, ExternalLink, Edit2, AlertCircle, CheckCircle2, Clock, ShieldAlert, Sparkles, UserCheck, Lock, ListTodo, CheckSquare, DollarSign, TrendingUp, TrendingDown, Receipt, Building, Building2 } from 'lucide-react';
+import { Search, Plus, Download, RefreshCw, ExternalLink, Edit2, AlertCircle, CheckCircle2, Clock, ShieldAlert, Sparkles, UserCheck, Lock, ListTodo, CheckSquare, DollarSign, TrendingUp, TrendingDown, Receipt, Building, Building2, X } from 'lucide-react';
 import { SYSTEM_USERS, fetchGlobalSubTasks, saveGlobalSubTasks } from '../services/googleSheets';
 import SubTaskModal from './SubTaskModal';
 import ProjectFinancialsModal from './ProjectFinancialsModal';
