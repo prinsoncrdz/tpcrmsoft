@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Building2, User, Phone, Mail, MapPin, Calendar, DollarSign, CheckCircle2, Clock, FileText, Printer, ShieldCheck, PieChart, Sparkles } from 'lucide-react';
 
-export default function ProjectDetailsModal({ project, subTasks = [], onClose }) {
+export default function ProjectDetailsModal({ project, subTasks = [], onClose, onDeleteProject }) {
   if (!project) return null;
 
   const totalContract = parseFloat(project.totalContractValue || project.value || 0);
@@ -127,6 +127,15 @@ export default function ProjectDetailsModal({ project, subTasks = [], onClose })
             >
               <Printer size={15} /> Print / PDF Report
             </button>
+            {onDeleteProject && (
+              <button 
+                onClick={() => onDeleteProject(project)}
+                style={{ background: '#DC2626', color: '#FFF', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                title="Delete Project via CEO Mobile QR Code 2FA Security"
+              >
+                🗑️ Delete Project
+              </button>
+            )}
             <button 
               onClick={onClose} 
               style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#FFF', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
