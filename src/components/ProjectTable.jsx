@@ -921,7 +921,9 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                           {/* Delete Project Button (STRICTLY CEO ONLY - Not even Admin!) */}
                           {canDeleteProject && (
                             <button
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
                                 setCeoDeleteModal({ project });
                                 setDeleteReasonInput('');
                                 setDeleteConfirmCodeInput('');
