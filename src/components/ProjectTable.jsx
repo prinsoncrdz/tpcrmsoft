@@ -8,11 +8,15 @@ import ProjectDetailsModal from './ProjectDetailsModal';
 const SUBTASKS_STORAGE_KEY = 'tp_crm_subtasks_v2';
 const FINANCIALS_STORAGE_KEY = 'tp_crm_project_financials_v1';
 
-export default function ProjectTable({ projects, currentUser, onCellEdit, onOpenNewProjectModal, onRefresh }) {
+export default function ProjectTable({ projects, currentUser, onCellEdit, onOpenNewProjectModal, onRefresh, onDeleteProject }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSector, setSelectedSector] = useState('ALL');
   const [editingCell, setEditingCell] = useState(null); // { id, field }
   const [editValue, setEditValue] = useState('');
+
+  // Status Change Reason Modal state (for Cancelled or On Hold)
+  const [statusReasonModal, setStatusReasonModal] = useState(null); // { project, newStatus }
+  const [reasonInput, setReasonInput] = useState('');
 
   // Project details sheet modal state
   const [detailsProject, setDetailsProject] = useState(null);
@@ -109,8 +113,28 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
 
   const sectors = ['ALL', 'HEALTHCARE', 'RETAIL & FRANCHISE', 'TECHNOLOGY & INNOVATION', 'EDUCATION', 'TRADING & DISTRIBUTION', 'CONSULTING'];
 
-  // Role-Based Field Edit Permissions
+  const handleSaveStatusReason = (e) => {
+    e.preventDefault();
+    if (!statusReasonModal || !reasonInput.trim()) return;
+
+    const { project, newStatus } = statusReasonModal;
+    
+    // Update status column (10)
+    onCellEdit(project, 'status', 10, newStatus);
+
+    // Append reason to statusUpdate column (12)
+    const formattedReason = `[${newStatus.toUpperCase()} REASON]: ${reasonInput.trim()}`;
+    const newUpdateNote = project.statusUpdate ? `${formattedReason} | ${project.statusUpdate}` : formattedReason;
+    onCellEdit(project, 'statusUpdate', 12, newUpdateNote);
+
+    setStatusReasonModal(null);
+    setReasonInput('');
+  };
+
+  // Role-Based Field Edit & Deletion Permissions
+  const isCeo = currentUser?.role === 'CEO' || (currentUser?.name || '').toLowerCase().includes('walter') || (currentUser?.role || '').toLowerCase().includes('ceo');
   const canEditAllFields = currentUser?.role === 'CEO' || currentUser?.role === 'Admin';
+  const canDeleteProject = isCeo; // STRICTLY CEO ONLY (Not even Admin!)
   const canEditProgressUpdate = true; // Everyone assigned can edit Progress Update
 
   // Filter projects by search query, sector tab, and assignment tab
@@ -712,16 +736,26 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                         className="cell-input"
                         value={editValue}
                         onChange={(e) => {
-                          setEditValue(e.target.value);
-                          onCellEdit(project, 'status', 10, e.target.value);
+                          const val = e.target.value;
                           setEditingCell(null);
+                          if (val === 'Cancelled' || val === 'On Hold') {
+                            setStatusReasonModal({ project, newStatus: val });
+                            setReasonInput('');
+                          } else {
+                            onCellEdit(project, 'status', 10, val);
+                            if (val === 'Completed') {
+                              onCellEdit(project, 'completion', 9, '100%');
+                            }
+                          }
                         }}
                         onBlur={() => setEditingCell(null)}
                         autoFocus
                       >
                         <option value="In Progress">In Progress</option>
                         <option value="Review">Review</option>
-                        <option value="Completed">Completed</option>
+                        <option value="Completed">Completed (100%)</option>
+                        <option value="On Hold">On Hold (Enter Reason)</option>
+                        <option value="Cancelled">Cancelled (Enter Reason)</option>
                         <option value="Planning">Planning</option>
                       </select>
                     ) : (
@@ -855,6 +889,31 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                               <span>Financials ({pSpent > 0 ? formatShortCurrency(pSpent) : 'Cost/Rev'})</span>
                             </button>
                           )}
+
+                          {/* Delete Project Button (STRICTLY CEO ONLY - Not even Admin!) */}
+                          {canDeleteProject && (
+                            <button
+                              onClick={() => onDeleteProject && onDeleteProject(project.id)}
+                              style={{
+                                background: '#FEF2F2',
+                                color: '#DC2626',
+                                border: '1px solid #FECACA',
+                                borderRadius: '6px',
+                                padding: '4px 8px',
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontFamily: 'inherit'
+                              }}
+                              title="Delete Project (CEO Exclusive Action)"
+                            >
+                              <ShieldAlert size={12} />
+                              <span>Delete</span>
+                            </button>
+                          )}
                         </div>
                       );
                     })()}
@@ -965,6 +1024,47 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
           subTasks={subTasksMap[detailsProject.id] || []}
           onClose={() => setDetailsProject(null)}
         />
+      )}
+
+      {/* Status Reason Modal (Mandatory Reason for Cancelled or On Hold) */}
+      {statusReasonModal && (
+        <div className="modal-overlay" style={{ zIndex: 100000 }}>
+          <div className="modal-content" style={{ maxWidth: '480px', padding: '24px', borderRadius: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: '#0F172A' }}>
+                Reason for Setting Status to "{statusReasonModal.newStatus}" *
+              </h3>
+              <button onClick={() => setStatusReasonModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
+            </div>
+
+            <form onSubmit={handleSaveStatusReason}>
+              <p style={{ fontSize: '0.82rem', color: '#475569', marginBottom: '14px' }}>
+                Please specify why project <strong>"{statusReasonModal.project.projectName}"</strong> is being marked as <strong>{statusReasonModal.newStatus}</strong>. This reason will be recorded in CRM project updates.
+              </p>
+
+              <div style={{ marginBottom: '18px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  {statusReasonModal.newStatus} Reason / Explanation *
+                </label>
+                <textarea 
+                  rows="3" 
+                  placeholder={statusReasonModal.newStatus === 'Cancelled' ? "e.g. Client requested project cancellation due to budget restructuring..." : "e.g. On hold pending Ministry of Commerce license approval..."}
+                  value={reasonInput} 
+                  onChange={e => setReasonInput(e.target.value)} 
+                  required
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.82rem' }} 
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button type="button" className="btn-secondary" onClick={() => setStatusReasonModal(null)}>Cancel</button>
+                <button type="submit" className="btn-primary" style={{ background: statusReasonModal.newStatus === 'Cancelled' ? '#DC2626' : '#F59E0B' }}>
+                  Confirm Status: {statusReasonModal.newStatus}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
     </div>

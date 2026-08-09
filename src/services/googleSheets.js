@@ -12,7 +12,7 @@ export const SHEET_GIDS = {
 };
 
 // User's Updated Live Google Apps Script Web App Deployment URL with Global Cloud Chat, Sub-Tasks & Invoice Engine
-export const DEPLOYED_GAS_URL = 'https://script.google.com/macros/s/AKfycbyF5E5Yq_kHaXL-oHuPWCO6usi32Daw78djll6eOi5LQjD-laCrgK7EcxYU0zfKwX_hTg/exec';
+export const DEPLOYED_GAS_URL = 'https://script.google.com/macros/s/AKfycbw4T5aMZivnM1oNWmuBTkB5Ftt7p39StKw-MHW-1BVJg-MBIYllnMCM1au5kuU8YD1bQA/exec';
 export const DEFAULT_GAS_URL = DEPLOYED_GAS_URL;
 
 // Registered Turning Point Retail Team Users with UNIQUE passwords for each user
