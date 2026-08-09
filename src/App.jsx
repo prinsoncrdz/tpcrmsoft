@@ -139,15 +139,9 @@ export default function App() {
   };
 
   const handleDeleteProject = (projectId, deleteReason) => {
-    const isCeo = currentUser?.role === 'CEO' || (currentUser?.name || '').toLowerCase().includes('walter') || (currentUser?.role || '').toLowerCase().includes('ceo');
-    if (!isCeo) {
-      alert('🔒 Access Denied: ONLY CEO Walter Dantis can delete projects from Turning Point CRM!');
-      return;
-    }
-
     const updated = projects.filter(p => p.id !== projectId);
     setProjects(updated);
-    showToast(`Project deleted by CEO Walter Dantis. Reason logged: "${deleteReason || 'Executive Cleanup'}"`);
+    showToast(`Project deleted successfully. Reason logged: "${deleteReason || 'Executive Cleanup'}"`);
   };
 
   if (!currentUser) {

@@ -161,8 +161,8 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
 
   // Role-Based Field Edit & Deletion Permissions
   const isCeo = currentUser?.role === 'CEO' || (currentUser?.name || '').toLowerCase().includes('walter') || (currentUser?.role || '').toLowerCase().includes('ceo');
-  const canEditAllFields = currentUser?.role === 'CEO' || currentUser?.role === 'Admin';
-  const canDeleteProject = isCeo; // STRICTLY CEO ONLY (Not even Admin!)
+  const canEditAllFields = currentUser?.role === 'CEO' || currentUser?.role === 'Admin' || isCeo;
+  const canDeleteProject = canEditAllFields; // Delete button is active for CEO/Admin and protected by the 2-Question Security Protocol Modal
   const canEditProgressUpdate = true; // Everyone assigned can edit Progress Update
 
   // Filter projects by search query, sector tab, and assignment tab
