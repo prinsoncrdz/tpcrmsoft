@@ -449,10 +449,13 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
       {/* Tasks Table */}
       <div className="printable-invoice-paper" style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
             Weekly Deliverables List ({weeksList.find(w => w.id === selectedWeek)?.label})
           </h3>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1E40AF', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '5px 12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>📅 <strong>Friday Submission Rule:</strong> Update daily work Mon–Fri. The <em>Submit to CEO</em> button activates every Friday by 5:00 PM.</span>
+          </div>
         </div>
 
         {filteredTasks.length === 0 ? (
@@ -519,18 +522,30 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
                   <td style={{ padding: '12px', textAlign: 'center' }}>
                     {(() => {
                       const isAssignedStaff = currentUser?.email && t.userEmail && currentUser.email.toLowerCase() === t.userEmail.toLowerCase();
+                      const isTodayFriday = new Date().getDay() === 5; // 5 = Friday
+                      const canSubmitNow = isTodayFriday || isCeoOrAdmin; // Staff can submit on Friday; CEO/Admin can always test
 
                       return (
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
                           {/* ONLY Assigned Staff Member (or CEO/Admin) can Submit work to CEO */}
                           {(isAssignedStaff || isCeoOrAdmin) && t.status !== 'Approved' && t.status !== 'Submitted' && (
-                            <button
-                              onClick={() => setSubmittingTaskId(t.id)}
-                              style={{ background: '#2563EB', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
-                              title="Submit Task to CEO for Verification (Friday Deadline)"
-                            >
-                              <Send size={11} /> Submit to CEO
-                            </button>
+                            canSubmitNow ? (
+                              <button
+                                onClick={() => setSubmittingTaskId(t.id)}
+                                style={{ background: '#2563EB', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                                title="Submit Task to CEO for Verification"
+                              >
+                                <Send size={11} /> Submit to CEO
+                              </button>
+                            ) : (
+                              <button
+                                disabled
+                                style={{ background: '#F1F5F9', color: '#94A3B8', border: '1px solid #CBD5E1', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 700, cursor: 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                                title="Submission activates every Friday by 5:00 PM. You can update your daily work anytime!"
+                              >
+                                <Clock size={11} /> Submit Opens Friday
+                              </button>
+                            )
                           )}
 
                           {/* ONLY CEO & Admin can Verify & Approve or Request Revision */}
