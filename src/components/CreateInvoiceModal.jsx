@@ -436,7 +436,9 @@ export default function CreateInvoiceModal({ initialInvoice = null, currentUser,
                   >
                     <Trash2 size={16} />
                   </button>
-                ))}
+                )}
+              </div>
+            ))}
               </div>
             )}
           </div>
