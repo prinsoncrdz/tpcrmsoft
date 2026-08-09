@@ -327,7 +327,7 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
             className="btn-primary"
             style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: 800, background: 'var(--brand-green)', borderColor: 'var(--brand-green)', boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}
           >
-            <Plus size={16} /> Add Weekly Task
+            <Plus size={16} /> {isCeoOrAdmin ? 'Assign Weekly Task' : 'Add My Weekly Deliverable'}
           </button>
         </div>
       </div>
@@ -579,7 +579,9 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
         <div className="modal-overlay" style={{ zIndex: 100000 }}>
           <div className="modal-content" style={{ maxWidth: '540px', padding: '24px', borderRadius: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: '#0F172A' }}>Assign Weekly Deliverable Task</h3>
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: '#0F172A' }}>
+                {isCeoOrAdmin ? 'Assign Weekly Deliverable Task' : 'Add My Weekly Deliverable Work'}
+              </h3>
               <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
             </div>
 
@@ -673,7 +675,9 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button type="button" className="btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
-                <button type="submit" className="btn-primary" style={{ background: 'var(--brand-green)' }}>Assign Task</button>
+                <button type="submit" className="btn-primary" style={{ background: 'var(--brand-green)' }}>
+                  {isCeoOrAdmin ? 'Assign Task' : 'Save My Work'}
+                </button>
               </div>
             </form>
           </div>
