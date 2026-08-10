@@ -464,7 +464,40 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                   <h4 style={{ fontSize: '0.95rem', fontWeight: 800, marginTop: '4px' }}>{project.projectName}</h4>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{project.client}</span>
                 </div>
-                <span className={getStatusClass(project.status)}>{project.status}</span>
+                <select 
+                  value={project.status || 'In Progress'}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'Cancelled' || val === 'On Hold') {
+                      setStatusReasonModal({ project, newStatus: val });
+                      setReasonInput('');
+                    } else {
+                      onCellEdit(project, 'status', 10, val);
+                      if (val === 'Completed') {
+                        onCellEdit(project, 'completion', 9, '100%');
+                      }
+                    }
+                  }}
+                  style={{
+                    background: (project.status || '').toLowerCase().includes('complete') ? '#ECFDF5' : (project.status || '').toLowerCase().includes('review') ? '#FFFBEB' : (project.status || '').toLowerCase().includes('hold') ? '#FFF7ED' : (project.status || '').toLowerCase().includes('cancel') ? '#FEF2F2' : '#EFF6FF',
+                    color: (project.status || '').toLowerCase().includes('complete') ? '#047857' : (project.status || '').toLowerCase().includes('review') ? '#B45309' : (project.status || '').toLowerCase().includes('hold') ? '#C2410C' : (project.status || '').toLowerCase().includes('cancel') ? '#DC2626' : '#1E40AF',
+                    border: '1px solid ' + ((project.status || '').toLowerCase().includes('complete') ? '#A7F3D0' : (project.status || '').toLowerCase().includes('review') ? '#FDE68A' : (project.status || '').toLowerCase().includes('hold') ? '#FFEDD5' : (project.status || '').toLowerCase().includes('cancel') ? '#FECACA' : '#BFDBFE'),
+                    borderRadius: '12px',
+                    padding: '4px 10px',
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    outline: 'none'
+                  }}
+                >
+                  <option value="In Progress">In Progress</option>
+                  <option value="Review">Review</option>
+                  <option value="Completed">Completed (100%)</option>
+                  <option value="On Hold">On Hold (Reason)</option>
+                  <option value="Cancelled">Cancelled (Reason)</option>
+                  <option value="Planning">Planning</option>
+                </select>
               </div>
 
               <div className="crm-mobile-card-body">
@@ -812,45 +845,42 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                     )}
                   </td>
 
-                  {/* Status Cell (Editable by Assignees & CEO/Admin) */}
+                  {/* Status Cell (Direct Interactive Select Box) */}
                   <td>
-                    {editingCell?.id === project.id && editingCell?.field === 'status' ? (
-                      <select 
-                        className="cell-input"
-                        value={editValue}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setEditingCell(null);
-                          if (val === 'Cancelled' || val === 'On Hold') {
-                            setStatusReasonModal({ project, newStatus: val });
-                            setReasonInput('');
-                          } else {
-                            onCellEdit(project, 'status', 10, val);
-                            if (val === 'Completed') {
-                              onCellEdit(project, 'completion', 9, '100%');
-                            }
+                    <select 
+                      value={project.status || 'In Progress'}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === 'Cancelled' || val === 'On Hold') {
+                          setStatusReasonModal({ project, newStatus: val });
+                          setReasonInput('');
+                        } else {
+                          onCellEdit(project, 'status', 10, val);
+                          if (val === 'Completed') {
+                            onCellEdit(project, 'completion', 9, '100%');
                           }
-                        }}
-                        onBlur={() => setEditingCell(null)}
-                        autoFocus
-                      >
-                        <option value="In Progress">In Progress</option>
-                        <option value="Review">Review</option>
-                        <option value="Completed">Completed (100%)</option>
-                        <option value="On Hold">On Hold (Enter Reason)</option>
-                        <option value="Cancelled">Cancelled (Enter Reason)</option>
-                        <option value="Planning">Planning</option>
-                      </select>
-                    ) : (
-                      <div 
-                        className="editable-cell" 
-                        onClick={() => handleStartEdit(project, 'status', project.status, false)}
-                        title="Click to change project status"
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <span className={getStatusClass(project.status)}>{project.status}</span>
-                      </div>
-                    )}
+                        }
+                      }}
+                      style={{
+                        background: (project.status || '').toLowerCase().includes('complete') ? '#ECFDF5' : (project.status || '').toLowerCase().includes('review') ? '#FFFBEB' : (project.status || '').toLowerCase().includes('hold') ? '#FFF7ED' : (project.status || '').toLowerCase().includes('cancel') ? '#FEF2F2' : '#EFF6FF',
+                        color: (project.status || '').toLowerCase().includes('complete') ? '#047857' : (project.status || '').toLowerCase().includes('review') ? '#B45309' : (project.status || '').toLowerCase().includes('hold') ? '#C2410C' : (project.status || '').toLowerCase().includes('cancel') ? '#DC2626' : '#1E40AF',
+                        border: '1px solid ' + ((project.status || '').toLowerCase().includes('complete') ? '#A7F3D0' : (project.status || '').toLowerCase().includes('review') ? '#FDE68A' : (project.status || '').toLowerCase().includes('hold') ? '#FFEDD5' : (project.status || '').toLowerCase().includes('cancel') ? '#FECACA' : '#BFDBFE'),
+                        borderRadius: '12px',
+                        padding: '4px 10px',
+                        fontSize: '0.75rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        outline: 'none'
+                      }}
+                    >
+                      <option value="In Progress">In Progress</option>
+                      <option value="Review">Review</option>
+                      <option value="Completed">Completed (100%)</option>
+                      <option value="On Hold">On Hold (Reason)</option>
+                      <option value="Cancelled">Cancelled (Reason)</option>
+                      <option value="Planning">Planning</option>
+                    </select>
                   </td>
 
                   {/* Priority Cell (CEO / Admin Editable Only) */}

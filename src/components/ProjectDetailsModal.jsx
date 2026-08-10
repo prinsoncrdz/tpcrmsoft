@@ -34,57 +34,55 @@ export default function ProjectDetailsModal({ project, subTasks = [], onClose, o
     const content = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
-        <title>Project Details Summary Report</title>
+        <title>PROJECT INITIATION FORM - ${project.projectName || 'Project'}</title>
         <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #1E293B; }
-          h1 { color: #0F172A; border-bottom: 2px solid #10B981; padding-bottom: 8px; }
-          h2 { color: #1E293B; margin-top: 20px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-          th, td { border: 1px solid #CBD5E1; padding: 8px 12px; text-align: left; }
-          th { background-color: #0F172A; color: #FFFFFF; }
-          .badge { padding: 4px 8px; background: #ECFDF5; color: #047857; font-weight: bold; border-radius: 4px; }
+          body { font-family: Arial, sans-serif; line-height: 1.5; color: #1E293B; }
+          h1 { color: #0F172A; border-bottom: 3px solid #F59E0B; padding-bottom: 6px; font-size: 20px; }
+          h2 { color: #92400E; background: #FEF3C7; padding: 6px 10px; font-size: 14px; margin-top: 18px; border-left: 4px solid #F59E0B; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+          th, td { border: 1px solid #CBD5E1; padding: 6px 10px; text-align: left; }
+          th { background-color: #F8FAFC; color: #0F172A; font-weight: bold; width: 30%; }
         </style>
       </head>
       <body>
-        <h1>Turning Point Retail Solutions - Project Details Summary Report</h1>
-        <p><strong>Generated Date:</strong> ${new Date().toLocaleDateString()}</p>
+        <h1>Turning Point Retail Solutions — PROJECT INITIATION FORM</h1>
+        <p style="font-size: 11px; color: #64748B;">Complete one form per new project | Obtain CEO approval before commencing | CONFIDENTIAL</p>
         
-        <h2>1. Client & Project Overview</h2>
+        <h2>SECTION A – BASIC PROJECT INFORMATION</h2>
         <table>
-          <tr><th>Client Company Name</th><td>${project.companyName || 'N/A'}</td></tr>
-          <tr><th>Project Name / Scope</th><td>${project.projectName || project.scopeOfWork || 'N/A'}</td></tr>
-          <tr><th>Contact Person</th><td>${project.contactPerson || project.clientName || 'N/A'}</td></tr>
-          <tr><th>Contact Details</th><td>Phone: ${project.phone || 'N/A'} | Email: ${project.email || 'N/A'}</td></tr>
-          <tr><th>Business Registration Type</th><td>${project.registrationType || 'N/A'}</td></tr>
-          <tr><th>Assigned Team Member</th><td>${project.assignee || 'N/A'}</td></tr>
-          <tr><th>Target Completion Date</th><td>${project.targetDate || project.dueDate || 'N/A'}</td></tr>
-          <tr><th>Current Progress</th><td>${calculatedProgress}% Completed</td></tr>
+          <tr><th>Project Name</th><td>${project.projectName || 'N/A'}</td></tr>
+          <tr><th>Project ID (TP-SL-MM-YY)</th><td><strong>${project.projectId || project.id || 'N/A'}</strong></td></tr>
+          <tr><th>Client Name</th><td>${project.client || project.companyName || 'N/A'}</td></tr>
+          <tr><th>Client Contact</th><td>${project.clientContact || project.phone || 'N/A'}</td></tr>
+          <tr><th>Lead Generation Source</th><td>${project.leadGeneration || 'Direct Referral'}</td></tr>
+          <tr><th>Project Manager</th><td>${project.owner || 'Walter Dantis (CEO)'}</td></tr>
+          <tr><th>Lead Assignee</th><td>${project.assignee || 'Unassigned'}</td></tr>
+          <tr><th>Sector / Category</th><td>${project.sector || 'RETAIL & FRANCHISE'}</td></tr>
+          <tr><th>Priority</th><td>${project.priority || 'High'}</td></tr>
+          <tr><th>Start Date & End Date</th><td>${project.startDate || 'N/A'} to ${project.targetEndDate || project.targetDate || 'N/A'}</td></tr>
         </table>
 
-        <h2>2. Financial Summary</h2>
+        <h2>SECTION B – SCOPE & OBJECTIVES</h2>
+        <table>
+          <tr><th>Project Objective</th><td>${project.projectObjective || project.statusUpdate || 'Primary retail consulting and implementation objective.'}</td></tr>
+          <tr><th>Scope of Work</th><td>${project.scopeOfWork || 'End-to-end management, license coordination, and operational deployment.'}</td></tr>
+          <tr><th>Key Deliverables</th><td>${project.keyDeliverables || 'Milestone outputs and weekly deliverable reports.'}</td></tr>
+          <tr><th>Out of Scope</th><td>${project.outOfScope || 'Explicitly excluded tasks outside initial agreement.'}</td></tr>
+        </table>
+
+        <h2>SECTION C – FINANCIAL SUMMARY (CEO Exclusive Update)</h2>
         <table>
           <tr><th>Total Contract Value</th><td>${formatCurrency(totalContract)}</td></tr>
-          <tr><th>Deposit / Amount Paid</th><td>${formatCurrency(paidAmount)}</td></tr>
+          <tr><th>Advance Amount Paid</th><td>${formatCurrency(paidAmount)}</td></tr>
           <tr><th>Outstanding Balance Due</th><td>${formatCurrency(balanceDue)}</td></tr>
+          <tr><th>Payment Terms</th><td>${project.paymentTerms || '25% advance / 50% mid-way / 25% completion'}</td></tr>
         </table>
 
-        <h2>3. Milestone Tasks & Progress Updates (${completedTasks.length} / ${projectTasks.length} Completed)</h2>
+        <h2>SECTION D – APPROVAL SIGN-OFF</h2>
         <table>
-          <thead>
-            <tr><th>#</th><th>Task Title</th><th>Category</th><th>Assigned To</th><th>Weight %</th><th>Status</th></tr>
-          </thead>
-          <tbody>
-            ${projectTasks.map((t, idx) => `
-              <tr>
-                <td>${idx + 1}</td>
-                <td>${t.title || 'Task'}</td>
-                <td>${t.category || 'General'}</td>
-                <td>${t.assigneeName || 'Staff'}</td>
-                <td>${t.weightScore || Math.round(100 / (projectTasks.length || 1))}%</td>
-                <td>${t.status}</td>
-              </tr>
-            `).join('')}
-          </tbody>
+          <tr><th>Prepared By</th><td>${project.preparedBy || 'Admin Manager'}</td></tr>
+          <tr><th>Reviewed By</th><td>${project.owner || 'Walter Dantis (CEO)'}</td></tr>
+          <tr><th>Approved By (CEO)</th><td>Walter Dantis (CEO) — <strong>Status: ${project.status || 'Approved'}</strong></td></tr>
         </table>
       </body>
       </html>
