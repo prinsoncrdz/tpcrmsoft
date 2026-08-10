@@ -186,6 +186,7 @@ export default function Navbar({ activeTab, setActiveTab, currentUser, onLogout,
 
   const navItems = [
     { id: 'CRM', label: 'Project CRM Sheet', icon: <Building2 size={15} />, restricted: false },
+    { id: 'PROJECT_APPROVALS', label: 'Project Approvals 📋', icon: <FileText size={15} />, ceoAdminOnly: true },
     { id: 'WEEKLY_TASKS', label: 'Weekly Staff Tasks 📅', icon: <Calendar size={15} />, restricted: false },
     { id: 'TAX_INVOICES', label: 'Tax Invoices 🧾', icon: <FileText size={15} />, ceoAdminOnly: true },
     { id: 'TEAM_CHAT', label: 'Team Chat 💬', icon: <MessageSquare size={15} />, restricted: false },

@@ -5,6 +5,7 @@ import PettyCashView from './components/PettyCashView';
 import TeamChatView from './components/TeamChatView';
 import InvoiceTab from './components/InvoiceTab';
 import WeeklyStaffTasksView from './components/WeeklyStaffTasksView';
+import ProjectApprovalsPortal from './components/ProjectApprovalsPortal';
 import LoginModal from './components/LoginModal';
 import NewProjectModal from './components/NewProjectModal';
 import NewPettyCashModal from './components/NewPettyCashModal';
@@ -235,6 +236,27 @@ export default function App() {
             onOpenNewProjectModal={() => setShowNewProjectModal(true)}
             onRefresh={loadData}
             onDeleteProject={handleDeleteProject}
+          />
+        ) : activeTab === 'PROJECT_APPROVALS' ? (
+          <ProjectApprovalsPortal 
+            projects={projects}
+            currentUser={currentUser}
+            onApproveProject={async (approvedProj) => {
+              const updated = projects.map(p => p.id === approvedProj.id ? approvedProj : p);
+              setProjects(updated);
+              showToast(`Project "${approvedProj.projectName}" approved by CEO Walter Dantis!`);
+              if (syncCellToGoogleSheet) {
+                await syncCellToGoogleSheet(gasUrl, {
+                  gid: SHEET_GIDS.CRM,
+                  rowIndex: approvedProj.rowIndex || 10,
+                  columnIndex: 10,
+                  value: 'In Progress'
+                });
+              }
+              try {
+                if (typeof confetti === 'function') confetti({ particleCount: 80, spread: 80 });
+              } catch(e) {}
+            }}
           />
         ) : activeTab === 'WEEKLY_TASKS' ? (
           <WeeklyStaffTasksView 
