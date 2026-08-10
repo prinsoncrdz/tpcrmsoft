@@ -258,7 +258,16 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
   const [ceoFeedbackInput, setCeoFeedbackInput] = useState('');
   const [ceoActionType, setCeoActionType] = useState('APPROVE'); // 'APPROVE' | 'REVISION'
 
+  const dayOfWeekNum = new Date().getDay(); // 0 = Sun, 5 = Fri, 6 = Sat
+  const isFridayOrSaturday = dayOfWeekNum === 5 || dayOfWeekNum === 6;
+  const canSubmitNow = isFridayOrSaturday || isCeoOrAdmin;
+
   const handleSubmitWeeklyReport = () => {
+    if (!canSubmitNow) {
+      alert('🔒 Submitting to CEO is enabled exclusively on Friday and Saturday. You can continue filling out and logging your daily work anytime!');
+      return;
+    }
+
     const userWeekTasks = roleFilteredTasks.filter(t => t.weekId === selectedWeek);
     if (userWeekTasks.length === 0) {
       alert('Please add at least one task before submitting your weekly report to CEO!');
@@ -285,7 +294,7 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
       });
     });
 
-    alert('🚀 Your Friday Weekly Deliverables Report has been submitted live to CEO Walter Dantis for verification!');
+    alert('🚀 Your Friday/Saturday Weekly Deliverables Report has been submitted live to CEO Walter Dantis for verification!');
   };
 
   const handlePrintPDF = () => {
@@ -649,14 +658,15 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
                   <td style={{ padding: '12px', textAlign: 'center' }}>
                     {(() => {
                       const isAssignedStaff = currentUser?.email && t.userEmail && currentUser.email.toLowerCase() === t.userEmail.toLowerCase();
-                      const isTodayFriday = new Date().getDay() === 5; // 5 = Friday
-                      const canSubmitNow = isTodayFriday || isCeoOrAdmin; // Staff can submit on Friday; CEO/Admin can always test
+                      const dayNum = new Date().getDay();
+                      const isFriOrSat = dayNum === 5 || dayNum === 6;
+                      const canSubmitTaskNow = isFriOrSat || isCeoOrAdmin;
 
                       return (
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
                           {/* ONLY Assigned Staff Member (or CEO/Admin) can Submit work to CEO */}
                           {(isAssignedStaff || isCeoOrAdmin) && t.status !== 'Approved' && t.status !== 'Submitted' && (
-                            canSubmitNow ? (
+                            canSubmitTaskNow ? (
                               <button
                                 onClick={() => setSubmittingTaskId(t.id)}
                                 style={{ background: '#2563EB', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
@@ -668,9 +678,9 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
                               <button
                                 disabled
                                 style={{ background: '#F1F5F9', color: '#94A3B8', border: '1px solid #CBD5E1', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 700, cursor: 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
-                                title="Submission activates every Friday by 5:00 PM. You can update your daily work anytime!"
+                                title="Submission opens every Friday & Saturday. You can update your daily work anytime Mon–Thu!"
                               >
-                                <Clock size={11} /> Submit Opens Friday
+                                <Clock size={11} /> Opens Fri & Sat
                               </button>
                             )
                           )}
