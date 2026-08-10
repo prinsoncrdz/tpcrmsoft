@@ -104,29 +104,37 @@ export default function NewProjectModal({ onClose, onAddProject, currentUser }) 
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.projectName || !formData.client) {
       alert('Please fill out all mandatory fields in Section A.');
       return;
     }
 
-    setSubmitted(true);
+    try {
+      setSubmitted(true);
 
-    const projectPayload = {
-      ...formData,
-      id: formData.projectId,
-      value: formData.contractValueUsd || formData.estimatedRevenueUsd || '$0',
-      depositPaid: formData.advanceAmountUsd || '$0',
-      progress: 0,
-      driveLink: ''
-    };
+      const projectPayload = {
+        ...formData,
+        id: formData.projectId || `TP-PRJ-${Date.now()}`,
+        projectId: formData.projectId || `TP-PRJ-${Date.now()}`,
+        value: formData.contractValueUsd || formData.estimatedRevenueUsd || '$0',
+        depositPaid: formData.advanceAmountUsd || '$0',
+        progress: 0,
+        driveLink: ''
+      };
 
-    onAddProject(projectPayload);
+      if (onAddProject) {
+        await onAddProject(projectPayload);
+      }
 
-    setTimeout(() => {
-      onClose();
-    }, 2800);
+      setTimeout(() => {
+        onClose();
+      }, 2500);
+    } catch (err) {
+      console.error('Submit Error:', err);
+      alert(`Project saved locally! Error syncing: ${err.message || err}`);
+    }
   };
 
   return (

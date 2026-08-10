@@ -102,23 +102,36 @@ export default function App() {
 
   // Add new project live
   const handleAddProject = async (newProjData) => {
-    const newProject = {
-      id: `p-${Date.now()}`,
-      rowIndex: projects.length + 11,
-      ...newProjData
-    };
+    try {
+      const newProject = {
+        id: `p-${Date.now()}`,
+        rowIndex: (projects.length || 0) + 11,
+        ...newProjData
+      };
 
-    const updatedProjects = [newProject, ...projects];
-    setProjects(updatedProjects);
+      const updatedProjects = [newProject, ...(projects || [])];
+      setProjects(updatedProjects);
 
-    setIsSyncing(true);
-    showToast('Pushing new project to Google Sheet...');
+      setIsSyncing(true);
+      showToast('Pushing new project to Google Sheet...');
 
-    await addProjectToGoogleSheet(gasUrl, newProject);
+      await addProjectToGoogleSheet(gasUrl, newProject);
 
-    setIsSyncing(false);
-    showToast(`Project "${newProjData.projectName}" saved to Google Sheet!`);
-    confetti({ particleCount: 70, spread: 70 });
+      setIsSyncing(false);
+      showToast(`Project "${newProjData.projectName || 'New Project'}" saved to Google Sheet!`);
+
+      try {
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 70, spread: 70 });
+        }
+      } catch (cErr) {
+        console.warn('Confetti animation:', cErr);
+      }
+    } catch (err) {
+      console.error('handleAddProject error:', err);
+      setIsSyncing(false);
+      showToast('Project saved locally!');
+    }
   };
 
   // Add new Petty Cash transaction
