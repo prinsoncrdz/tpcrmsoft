@@ -258,13 +258,22 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
   const [ceoFeedbackInput, setCeoFeedbackInput] = useState('');
   const [ceoActionType, setCeoActionType] = useState('APPROVE'); // 'APPROVE' | 'REVISION'
 
-  const dayOfWeekNum = new Date().getDay(); // 0 = Sun, 5 = Fri, 6 = Sat
-  const isFridayOrSaturday = dayOfWeekNum === 5 || dayOfWeekNum === 6;
-  const canSubmitNow = isFridayOrSaturday || isCeoOrAdmin;
+  const now = new Date();
+  const dayOfWeekNum = now.getDay(); // 0 = Sun, 1 = Mon, 5 = Fri, 6 = Sat
+  const hourNum = now.getHours();
+
+  // CEO Verification & Staff Submission Window: Friday, Saturday, Sunday, and Monday until 12:00 PM
+  const isSubmissionWindowOpen = 
+    dayOfWeekNum === 5 || // Friday
+    dayOfWeekNum === 6 || // Saturday
+    dayOfWeekNum === 0 || // Sunday
+    (dayOfWeekNum === 1 && hourNum < 12); // Monday before 12:00 PM
+
+  const canSubmitNow = isSubmissionWindowOpen || isCeoOrAdmin;
 
   const handleSubmitWeeklyReport = () => {
     if (!canSubmitNow) {
-      alert('🔒 Submitting to CEO is enabled exclusively on Friday and Saturday. You can continue filling out and logging your daily work anytime!');
+      alert('🔒 Submitting to CEO is enabled from Friday through Monday 12:00 PM. You can continue filling out and logging your daily work anytime!');
       return;
     }
 
@@ -294,7 +303,7 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
       });
     });
 
-    alert('🚀 Your Friday/Saturday Weekly Deliverables Report has been submitted live to CEO Walter Dantis for verification!');
+    alert('🚀 Your Weekly Deliverables Report has been submitted live to CEO Walter Dantis for verification!');
   };
 
   const handlePrintPDF = () => {
@@ -417,16 +426,16 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
               ⏰ Mon–Fri 8:00 AM – 5:00 PM
             </span>
             <span style={{ background: '#F59E0B', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
-              🍱 1 Hr Lunch Break (12:00 PM – 1:00 PM)
+              🍱 1 Hr Lunch
             </span>
             <span style={{ background: '#8B5CF6', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
-              📅 Submit Every Friday by 5:00 PM
+              📅 CEO Verification Window: Fri–Mon 12:00 PM
             </span>
             <span style={{ fontSize: '0.78rem', color: '#94A3B8' }}>Live Cloud Sync</span>
           </div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#FFFFFF', margin: 0 }}>Weekly Staff Tasks & Deliverables Report</h2>
           <p style={{ fontSize: '0.82rem', color: '#94A3B8', margin: '4px 0 0 0' }}>
-            Working schedule: 8:00 AM – 5:00 PM (Monday to Friday). Assigned staff submit completed deliverables every Friday by 5:00 PM for CEO Walter Dantis to verify & approve.
+            Working schedule: 8:00 AM – 5:00 PM (Mon–Fri). Staff log daily work; CEO Walter Dantis verifies and approves updates from Friday through Monday 12:00 PM.
           </p>
         </div>
 
@@ -658,9 +667,11 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
                   <td style={{ padding: '12px', textAlign: 'center' }}>
                     {(() => {
                       const isAssignedStaff = currentUser?.email && t.userEmail && currentUser.email.toLowerCase() === t.userEmail.toLowerCase();
-                      const dayNum = new Date().getDay();
-                      const isFriOrSat = dayNum === 5 || dayNum === 6;
-                      const canSubmitTaskNow = isFriOrSat || isCeoOrAdmin;
+                      const dNow = new Date();
+                      const dNum = dNow.getDay(); // 0 = Sun, 1 = Mon, 5 = Fri, 6 = Sat
+                      const hNum = dNow.getHours();
+                      const isWindowOpen = dNum === 5 || dNum === 6 || dNum === 0 || (dNum === 1 && hNum < 12);
+                      const canSubmitTaskNow = isWindowOpen || isCeoOrAdmin;
 
                       return (
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -678,9 +689,9 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
                               <button
                                 disabled
                                 style={{ background: '#F1F5F9', color: '#94A3B8', border: '1px solid #CBD5E1', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 700, cursor: 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
-                                title="Submission opens every Friday & Saturday. You can update your daily work anytime Mon–Thu!"
+                                title="Submission opens Friday through Monday 12:00 PM. You can update your daily work anytime!"
                               >
-                                <Clock size={11} /> Opens Fri & Sat
+                                <Clock size={11} /> Opens Fri–Mon 12PM
                               </button>
                             )
                           )}
