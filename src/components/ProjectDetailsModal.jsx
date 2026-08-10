@@ -161,7 +161,10 @@ export default function ProjectDetailsModal({ project, subTasks = [], onClose, o
             <div style={{ textAlign: 'right' }}>
               <select
                 value={project.status || 'In Progress'}
+                disabled={!isCeo}
+                title={isCeo ? 'Update Project Status' : '🔒 Project Status Update Reserved Exclusively for CEO Walter Dantis'}
                 onChange={(e) => {
+                  if (!isCeo) return;
                   if (onCellEdit) {
                     onCellEdit(project, 'status', 10, e.target.value);
                     if (e.target.value === 'Completed') {

@@ -466,7 +466,10 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                 </div>
                 <select 
                   value={project.status || 'In Progress'}
+                  disabled={!isCeo}
+                  title={isCeo ? 'Update Project Status' : '🔒 Project Status Update Reserved Exclusively for CEO Walter Dantis'}
                   onChange={(e) => {
+                    if (!isCeo) return;
                     const val = e.target.value;
                     if (val === 'Cancelled' || val === 'On Hold') {
                       setStatusReasonModal({ project, newStatus: val });
@@ -845,11 +848,14 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
                     )}
                   </td>
 
-                  {/* Status Cell (Direct Interactive Select Box) */}
+                  {/* Status Cell (CEO Exclusive Interactive Select Box) */}
                   <td>
                     <select 
                       value={project.status || 'In Progress'}
+                      disabled={!isCeo}
+                      title={isCeo ? 'Update Project Status' : '🔒 Project Status Update Reserved Exclusively for CEO Walter Dantis'}
                       onChange={(e) => {
+                        if (!isCeo) return;
                         const val = e.target.value;
                         if (val === 'Cancelled' || val === 'On Hold') {
                           setStatusReasonModal({ project, newStatus: val });
