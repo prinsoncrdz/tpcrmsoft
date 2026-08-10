@@ -253,16 +253,21 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
     });
   };
 
+  // CEO Feedback Modal State
+  const [ceoFeedbackModalTask, setCeoFeedbackModalTask] = useState(null);
+  const [ceoFeedbackInput, setCeoFeedbackInput] = useState('');
+  const [ceoActionType, setCeoActionType] = useState('APPROVE'); // 'APPROVE' | 'REVISION'
+
   const handleSubmitWeeklyReport = () => {
-    const userWeekTasks = weeklyTasks.filter(t => t.weekId === selectedWeek && t.userEmail.toLowerCase() === (currentUser?.email || selectedUserEmail).toLowerCase());
+    const userWeekTasks = roleFilteredTasks.filter(t => t.weekId === selectedWeek);
     if (userWeekTasks.length === 0) {
-      alert('Please add at least one task before submitting your weekly report!');
+      alert('Please add at least one task before submitting your weekly report to CEO!');
       return;
     }
 
     const updated = weeklyTasks.map(t => {
-      if (t.weekId === selectedWeek && t.userEmail.toLowerCase() === (currentUser?.email || selectedUserEmail).toLowerCase()) {
-        return { ...t, submittedToCeo: true, updatedAt: new Date().toISOString() };
+      if (t.weekId === selectedWeek && (isCeoOrAdmin || t.userEmail.toLowerCase() === userRoleEmail)) {
+        return { ...t, status: 'Submitted', submittedToCeo: true, updatedAt: new Date().toISOString() };
       }
       return t;
     });
@@ -273,14 +278,14 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
     ['walterdantis@turningpointretail.com', 'admin@turningpointretail.com'].forEach(ceoEmail => {
       createNotification({
         recipientEmail: ceoEmail,
-        title: `📅 Weekly Staff Report Submitted by ${currentUser?.name}`,
+        title: `📅 Friday Staff Report Submitted by ${currentUser?.name}`,
         message: `${currentUser?.name} submitted weekly tasks report for ${weeksList.find(w => w.id === selectedWeek)?.label}. Total Tasks: ${userWeekTasks.length}`,
         type: 'SUBMISSION',
         createdByName: currentUser?.name
       });
     });
 
-    alert('✅ Your Weekly Tasks Report has been submitted successfully to CEO Walter Dantis!');
+    alert('🚀 Your Friday Weekly Deliverables Report has been submitted live to CEO Walter Dantis for verification!');
   };
 
   const handlePrintPDF = () => {
@@ -433,6 +438,15 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
             title="Download / Print PDF Staff-Wise Weekly Report"
           >
             <Printer size={15} /> Export PDF
+          </button>
+
+          <button 
+            onClick={handleSubmitWeeklyReport}
+            className="btn-primary"
+            style={{ padding: '10px 18px', fontSize: '0.82rem', fontWeight: 800, background: '#2563EB', borderColor: '#2563EB', boxShadow: '0 4px 12px rgba(37,99,235,0.3)' }}
+            title="Submit all weekly tasks to CEO Walter Dantis for Friday verification"
+          >
+            <Send size={15} /> 🚀 Submit All Tasks to CEO
           </button>
 
           <button 
@@ -665,14 +679,22 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
                           {isCeoOrAdmin && t.status !== 'Approved' && (
                             <>
                               <button
-                                onClick={() => handleApproveTaskByCeo(t)}
+                                onClick={() => {
+                                  setCeoActionType('APPROVE');
+                                  setCeoFeedbackInput('Verified & Approved by CEO Walter Dantis');
+                                  setCeoFeedbackModalTask(t);
+                                }}
                                 style={{ background: '#10B981', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
                                 title="CEO Verify & Approve Task"
                               >
                                 <Check size={11} /> CEO Approve
                               </button>
                               <button
-                                onClick={() => handleRejectTaskByCeo(t)}
+                                onClick={() => {
+                                  setCeoActionType('REVISION');
+                                  setCeoFeedbackInput('');
+                                  setCeoFeedbackModalTask(t);
+                                }}
                                 style={{ background: '#F59E0B', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
                                 title="Request Revision"
                               >
@@ -932,6 +954,84 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button type="button" className="btn-secondary" onClick={() => setEditingTask(null)}>Cancel</button>
                 <button type="submit" className="btn-primary" style={{ background: 'var(--brand-green)' }}>Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CEO Feedback & Verification Modal */}
+      {ceoFeedbackModalTask && (
+        <div className="modal-overlay" style={{ zIndex: 100000 }}>
+          <div className="modal-content" style={{ maxWidth: '520px', padding: '24px', borderRadius: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: '#0F172A' }}>
+                {ceoActionType === 'APPROVE' ? '✅ CEO Verification & Approval' : '⚠️ Request Task Revision'}
+              </h3>
+              <button onClick={() => setCeoFeedbackModalTask(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (ceoActionType === 'APPROVE') {
+                const updated = weeklyTasks.map(t => t.id === ceoFeedbackModalTask.id ? {
+                  ...t,
+                  status: 'Approved',
+                  ceoFeedback: ceoFeedbackInput.trim() || 'Verified & Approved by CEO Walter Dantis',
+                  approvedAt: new Date().toISOString(),
+                  approvedByName: currentUser?.name || 'Walter Dantis (CEO)',
+                  updatedAt: new Date().toISOString()
+                } : t);
+                saveWeeklyTasks(updated);
+                createNotification({
+                  recipientEmail: ceoFeedbackModalTask.userEmail,
+                  title: `🎉 CEO Approved Your Weekly Task!`,
+                  message: `CEO Walter Dantis verified & approved your weekly task "${ceoFeedbackModalTask.title}". Feedback: "${ceoFeedbackInput.trim() || 'Approved!'}"`,
+                  type: 'APPROVAL',
+                  createdByName: currentUser?.name
+                });
+              } else {
+                const updated = weeklyTasks.map(t => t.id === ceoFeedbackModalTask.id ? {
+                  ...t,
+                  status: 'Needs Revision',
+                  ceoFeedback: ceoFeedbackInput.trim() || 'Please review deliverable details.',
+                  updatedAt: new Date().toISOString()
+                } : t);
+                saveWeeklyTasks(updated);
+                createNotification({
+                  recipientEmail: ceoFeedbackModalTask.userEmail,
+                  title: `⚠️ CEO Requested Revision on Weekly Task`,
+                  message: `CEO Walter Dantis requested revision on "${ceoFeedbackModalTask.title}". Feedback: "${ceoFeedbackInput.trim()}"`,
+                  type: 'REVISION',
+                  createdByName: currentUser?.name
+                });
+              }
+              setCeoFeedbackModalTask(null);
+              setCeoFeedbackInput('');
+            }}>
+              <p style={{ fontSize: '0.82rem', color: '#475569', marginBottom: '14px' }}>
+                Deliverable: <strong>"{ceoFeedbackModalTask.title}"</strong> ({ceoFeedbackModalTask.userName})
+              </p>
+
+              <div style={{ marginBottom: '18px' }}>
+                <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0F172A', display: 'block', marginBottom: '6px' }}>
+                  CEO Feedback / Verification Note *
+                </label>
+                <textarea 
+                  rows="3" 
+                  placeholder={ceoActionType === 'APPROVE' ? "e.g. Excellent execution. Deliverables verified." : "e.g. Please update MOC registration document attachments and re-submit."} 
+                  value={ceoFeedbackInput} 
+                  onChange={e => setCeoFeedbackInput(e.target.value)} 
+                  required
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.85rem' }} 
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button type="button" className="btn-secondary" onClick={() => setCeoFeedbackModalTask(null)}>Cancel</button>
+                <button type="submit" className="btn-primary" style={{ background: ceoActionType === 'APPROVE' ? '#10B981' : '#F59E0B' }}>
+                  {ceoActionType === 'APPROVE' ? 'Verify & Approve' : 'Submit Revision Notice'}
+                </button>
               </div>
             </form>
           </div>
