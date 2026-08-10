@@ -414,22 +414,21 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
             <span style={{ background: 'var(--brand-green)', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>
-              Weekly Staff Tasks & Submission Portal
+              TBC Global Partners • Weekly Staff Update
             </span>
             <span style={{ background: '#3B82F6', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
-              ⏰ Mon–Fri 8:00 AM – 5:00 PM
+              ⏰ Daily Work Logging (Mon–Thu)
             </span>
             <span style={{ background: '#8B5CF6', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
-              📅 Staff Submit: Friday & Saturday
+              📅 Submit Window: Friday & Saturday
             </span>
             <span style={{ background: '#EC4899', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
-              👑 CEO Review & Verify: Sat, Sun & Mon 12:00 PM
+              👑 CEO Review: Sat–Mon 12:00 PM
             </span>
-            <span style={{ fontSize: '0.78rem', color: '#94A3B8' }}>Live Cloud Sync</span>
           </div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#FFFFFF', margin: 0 }}>Friday Staff Task Update Portal</h2>
           <p style={{ fontSize: '0.82rem', color: '#94A3B8', margin: '4px 0 0 0' }}>
-            Staff log daily work throughout the week (Mon–Thu); Submit button unlocks every Friday & Saturday for CEO Walter Dantis to verify & approve (Sat–Mon 12:00 PM).
+            Staff can open, view, and log daily tasks on any day of the week. Submitting to CEO Walter Dantis unlocks every Friday & Saturday.
           </p>
         </div>
 
