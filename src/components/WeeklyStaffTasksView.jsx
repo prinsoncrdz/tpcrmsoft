@@ -259,13 +259,15 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
   const [ceoActionType, setCeoActionType] = useState('APPROVE'); // 'APPROVE' | 'REVISION'
 
   const now = new Date();
-  const dayOfWeekNum = now.getDay(); // 0 = Sun, 5 = Fri, 6 = Sat
+  const dayOfWeekNum = now.getDay(); // 0 = Sun, 1 = Mon, 5 = Fri, 6 = Sat
   const isFridayOrSaturday = dayOfWeekNum === 5 || dayOfWeekNum === 6;
+  // CEO Verification Window: Saturday, Sunday, and Monday until 12:00 PM
+  const isCeoVerificationWindow = dayOfWeekNum === 6 || dayOfWeekNum === 0 || (dayOfWeekNum === 1 && now.getHours() < 12);
   const canSubmitNow = isFridayOrSaturday || isCeoOrAdmin;
 
   const handleSubmitWeeklyReport = () => {
     if (!canSubmitNow) {
-      alert('🔒 Submitting to CEO is enabled exclusively on Friday and Saturday! You can fill and save your daily task entries anytime Mon–Thu.');
+      alert('🔒 Submitting to CEO is enabled exclusively on Friday and Saturday! You can fill, edit, and save your daily task entries anytime Mon–Thu.');
       return;
     }
 
@@ -418,13 +420,16 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
               ⏰ Mon–Fri 8:00 AM – 5:00 PM
             </span>
             <span style={{ background: '#8B5CF6', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
-              📅 Friday & Saturday CEO Submission Window
+              📅 Staff Submit: Friday & Saturday
+            </span>
+            <span style={{ background: '#EC4899', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
+              👑 CEO Review & Verify: Sat, Sun & Mon 12:00 PM
             </span>
             <span style={{ fontSize: '0.78rem', color: '#94A3B8' }}>Live Cloud Sync</span>
           </div>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#FFFFFF', margin: 0 }}>Weekly Staff Tasks & Deliverables Report</h2>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#FFFFFF', margin: 0 }}>Friday Staff Task Update Portal</h2>
           <p style={{ fontSize: '0.82rem', color: '#94A3B8', margin: '4px 0 0 0' }}>
-            Staff log daily work throughout the week (Mon–Thu); Submit button unlocks every Friday & Saturday for CEO Walter Dantis to verify & approve.
+            Staff log daily work throughout the week (Mon–Thu); Submit button unlocks every Friday & Saturday for CEO Walter Dantis to verify & approve (Sat–Mon 12:00 PM).
           </p>
         </div>
 
