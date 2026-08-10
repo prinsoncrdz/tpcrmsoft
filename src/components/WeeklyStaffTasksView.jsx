@@ -452,14 +452,25 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
             <Printer size={15} /> Export PDF
           </button>
 
-          <button 
-            onClick={handleSubmitWeeklyReport}
-            className="btn-primary"
-            style={{ padding: '10px 18px', fontSize: '0.82rem', fontWeight: 800, background: '#2563EB', borderColor: '#2563EB', boxShadow: '0 4px 12px rgba(37,99,235,0.3)' }}
-            title="Submit all weekly tasks to CEO Walter Dantis for Friday verification"
-          >
-            <Send size={15} /> 🚀 Submit All Tasks to CEO
-          </button>
+          {canSubmitNow ? (
+            <button 
+              onClick={handleSubmitWeeklyReport}
+              className="btn-primary"
+              style={{ padding: '10px 18px', fontSize: '0.82rem', fontWeight: 800, background: '#2563EB', borderColor: '#2563EB', boxShadow: '0 4px 12px rgba(37,99,235,0.3)', cursor: 'pointer' }}
+              title="Submit all weekly tasks to CEO Walter Dantis for Friday verification"
+            >
+              <Send size={15} /> 🚀 Submit All Tasks to CEO
+            </button>
+          ) : (
+            <button 
+              disabled
+              className="btn-primary"
+              style={{ padding: '10px 18px', fontSize: '0.82rem', fontWeight: 700, background: '#F1F5F9', color: '#94A3B8', border: '1px solid #CBD5E1', cursor: 'not-allowed', boxShadow: 'none' }}
+              title="Form is open to view & fill daily tasks. Submission to CEO unlocks every Friday & Saturday!"
+            >
+              <Clock size={15} /> 🔒 Submit Opens Fri & Sat
+            </button>
+          )}
 
           <button 
             onClick={() => setShowAddModal(true)}
