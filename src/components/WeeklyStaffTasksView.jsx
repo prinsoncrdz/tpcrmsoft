@@ -258,24 +258,9 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
   const [ceoFeedbackInput, setCeoFeedbackInput] = useState('');
   const [ceoActionType, setCeoActionType] = useState('APPROVE'); // 'APPROVE' | 'REVISION'
 
-  const now = new Date();
-  const dayOfWeekNum = now.getDay(); // 0 = Sun, 1 = Mon, 5 = Fri, 6 = Sat
-  const hourNum = now.getHours();
-
-  // CEO Verification & Staff Submission Window: Friday, Saturday, Sunday, and Monday until 12:00 PM
-  const isSubmissionWindowOpen = 
-    dayOfWeekNum === 5 || // Friday
-    dayOfWeekNum === 6 || // Saturday
-    dayOfWeekNum === 0 || // Sunday
-    (dayOfWeekNum === 1 && hourNum < 12); // Monday before 12:00 PM
-
-  const canSubmitNow = isSubmissionWindowOpen || isCeoOrAdmin;
+  const canSubmitNow = true; // Staff can open portal and submit task updates on any day
 
   const handleSubmitWeeklyReport = () => {
-    if (!canSubmitNow) {
-      alert('🔒 Submitting to CEO is enabled from Friday through Monday 12:00 PM. You can continue filling out and logging your daily work anytime!');
-      return;
-    }
 
     const userWeekTasks = roleFilteredTasks.filter(t => t.weekId === selectedWeek);
     if (userWeekTasks.length === 0) {
@@ -425,17 +410,14 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
             <span style={{ background: '#3B82F6', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
               ⏰ Mon–Fri 8:00 AM – 5:00 PM
             </span>
-            <span style={{ background: '#F59E0B', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
-              🍱 1 Hr Lunch
-            </span>
             <span style={{ background: '#8B5CF6', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
-              📅 CEO Verification Window: Fri–Mon 12:00 PM
+              📅 Open Submission & CEO Review Portal
             </span>
             <span style={{ fontSize: '0.78rem', color: '#94A3B8' }}>Live Cloud Sync</span>
           </div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#FFFFFF', margin: 0 }}>Weekly Staff Tasks & Deliverables Report</h2>
           <p style={{ fontSize: '0.82rem', color: '#94A3B8', margin: '4px 0 0 0' }}>
-            Working schedule: 8:00 AM – 5:00 PM (Mon–Fri). Staff log daily work; CEO Walter Dantis verifies and approves updates from Friday through Monday 12:00 PM.
+            Staff can fill daily work or pick tasks and submit to CEO Walter Dantis on any day. CEO verifies and approves reports live.
           </p>
         </div>
 
@@ -667,33 +649,19 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
                   <td style={{ padding: '12px', textAlign: 'center' }}>
                     {(() => {
                       const isAssignedStaff = currentUser?.email && t.userEmail && currentUser.email.toLowerCase() === t.userEmail.toLowerCase();
-                      const dNow = new Date();
-                      const dNum = dNow.getDay(); // 0 = Sun, 1 = Mon, 5 = Fri, 6 = Sat
-                      const hNum = dNow.getHours();
-                      const isWindowOpen = dNum === 5 || dNum === 6 || dNum === 0 || (dNum === 1 && hNum < 12);
-                      const canSubmitTaskNow = isWindowOpen || isCeoOrAdmin;
+                      const canSubmitTaskNow = true; // Unlocked on all days
 
                       return (
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
                           {/* ONLY Assigned Staff Member (or CEO/Admin) can Submit work to CEO */}
                           {(isAssignedStaff || isCeoOrAdmin) && t.status !== 'Approved' && t.status !== 'Submitted' && (
-                            canSubmitTaskNow ? (
-                              <button
-                                onClick={() => setSubmittingTaskId(t.id)}
-                                style={{ background: '#2563EB', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
-                                title="Submit Task to CEO for Verification"
-                              >
-                                <Send size={11} /> Submit to CEO
-                              </button>
-                            ) : (
-                              <button
-                                disabled
-                                style={{ background: '#F1F5F9', color: '#94A3B8', border: '1px solid #CBD5E1', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 700, cursor: 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
-                                title="Submission opens Friday through Monday 12:00 PM. You can update your daily work anytime!"
-                              >
-                                <Clock size={11} /> Opens Fri–Mon 12PM
-                              </button>
-                            )
+                            <button
+                              onClick={() => setSubmittingTaskId(t.id)}
+                              style={{ background: '#2563EB', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                              title="Submit Task to CEO for Verification"
+                            >
+                              <Send size={11} /> Submit to CEO
+                            </button>
                           )}
 
                           {/* ONLY CEO & Admin can Verify & Approve or Request Revision */}
