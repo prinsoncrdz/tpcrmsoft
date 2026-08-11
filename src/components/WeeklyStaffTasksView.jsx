@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Plus, CheckCircle2, Clock, AlertCircle, Send, FileText, Printer, User, Building, Sparkles, ShieldCheck, Filter, X, Trash2, Check, Edit2 } from 'lucide-react';
-import { SYSTEM_USERS, DEPLOYED_GAS_URL } from '../services/googleSheets';
+import { SYSTEM_USERS, DEPLOYED_GAS_URL, fetchGlobalWeeklyTasks, saveGlobalWeeklyTasks } from '../services/googleSheets';
 import { createNotification } from '../services/notifications';
 
 const WEEKLY_TASKS_STORAGE_KEY = 'tp_crm_weekly_staff_tasks_v1';
@@ -55,15 +55,26 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
     ];
   });
 
-  // Cloud fetch
+  // Real-time Cloud Fetch & Polling for Weekly Tasks
   useEffect(() => {
     let isMounted = true;
-    const fetchCloudWeeklyTasks = async () => {
+    const fetchCloudWeeklyTasksData = async () => {
       try {
-        const res = await fetch(`${DEPLOYED_GAS_URL}?action=getNotifications&t=${Date.now()}`);
-      } catch (err) {}
+        const cloudTasks = await fetchGlobalWeeklyTasks();
+        if (isMounted && Array.isArray(cloudTasks) && cloudTasks.length > 0) {
+          setWeeklyTasks(cloudTasks);
+          localStorage.setItem(WEEKLY_TASKS_STORAGE_KEY, JSON.stringify(cloudTasks));
+        }
+      } catch (err) {
+        console.warn('Real-time task poll warning:', err);
+      }
     };
-    fetchCloudWeeklyTasks();
+    fetchCloudWeeklyTasksData();
+    const interval = setInterval(fetchCloudWeeklyTasksData, 8000); // 8s real-time polling pulse
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   // New task form state
@@ -86,6 +97,8 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
   const saveWeeklyTasks = (updated) => {
     setWeeklyTasks(updated);
     localStorage.setItem(WEEKLY_TASKS_STORAGE_KEY, JSON.stringify(updated));
+    // Real-time Cloud Push
+    saveGlobalWeeklyTasks(null, updated);
   };
 
   const handleAddTask = (e) => {

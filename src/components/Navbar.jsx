@@ -204,12 +204,27 @@ export default function Navbar({ activeTab, setActiveTab, currentUser, onLogout,
 
   return (
     <nav className="navbar">
-      <div className="brand-section">
+      <div className="brand-section" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <img 
           src="https://www.turningpointretail.com/images/turning-point-new-logo.png" 
           alt="Turning Point Retail Solutions" 
           className="brand-logo"
         />
+        <span style={{ 
+          background: 'linear-gradient(135deg, #10B981, #059669)', 
+          color: '#FFFFFF', 
+          fontSize: '0.68rem', 
+          fontWeight: 900, 
+          padding: '3px 8px', 
+          borderRadius: '12px',
+          boxShadow: '0 2px 8px rgba(16,185,129,0.3)',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px'
+        }}>
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#74F6B9', animation: 'pulse 1.5s infinite' }} />
+          ⚡ LIVE REAL-TIME
+        </span>
       </div>
 
       <div className="nav-tabs" style={{ display: mobileMenuOpen ? 'flex' : undefined }}>

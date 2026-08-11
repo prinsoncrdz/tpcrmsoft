@@ -620,3 +620,40 @@ export async function saveGlobalPnLData(gasUrl, pnlData) {
   return null;
 }
 
+// FETCH GLOBAL WEEKLY STAFF TASKS FROM CLOUD BACKEND
+export async function fetchGlobalWeeklyTasks(gasUrl) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(`${targetUrl}?action=getWeeklyTasks&t=${Date.now()}`);
+    if (!response.ok) throw new Error('Network response not ok');
+    const json = await response.json();
+    if (json.status === 'success' && Array.isArray(json.data)) {
+      return json.data;
+    }
+  } catch (err) {
+    console.warn('Global Weekly Tasks fetch error:', err);
+  }
+  return null;
+}
+
+// SAVE GLOBAL WEEKLY STAFF TASKS TO CLOUD BACKEND
+export async function saveGlobalWeeklyTasks(gasUrl, tasks) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'saveWeeklyTasks',
+        tasks: tasks || []
+      })
+    });
+    const json = await response.json();
+    return json.data || null;
+  } catch (err) {
+    console.warn('Global Weekly Tasks save error:', err);
+  }
+  return null;
+}
+
+

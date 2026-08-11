@@ -59,8 +59,14 @@ export default function App() {
     setIsSyncing(false);
   };
 
+  // Real-time automatic background polling every 8 seconds
   useEffect(() => {
     loadData();
+    const interval = setInterval(() => {
+      loadData();
+      syncGlobalNotifications();
+    }, 8000); // 8-second real-time polling pulse
+    return () => clearInterval(interval);
   }, []);
 
   const handleLogin = (user) => {
