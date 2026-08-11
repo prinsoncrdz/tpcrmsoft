@@ -5,6 +5,10 @@ import { validatePassword } from '../services/googleSheets';
 const CUSTOM_PASSWORDS_KEY = 'tp_custom_passwords_v1';
 
 export default function ChangePasswordView({ currentUser, onShowToast }) {
+  const userEmail = (currentUser?.email || '').toLowerCase();
+  const userName = currentUser?.name || 'Staff Member';
+  const isPrinson = userEmail.includes('prinson') || userName.toLowerCase().includes('prinson');
+
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -15,8 +19,19 @@ export default function ChangePasswordView({ currentUser, onShowToast }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const userEmail = (currentUser?.email || '').toLowerCase();
-  const userName = currentUser?.name || 'Staff Member';
+  if (!isPrinson) {
+    return (
+      <div style={{ padding: '60px 20px', textAlign: 'center', background: '#FFFFFF', borderRadius: '16px', margin: '24px auto', maxWidth: '600px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+        <div style={{ width: '64px', height: '64px', background: '#FEF2F2', color: '#DC2626', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+          <Lock size={32} />
+        </div>
+        <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0F172A', marginBottom: '8px' }}>Restricted Access</h2>
+        <p style={{ fontSize: '0.85rem', color: '#64748B', lineHeight: 1.6 }}>
+          The Change Password tab is strictly reserved for <strong>Prinson Cardoza</strong>.
+        </p>
+      </div>
+    );
+  }
 
   const handlePasswordChange = (e) => {
     e.preventDefault();

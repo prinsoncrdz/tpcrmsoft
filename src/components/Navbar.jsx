@@ -190,6 +190,9 @@ export default function Navbar({ activeTab, setActiveTab, currentUser, onLogout,
                     currentUser?.email?.toLowerCase().includes('walterdantis') || 
                     currentUser?.role?.toLowerCase().includes('ceo');
 
+  const isPrinsonOnly = currentUser?.email?.toLowerCase().includes('prinson') || 
+                        currentUser?.name?.toLowerCase().includes('prinson');
+
   const navItems = [
     { id: 'CRM', label: 'Project CRM Sheet', icon: <Building2 size={15} />, restricted: false },
     { id: 'CEO_PNL_TRACKER', label: 'CEO P&L Tracker 📊', icon: <TrendingUp size={15} />, ceoOnly: true },
@@ -197,12 +200,14 @@ export default function Navbar({ activeTab, setActiveTab, currentUser, onLogout,
     { id: 'WEEKLY_TASKS', label: 'Friday Task Update Portal 📅', icon: <Calendar size={15} />, restricted: false },
     { id: 'TAX_INVOICES', label: 'Tax Invoices 🧾', icon: <FileText size={15} />, ceoAdminOnly: true },
     { id: 'TEAM_CHAT', label: 'Team Chat 💬', icon: <MessageSquare size={15} />, restricted: false },
-    { id: 'CHANGE_PASSWORD', label: 'Change Password 🔑', icon: <Lock size={15} />, restricted: false },
+    { id: 'CHANGE_PASSWORD', label: 'Change Password 🔑', icon: <Lock size={15} />, prinsonOnly: true },
     { id: 'PETTY_CASH_DASHBOARD', label: 'Petty Cash Dashboard', icon: <LayoutDashboard size={15} />, restricted: true },
     { id: 'PETTY_CASH_JULY', label: 'July 2026', icon: <DollarSign size={15} />, restricted: true },
     { id: 'PETTY_CASH_AUG', label: 'August 2026', icon: <DollarSign size={15} />, restricted: true },
     { id: 'PETTY_CASH_SEPT', label: 'September 2026', icon: <DollarSign size={15} />, restricted: true }
   ].filter(item => {
+    // Change Password tab is strictly reserved for Prinson Cardoza ONLY
+    if (item.prinsonOnly && !isPrinsonOnly) return false;
     // CEO P&L Tracker is strictly reserved for CEO Walter Dantis ONLY (not Admin)
     if (item.ceoOnly && !isCeoOnly) return false;
     if (item.ceoAdminOnly && !isExecutive) return false;
