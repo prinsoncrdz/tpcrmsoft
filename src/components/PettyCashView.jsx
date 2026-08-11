@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, ShieldAlert, DollarSign, Calendar, CheckCircle2, TrendingUp, RefreshCw, Plus, PieChart, BarChart3, CreditCard, Wallet, Layers, Eye, Table, ArrowUpRight, ArrowDownRight, Tag, User } from 'lucide-react';
+import { Lock, ShieldAlert, DollarSign, Calendar, CheckCircle2, TrendingUp, RefreshCw, Plus, PieChart, BarChart3, CreditCard, Wallet, Layers, Eye, Table, ArrowUpRight, ArrowDownRight, Tag, User, Printer, FileText } from 'lucide-react';
 import { fetchSheetData, SHEET_GIDS, PUBLISHED_SHEET_ID } from '../services/googleSheets';
 
 export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCashModal, refreshTrigger }) {
@@ -105,6 +105,95 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     percentage: totalYTD > 0 ? ((categoryMap[cat] / totalYTD) * 100).toFixed(1) : 0
   })).sort((a, b) => b.amount - a.amount);
 
+  const monthNameMap = {
+    PETTY_CASH_DASHBOARD: 'YTD Overview (July – September 2026)',
+    PETTY_CASH_JULY: 'July 2026 Monthly Statement',
+    PETTY_CASH_AUG: 'August 2026 Monthly Statement',
+    PETTY_CASH_SEPT: 'September 2026 Monthly Statement'
+  };
+
+  const handlePrintMonthlyPDF = () => {
+    const origTitle = document.title;
+    document.title = `Turning_Point_Petty_Cash_${activeTab}_Report`;
+    window.print();
+    setTimeout(() => { document.title = origTitle; }, 1000);
+  };
+
+  const handleExportMonthlyWord = () => {
+    const targetMonthLabel = monthNameMap[activeTab] || 'Monthly Statement';
+    const dataToExport = isDashboardTab ? allRows : (activeTabData.length > 0 ? activeTabData : allRows);
+    const totalSpent = dataToExport.reduce((acc, r) => acc + parseVal(r.cardSpent || r.cashOut || r.amount), 0);
+
+    const content = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <title>Turning Point Retail Solutions - Monthly Petty Cash Expense Statement</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #0F172A; }
+          h1 { color: #0F172A; border-bottom: 3px solid #10B981; padding-bottom: 8px; font-size: 20px; }
+          h2 { color: #1E293B; margin-top: 20px; font-size: 16px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+          th, td { border: 1px solid #CBD5E1; padding: 8px 12px; text-align: left; font-size: 13px; }
+          th { background-color: #0F172A; color: #FFFFFF; }
+          .highlight { background-color: #ECFDF5; color: #047857; font-weight: bold; }
+          .header-box { background-color: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px; margin-bottom: 16px; border-radius: 6px; }
+        </style>
+      </head>
+      <body>
+        <h1>Turning Point Retail Solutions — Monthly Petty Cash Expense Statement</h1>
+        <div class="header-box">
+          <p><strong>Statement Period:</strong> ${targetMonthLabel} | <strong>Report Generated:</strong> ${new Date().toLocaleDateString()}</p>
+          <p><strong>Starting Fund:</strong> ${headerSummary.startingCash || '$0.00'} | <strong>Total Cash In:</strong> ${headerSummary.cashIn || '$0.00'} | <strong>Total Expenses:</strong> $${totalSpent.toFixed(2)}</p>
+          <p class="highlight"><strong>Net Remaining Petty Cash Balance:</strong> ${headerSummary.remainingCash || '$0.00'}</p>
+        </div>
+
+        <h2>Itemized Petty Cash Expense Ledger (${dataToExport.length} Transactions)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Description / Purpose</th>
+              <th>Voucher / Ref</th>
+              <th>Payment Method</th>
+              <th>Amount ($)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${dataToExport.map((r, idx) => `
+              <tr>
+                <td>${idx + 1}</td>
+                <td>${r.date || r.Date || '2026-08-01'}</td>
+                <td><strong>${r.category || r.Category || 'Supplies'}</strong></td>
+                <td>${r.description || r.Description || r.particulars || 'Expense entry'}</td>
+                <td>${r.voucherNo || r.ref || 'VOUCH-101'}</td>
+                <td>${r.paymentMode || r.mode || 'Cash'}</td>
+                <td><strong>$${parseVal(r.cardSpent || r.cashOut || r.amount).toFixed(2)}</strong></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div style="margin-top: 40px; border-top: 2px dashed #CBD5E1; padding-top: 20px;">
+          <p><strong>Approved & Verified by:</strong> CEO Walter Dantis (Executive Authorization Signature)</p>
+          <p style="font-size: 11px; color: #64748B;">Turning Point Retail Solutions • Phnom Penh, Cambodia • Official Monthly Financial Record</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\ufeff' + content], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `TurningPoint_Petty_Cash_${activeTab}_Statement.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div>
       {/* Header Toolbar */}
@@ -134,6 +223,22 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
               </button>
             </div>
           )}
+          <button 
+            className="btn-secondary" 
+            onClick={handleExportMonthlyWord}
+            style={{ padding: '8px 14px', fontSize: '0.8rem', fontWeight: 800 }}
+            title="Download Word (.doc) Monthly Expense Statement"
+          >
+            <FileText size={15} /> Export Word (.doc)
+          </button>
+          <button 
+            className="btn-secondary" 
+            onClick={handlePrintMonthlyPDF}
+            style={{ padding: '8px 14px', fontSize: '0.8rem', fontWeight: 800, background: '#2563EB', color: '#FFF', border: '1px solid #2563EB' }}
+            title="Print / Save PDF Monthly Expense Statement"
+          >
+            <Printer size={15} /> Export Monthly PDF 🖨️
+          </button>
           <button className="btn-secondary" onClick={loadAllPettyCashData} disabled={loading}>
             <RefreshCw size={16} className={loading ? 'spin' : ''} />
             Refresh
