@@ -193,10 +193,17 @@ export default function Navbar({ activeTab, setActiveTab, currentUser, onLogout,
   const isPrinsonOnly = currentUser?.email?.toLowerCase().includes('prinson') || 
                         currentUser?.name?.toLowerCase().includes('prinson');
 
+  const isSrelyangOrCeo = currentUser?.role === 'CEO' || 
+                          currentUser?.name?.toLowerCase().includes('walter') || 
+                          currentUser?.email?.toLowerCase().includes('walterdantis') || 
+                          currentUser?.name?.toLowerCase().includes('srelyang') || 
+                          currentUser?.email?.toLowerCase().includes('srelyang.thim') || 
+                          currentUser?.role?.toLowerCase().includes('ceo');
+
   const navItems = [
     { id: 'CRM', label: 'Project CRM Sheet', icon: <Building2 size={15} />, restricted: false },
     { id: 'CEO_PNL_TRACKER', label: 'CEO P&L Tracker 📊', icon: <TrendingUp size={15} />, ceoOnly: true },
-    { id: 'PROJECT_APPROVALS', label: 'Project Approvals 📋', icon: <FileText size={15} />, ceoAdminOnly: true },
+    { id: 'PROJECT_APPROVALS', label: 'Project Approvals 📋', icon: <FileText size={15} />, srelyangCeoOnly: true },
     { id: 'WEEKLY_TASKS', label: 'Friday Task Update Portal 📅', icon: <Calendar size={15} />, restricted: false },
     { id: 'TAX_INVOICES', label: 'Tax Invoices 🧾', icon: <FileText size={15} />, ceoAdminOnly: true },
     { id: 'TEAM_CHAT', label: 'Team Chat 💬', icon: <MessageSquare size={15} />, restricted: false },
@@ -206,6 +213,8 @@ export default function Navbar({ activeTab, setActiveTab, currentUser, onLogout,
     { id: 'PETTY_CASH_AUG', label: 'August 2026', icon: <DollarSign size={15} />, restricted: true },
     { id: 'PETTY_CASH_SEPT', label: 'September 2026', icon: <DollarSign size={15} />, restricted: true }
   ].filter(item => {
+    // Project Approvals tab is strictly reserved for Srelyang Thim & CEO Walter Dantis ONLY
+    if (item.srelyangCeoOnly && !isSrelyangOrCeo) return false;
     // Change Password tab is strictly reserved for Prinson Cardoza ONLY
     if (item.prinsonOnly && !isPrinsonOnly) return false;
     // CEO P&L Tracker is strictly reserved for CEO Walter Dantis ONLY (not Admin)
