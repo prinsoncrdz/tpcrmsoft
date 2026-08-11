@@ -111,6 +111,14 @@ export default function App() {
 
   // Add new project live
   const handleAddProject = async (newProjData) => {
+    const isSrelyang = (currentUser?.name || '').toLowerCase().includes('srelyang') || (currentUser?.email || '').toLowerCase().includes('srelyang.thim');
+    const isCeo = currentUser?.role === 'CEO' || (currentUser?.name || '').toLowerCase().includes('walter') || (currentUser?.role || '').toLowerCase().includes('ceo');
+
+    if (!isSrelyang && !isCeo) {
+      showToast('🔒 Access Denied: Creating projects is reserved for Srelyang Thim & CEO Walter Dantis!');
+      return;
+    }
+
     try {
       const newProject = {
         id: `p-${Date.now()}`,

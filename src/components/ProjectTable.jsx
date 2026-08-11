@@ -170,7 +170,9 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
 
   // Role-Based Field Edit & Deletion Permissions
   const isCeo = currentUser?.role === 'CEO' || (currentUser?.name || '').toLowerCase().includes('walter') || (currentUser?.role || '').toLowerCase().includes('ceo');
-  const canEditAllFields = currentUser?.role === 'CEO' || currentUser?.role === 'Admin' || isCeo;
+  const isSrelyang = (currentUser?.name || '').toLowerCase().includes('srelyang') || (currentUser?.email || '').toLowerCase().includes('srelyang.thim');
+  const canEditAllFields = currentUser?.role === 'CEO' || currentUser?.role === 'Admin' || isCeo || isSrelyang;
+  const canAddProject = isSrelyang || isCeo; // Adding project is reserved for Srelyang Thim & CEO Walter Dantis (NOT Admin)
   const canDeleteProject = isCeo; // Project deletion is STRICTLY reserved for CEO Walter Dantis
   const canEditProgressUpdate = true; // Everyone assigned can edit Progress Update
 
@@ -431,7 +433,7 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
             <Download size={14} />
             Export CSV
           </button>
-          {canEditAllFields && (
+          {canAddProject && (
             <button className="btn-primary" onClick={onOpenNewProjectModal}>
               <Plus size={16} />
               Add Project
@@ -449,7 +451,7 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '6px 0 14px 0' }}>
               No projects currently listed under this filter.
             </p>
-            {canEditAllFields && (
+            {canAddProject && (
               <button className="btn-primary" onClick={onOpenNewProjectModal} style={{ width: '100%', justifyContent: 'center' }}>
                 <Plus size={16} /> Add Project Live to Google Sheet
               </button>
