@@ -4,7 +4,6 @@ import ProjectTable from './components/ProjectTable';
 import PettyCashView from './components/PettyCashView';
 import TeamChatView from './components/TeamChatView';
 import InvoiceTab from './components/InvoiceTab';
-import WeeklyStaffTasksView from './components/WeeklyStaffTasksView';
 import ProjectApprovalsPortal from './components/ProjectApprovalsPortal';
 import CeoPnLTrackerView from './components/CeoPnLTrackerView';
 import ChangePasswordView from './components/ChangePasswordView';
@@ -282,11 +281,6 @@ export default function App() {
                 if (typeof confetti === 'function') confetti({ particleCount: 80, spread: 80 });
               } catch(e) {}
             }}
-          />
-        ) : activeTab === 'WEEKLY_TASKS' ? (
-          <WeeklyStaffTasksView 
-            currentUser={currentUser}
-            projects={roleFilteredProjects}
           />
         ) : activeTab === 'TAX_INVOICES' ? (
           <InvoiceTab 
