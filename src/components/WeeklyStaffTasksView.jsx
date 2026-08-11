@@ -273,14 +273,13 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
 
   const now = new Date();
   const dayOfWeekNum = now.getDay(); // 0 = Sun, 1 = Mon, 5 = Fri, 6 = Sat
-  const isFridayOrSaturday = dayOfWeekNum === 5 || dayOfWeekNum === 6;
-  // CEO Verification Window: Saturday, Sunday, and Monday until 12:00 PM
-  const isCeoVerificationWindow = dayOfWeekNum === 6 || dayOfWeekNum === 0 || (dayOfWeekNum === 1 && now.getHours() < 12);
-  const canSubmitNow = isFridayOrSaturday || isCeoOrAdmin;
+  const isTodayFriday = dayOfWeekNum === 5;
+  const canAccessPortal = isTodayFriday || isCeoOrAdmin;
+  const canSubmitNow = isTodayFriday || isCeoOrAdmin;
 
   const handleSubmitWeeklyReport = () => {
     if (!canSubmitNow) {
-      alert('🔒 Submitting to CEO is enabled exclusively on Friday and Saturday! You can fill, edit, and save your daily task entries anytime Mon–Thu.');
+      alert('🔒 Friday Staff Task Update Portal opens exclusively every Friday!');
       return;
     }
 
@@ -418,6 +417,26 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
 
   const totalHours = filteredTasks.reduce((sum, t) => sum + (parseFloat(t.hoursSpent || 0)), 0);
   const completedCount = filteredTasks.filter(t => t.status === 'Approved').length;
+
+  // Lock out staff access on non-Fridays (CEO/Admin retains access anytime)
+  if (!canAccessPortal) {
+    return (
+      <div style={{ padding: '60px 20px', textAlign: 'center', background: '#FFFFFF', borderRadius: '16px', margin: '24px auto', maxWidth: '600px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+        <div style={{ width: '64px', height: '64px', background: '#FEF3C7', color: '#D97706', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+          <Calendar size={32} />
+        </div>
+        <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0F172A', marginBottom: '8px' }}>
+          Friday Task Update Portal Closed
+        </h2>
+        <p style={{ fontSize: '0.85rem', color: '#64748B', lineHeight: 1.6, marginBottom: '20px' }}>
+          The Friday Staff Task Update Portal opens <strong>EXCLUSIVELY EVERY FRIDAY</strong> for staff members to enter, update, and submit weekly deliverable tasks to CEO Walter Dantis.
+        </p>
+        <div style={{ background: '#F8FAFC', padding: '12px 18px', borderRadius: '10px', fontSize: '0.78rem', color: '#475569', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', border: '1px solid #CBD5E1' }}>
+          <Clock size={16} style={{ color: '#2563EB' }} /> Schedule: Opens Every Friday (8:00 AM – 11:59 PM)
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '24px 0' }}>
