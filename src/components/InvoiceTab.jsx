@@ -159,6 +159,51 @@ export default function InvoiceTab({ currentUser }) {
   const totalReceived = invoices.reduce((sum, i) => sum + (i.amountReceived || 0), 0);
   const totalOutstanding = invoices.reduce((sum, i) => sum + (i.balanceDue > 0 ? i.balanceDue : 0), 0);
 
+  const handleConvertToBill = (inv) => {
+    if (!isCeo) {
+      alert('🔒 Access Denied: Converting a Quotation to an Official Bill / Tax Invoice can ONLY be done by CEO Walter Dantis!');
+      return;
+    }
+
+    const origNo = inv.taxInvoiceNo || '';
+    const newInvoiceNo = origNo.includes('QUO') ? origNo.replace('QUO', 'INV') : (origNo.startsWith('TP-') ? origNo : `TP-INV-${Date.now().toString().slice(-4)}`);
+    const subtotal = parseFloat(inv.subtotal || 0);
+    const vatAmount = subtotal * 0.10;
+    const grandTotal = subtotal + vatAmount;
+    const amountRec = parseFloat(inv.amountReceived || 0);
+    const balanceDue = grandTotal - amountRec;
+
+    const updatedList = invoices.map(item => {
+      if (item.id === inv.id) {
+        return {
+          ...item,
+          docType: 'Official Tax Invoice',
+          isQuotation: false,
+          includeVat: true,
+          taxInvoiceNo: newInvoiceNo,
+          vatAmount: vatAmount,
+          grandTotal: grandTotal,
+          balanceDue: balanceDue,
+          convertedAt: new Date().toISOString(),
+          convertedBy: currentUser?.name || 'Walter Dantis (CEO)'
+        };
+      }
+      return item;
+    });
+
+    setInvoices(updatedList);
+    localStorage.setItem(INVOICES_STORAGE_KEY, JSON.stringify(updatedList));
+    saveGlobalTaxInvoices(updatedList);
+
+    try {
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 90, spread: 90 });
+      }
+    } catch(e) {}
+
+    alert(`🎉 Success! Quotation "${inv.companyName}" (${origNo}) successfully converted to Official Tax Invoice / Bill (${newInvoiceNo}) by CEO Walter Dantis!`);
+  };
+
   const formatCurrency = (val) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val || 0);
   };
@@ -494,6 +539,41 @@ export default function InvoiceTab({ currentUser }) {
                       </div>
                     )}
                   </div>
+
+                  {/* Quotation / Estimate Conversion Block */}
+                  {(inv.isQuotation || inv.docType === 'Quotation' || inv.includeVat === false || (inv.taxInvoiceNo || '').includes('QUO')) && (
+                    <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', padding: '10px 12px', borderRadius: '10px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <div>
+                        <span style={{ background: '#FEF3C7', color: '#B45309', fontSize: '0.68rem', fontWeight: 900, padding: '2px 8px', borderRadius: '4px', border: '1px solid #FCD34D', textTransform: 'uppercase' }}>
+                          📄 QUOTATION / ESTIMATE
+                        </span>
+                        <div style={{ fontSize: '0.72rem', color: '#B45309', marginTop: '2px', fontWeight: 600 }}>
+                          Non-tax draft quotation
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleConvertToBill(inv)}
+                        style={{
+                          background: isCeo ? '#2563EB' : '#94A3B8',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '6px 12px',
+                          fontSize: '0.75rem',
+                          fontWeight: 800,
+                          cursor: isCeo ? 'pointer' : 'not-allowed',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          boxShadow: isCeo ? '0 2px 6px rgba(37,99,235,0.2)' : 'none'
+                        }}
+                        title={isCeo ? "Convert Quotation to Official Bill / Tax Invoice" : "Converting Quotations to Bills is strictly reserved for CEO Walter Dantis"}
+                      >
+                        <Sparkles size={13} /> {isCeo ? '🔄 Convert to Bill (CEO Only)' : '🔒 CEO Only: Convert to Bill'}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Card Footer Actions */}

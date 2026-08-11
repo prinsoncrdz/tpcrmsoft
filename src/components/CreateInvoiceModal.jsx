@@ -18,6 +18,7 @@ export default function CreateInvoiceModal({ initialInvoice = null, currentUser,
   const [amountReceived, setAmountReceived] = useState(initialInvoice?.amountReceived || 0);
 
   // New fields for Tax option, Custom terms/notes, Address & Drive Backup
+  const [docType, setDocType] = useState(initialInvoice?.docType || (initialInvoice?.includeVat === false ? 'Quotation' : 'Official Tax Invoice'));
   const [includeVat, setIncludeVat] = useState(initialInvoice?.includeVat !== undefined ? initialInvoice.includeVat : true);
   const [companyAddress, setCompanyAddress] = useState(initialInvoice?.companyAddress || 'Office no:-#17F-10D, Morgan Towers, Sopheak Mongkul Street, Koh Pich, Phnom Penh, Cambodia');
   const [customPaymentTerms, setCustomPaymentTerms] = useState(initialInvoice?.customPaymentTerms || '50% advance for deposit and another 50% after completion of business registration.');
@@ -75,6 +76,8 @@ export default function CreateInvoiceModal({ initialInvoice = null, currentUser,
       telephoneNumber: telephoneNumber.trim(),
       dueDate,
       amountReceived: numAmountReceived,
+      docType: includeVat ? 'Official Tax Invoice' : 'Quotation',
+      isQuotation: !includeVat,
       includeVat,
       companyAddress: companyAddress.trim(),
       customPaymentTerms: customPaymentTerms.trim(),
