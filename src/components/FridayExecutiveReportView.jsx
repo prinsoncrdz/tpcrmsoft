@@ -141,6 +141,11 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
   const handleSubmitReportToCeo = (e) => {
     e.preventDefault();
 
+    if (!canSubmitNow) {
+      alert('🔒 Form submission to CEO unlocks exclusively every Friday & Saturday! You can fill, draft, and preview your weekly report anytime.');
+      return;
+    }
+
     if (!fullName || !roleDesignation || !weekEnding || !emailAddress) {
       alert('Please fill in all required Staff Details fields (*).');
       return;
@@ -307,25 +312,7 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
     setTimeout(() => { document.title = origTitle; }, 1000);
   };
 
-  // Lock screen for non-Friday/Saturday staff access
-  if (!canAccessPortal) {
-    return (
-      <div style={{ padding: '60px 20px', textAlign: 'center', background: '#FFFFFF', borderRadius: '16px', margin: '24px auto', maxWidth: '600px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
-        <div style={{ width: '64px', height: '64px', background: '#FEF3C7', color: '#D97706', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-          <Calendar size={32} />
-        </div>
-        <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0F172A', marginBottom: '8px' }}>
-          Friday Task Update Portal Closed
-        </h2>
-        <p style={{ fontSize: '0.85rem', color: '#64748B', lineHeight: 1.6, marginBottom: '20px' }}>
-          The Friday Executive Staff Weekly Report Portal opens <strong>EXCLUSIVELY EVERY FRIDAY & SATURDAY</strong> for all staff members to complete and send weekly updates directly to CEO Walter Dantis.
-        </p>
-        <div style={{ background: '#F8FAFC', padding: '12px 18px', borderRadius: '10px', fontSize: '0.78rem', color: '#475569', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', border: '1px solid #CBD5E1' }}>
-          <Clock size={16} style={{ color: '#2563EB' }} /> Opens: Every Friday & Saturday
-        </div>
-      </div>
-    );
-  }
+  const canSubmitNow = isFridayOrSaturday || isCeo;
 
   // =========================================================================
   // CEO EXECUTIVE REVIEW DASHBOARD VIEW (CEO DOES NOT FILL FORM)
@@ -993,12 +980,23 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
             <Eye size={16} /> Preview & Generate Report
           </button>
 
-          <button 
-            type="submit"
-            style={{ padding: '12px 24px', background: '#2563EB', color: '#FFFFFF', border: 'none', borderRadius: '8px', fontWeight: 900, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 14px rgba(37,99,235,0.3)' }}
-          >
-            <Send size={18} /> 🚀 Sent Directly to CEO
-          </button>
+          {canSubmitNow ? (
+            <button 
+              type="submit"
+              style={{ padding: '12px 24px', background: '#2563EB', color: '#FFFFFF', border: 'none', borderRadius: '8px', fontWeight: 900, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 14px rgba(37,99,235,0.3)' }}
+            >
+              <Send size={18} /> 🚀 Sent Directly to CEO
+            </button>
+          ) : (
+            <button 
+              type="button"
+              disabled
+              style={{ padding: '12px 24px', background: '#F1F5F9', color: '#94A3B8', border: '1px solid #CBD5E1', borderRadius: '8px', fontWeight: 800, fontSize: '0.88rem', cursor: 'not-allowed', display: 'flex', alignItems: 'center', gap: '8px' }}
+              title="Form is open every day for drafting. Submission to CEO unlocks every Friday & Saturday!"
+            >
+              <Clock size={18} /> 🔒 Submit Opens Fri & Sat
+            </button>
+          )}
         </div>
 
       </form>
