@@ -57,8 +57,8 @@ const INITIAL_PNL_DATA = {
 
 export default function CeoPnLTrackerView({ currentUser }) {
   const isCeo = currentUser?.role === 'CEO' || 
-                currentUser?.role === 'Admin' || 
                 (currentUser?.name || '').toLowerCase().includes('walter') || 
+                (currentUser?.email || '').toLowerCase().includes('walterdantis') || 
                 (currentUser?.role || '').toLowerCase().includes('ceo');
 
   const [pnlData, setPnlData] = useState(() => {
