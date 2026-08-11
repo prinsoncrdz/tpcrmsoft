@@ -272,8 +272,8 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
   const [ceoActionType, setCeoActionType] = useState('APPROVE'); // 'APPROVE' | 'REVISION'
 
   const now = new Date();
-  const dayOfWeekNum = now.getDay(); // 0 = Sun, 1 = Mon, 5 = Fri, 6 = Sat
-  const isTodayFriday = dayOfWeekNum === 5;
+  const dayOfWeekNum = now.getDay(); // 0 = Sun, 1 = Mon, 2 = Tue, 5 = Fri, 6 = Sat
+  const isTodayFriday = dayOfWeekNum === 5 || dayOfWeekNum === 2; // Unlocked on Tuesday & Friday
   const canAccessPortal = isTodayFriday || isCeoOrAdmin;
   const canSubmitNow = isTodayFriday || isCeoOrAdmin;
 
