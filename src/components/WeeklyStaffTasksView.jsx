@@ -82,8 +82,8 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
   const [taskTitle, setTaskTitle] = useState('');
   const [selectedProject, setSelectedProject] = useState(projects[0]?.companyName || 'General Operations');
   const [assignedStaffEmail, setAssignedStaffEmail] = useState(currentUser?.email || SYSTEM_USERS[0].email);
-  const [targetDay, setTargetDay] = useState('Monday');
-  const [hoursSpent, setHoursSpent] = useState(8);
+  const [targetDay, setTargetDay] = useState('Full Week Report');
+  const [hoursSpent, setHoursSpent] = useState(40);
   const [taskStatus, setTaskStatus] = useState('Pending'); // Pending | In Progress | Submitted | Approved | Needs Revision
   const [taskDetails, setTaskDetails] = useState('');
 
@@ -449,10 +449,7 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
               Turning Point • Weekly Staff Update
             </span>
             <span style={{ background: '#3B82F6', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
-              ⏰ Daily Work Logging (Mon–Thu)
-            </span>
-            <span style={{ background: '#8B5CF6', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
-              📅 Submit Window: Friday & Saturday
+              📋 Single Consolidated Weekly Report
             </span>
             <span style={{ background: '#EC4899', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
               👑 CEO Review: Sat–Mon 12:00 PM
@@ -460,7 +457,7 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
           </div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#FFFFFF', margin: 0 }}>Friday Staff Task Update Portal</h2>
           <p style={{ fontSize: '0.82rem', color: '#94A3B8', margin: '4px 0 0 0' }}>
-            Staff can open, view, and log daily tasks on any day of the week. Submitting to CEO Walter Dantis unlocks every Friday & Saturday.
+            Each staff member logs 1 single consolidated weekly deliverable report per week for CEO verification.
           </p>
         </div>
 
@@ -530,27 +527,9 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
             ))}
           </select>
 
-          {/* Day of Week Selector */}
-          <div style={{ display: 'flex', gap: '4px', background: '#F1F5F9', padding: '3px', borderRadius: '8px', flexWrap: 'wrap' }}>
-            {daysList.map(day => (
-              <button
-                key={day}
-                onClick={() => setSelectedDay(day)}
-                style={{
-                  background: selectedDay === day ? '#FFFFFF' : 'transparent',
-                  color: selectedDay === day ? '#0F172A' : '#64748B',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '5px 10px',
-                  fontSize: '0.75rem',
-                  fontWeight: selectedDay === day ? 800 : 600,
-                  cursor: 'pointer',
-                  boxShadow: selectedDay === day ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
-                }}
-              >
-                {day}
-              </button>
-            ))}
+          {/* Consolidated Weekly Report Scope Indicator */}
+          <div style={{ background: '#ECFDF5', padding: '6px 12px', borderRadius: '8px', border: '1px solid #A7F3D0', color: '#047857', fontSize: '0.78rem', fontWeight: 800 }}>
+            📋 Consolidated Weekly Deliverable Report Scope
           </div>
 
           {isCeoOrAdmin && (
