@@ -654,7 +654,7 @@ export default function CeoPnLTrackerView({ currentUser }) {
                       <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 800, color: '#0F172A', background: '#F8FAFC' }}>
                         {formatNum(totalsFY.costOfSales[itemKey])}
                       </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight 700, color: '#475569', background: '#F1F5F9' }}>
+                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: '#475569', background: '#F1F5F9' }}>
                         {formatNum(totalsFY.costOfSales[itemKey] / 12)}
                       </td>
                     </tr>
@@ -752,7 +752,7 @@ export default function CeoPnLTrackerView({ currentUser }) {
                       <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 800, color: '#0F172A', background: '#F8FAFC' }}>
                         {formatNum(totalsFY.operatingExpenses[itemKey])}
                       </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight 700, color: '#475569', background: '#F1F5F9' }}>
+                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: '#475569', background: '#F1F5F9' }}>
                         {formatNum(totalsFY.operatingExpenses[itemKey] / 12)}
                       </td>
                     </tr>
