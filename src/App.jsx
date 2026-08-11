@@ -7,6 +7,7 @@ import InvoiceTab from './components/InvoiceTab';
 import WeeklyStaffTasksView from './components/WeeklyStaffTasksView';
 import ProjectApprovalsPortal from './components/ProjectApprovalsPortal';
 import CeoPnLTrackerView from './components/CeoPnLTrackerView';
+import ChangePasswordView from './components/ChangePasswordView';
 import LoginModal from './components/LoginModal';
 import NewProjectModal from './components/NewProjectModal';
 import NewPettyCashModal from './components/NewPettyCashModal';
@@ -286,6 +287,11 @@ export default function App() {
         ) : activeTab === 'TEAM_CHAT' ? (
           <TeamChatView 
             currentUser={currentUser}
+          />
+        ) : activeTab === 'CHANGE_PASSWORD' ? (
+          <ChangePasswordView 
+            currentUser={currentUser}
+            onShowToast={showToast}
           />
         ) : (
           <PettyCashView 

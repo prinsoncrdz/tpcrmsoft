@@ -17,10 +17,15 @@ export default function LoginModal({ onLogin }) {
       return;
     }
 
-    const matchedUser = SYSTEM_USERS.find(
-      u => u.email.toLowerCase() === email.trim().toLowerCase() && 
-           (u.passwordHash === password || u.fallbackPassword === password)
-    );
+    const customPasswords = JSON.parse(localStorage.getItem('tp_custom_passwords_v1') || '{}');
+    const userEmailKey = email.trim().toLowerCase();
+    const customPass = customPasswords[userEmailKey];
+
+    const matchedUser = SYSTEM_USERS.find(u => {
+      if (u.email.toLowerCase() !== userEmailKey) return false;
+      if (customPass) return customPass === password;
+      return u.passwordHash === password || u.fallbackPassword === password;
+    });
 
     if (matchedUser) {
       onLogin(matchedUser);
