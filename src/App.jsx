@@ -6,6 +6,7 @@ import TeamChatView from './components/TeamChatView';
 import InvoiceTab from './components/InvoiceTab';
 import WeeklyStaffTasksView from './components/WeeklyStaffTasksView';
 import ProjectApprovalsPortal from './components/ProjectApprovalsPortal';
+import CeoPnLTrackerView from './components/CeoPnLTrackerView';
 import LoginModal from './components/LoginModal';
 import NewProjectModal from './components/NewProjectModal';
 import NewPettyCashModal from './components/NewPettyCashModal';
@@ -241,6 +242,10 @@ export default function App() {
             onOpenNewProjectModal={() => setShowNewProjectModal(true)}
             onRefresh={loadData}
             onDeleteProject={handleDeleteProject}
+          />
+        ) : activeTab === 'CEO_PNL_TRACKER' ? (
+          <CeoPnLTrackerView 
+            currentUser={currentUser}
           />
         ) : activeTab === 'PROJECT_APPROVALS' ? (
           <ProjectApprovalsPortal 
