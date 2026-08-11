@@ -4,6 +4,8 @@ import {
   Save, RotateCcw, ShieldCheck, Lock, Edit3, Sparkles, AlertCircle, ArrowUpRight, ArrowDownRight 
 } from 'lucide-react';
 
+import { fetchGlobalPnLData, saveGlobalPnLData } from '../services/googleSheets';
+
 const PNL_STORAGE_KEY = 'tp_crm_ceo_pnl_tracker_v1';
 
 const MONTHS = [
@@ -78,6 +80,21 @@ export default function CeoPnLTrackerView({ currentUser }) {
   const [editingCell, setEditingCell] = useState(null); // { section, key, monthKey }
   const [editValueInput, setEditValueInput] = useState('');
   const [saveToast, setSaveToast] = useState(null);
+  const [isCloudSyncing, setIsCloudSyncing] = useState(false);
+
+  // Fetch real-time cloud P&L data on component mount
+  useEffect(() => {
+    async function loadCloudPnL() {
+      setIsCloudSyncing(true);
+      const cloudData = await fetchGlobalPnLData();
+      if (cloudData && cloudData.revenue && cloudData.costOfSales && cloudData.operatingExpenses) {
+        setPnlData(cloudData);
+        localStorage.setItem(PNL_STORAGE_KEY, JSON.stringify(cloudData));
+      }
+      setIsCloudSyncing(false);
+    }
+    loadCloudPnL();
+  }, []);
 
   const triggerToast = (msg) => {
     setSaveToast(msg);
@@ -87,7 +104,9 @@ export default function CeoPnLTrackerView({ currentUser }) {
   const handleSaveToLocalStorage = (dataToSave) => {
     try {
       localStorage.setItem(PNL_STORAGE_KEY, JSON.stringify(dataToSave));
-      triggerToast('💾 Financial P&L Tracker figures saved!');
+      triggerToast('💾 Real-time saved & synced to cloud!');
+      // Sync real-time to Google Cloud backend
+      saveGlobalPnLData(null, dataToSave);
     } catch (e) {
       console.error(e);
     }
@@ -418,6 +437,9 @@ export default function CeoPnLTrackerView({ currentUser }) {
             </span>
             <span style={{ background: 'rgba(255,255,255,0.2)', color: '#FFFFFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
               FY Aug 2026 – Jul 2027
+            </span>
+            <span style={{ background: '#2563EB', color: '#FFFFFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
+              ⚡ Real-time Cloud Saved
             </span>
             <span style={{ fontSize: '0.78rem', color: '#A7F3D0' }}>Figures in USD ($)</span>
           </div>

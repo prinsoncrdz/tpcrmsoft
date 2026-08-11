@@ -583,3 +583,40 @@ export async function saveGlobalSealSignature(gasUrl, signatureUrl, sealUrl) {
   }
   return null;
 }
+
+// FETCH GLOBAL CEO P&L TRACKER DATA FROM CLOUD BACKEND
+export async function fetchGlobalPnLData(gasUrl) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(`${targetUrl}?action=getPnLData&t=${Date.now()}`);
+    if (!response.ok) throw new Error('Network response not ok');
+    const json = await response.json();
+    if (json.status === 'success' && json.data) {
+      return json.data;
+    }
+  } catch (err) {
+    console.warn('Global PnL Data fetch error:', err);
+  }
+  return null;
+}
+
+// SAVE GLOBAL CEO P&L TRACKER DATA TO CLOUD BACKEND
+export async function saveGlobalPnLData(gasUrl, pnlData) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'savePnLData',
+        pnlData: pnlData || {}
+      })
+    });
+    const json = await response.json();
+    return json.data || null;
+  } catch (err) {
+    console.warn('Global PnL Data save error:', err);
+  }
+  return null;
+}
+
