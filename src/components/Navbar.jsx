@@ -16,7 +16,8 @@ import {
   Clock,
   Check,
   FileText,
-  Calendar
+  Calendar,
+  TrendingUp
 } from 'lucide-react';
 import { getNotifications, markAllNotificationsAsRead, markNotificationAsRead, syncGlobalNotifications } from '../services/notifications';
 
