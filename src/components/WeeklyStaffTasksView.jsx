@@ -427,7 +427,7 @@ export default function WeeklyStaffTasksView({ currentUser, projects = [] }) {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
             <span style={{ background: 'var(--brand-green)', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>
-              TBC Global Partners • Weekly Staff Update
+              Turning Point • Weekly Staff Update
             </span>
             <span style={{ background: '#3B82F6', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
               ⏰ Daily Work Logging (Mon–Thu)
