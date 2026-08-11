@@ -5,6 +5,7 @@ import PettyCashView from './components/PettyCashView';
 import TeamChatView from './components/TeamChatView';
 import InvoiceTab from './components/InvoiceTab';
 import ProjectApprovalsPortal from './components/ProjectApprovalsPortal';
+import FridayExecutiveReportView from './components/FridayExecutiveReportView';
 import CeoPnLTrackerView from './components/CeoPnLTrackerView';
 import ChangePasswordView from './components/ChangePasswordView';
 import LoginModal from './components/LoginModal';
@@ -281,6 +282,12 @@ export default function App() {
                 if (typeof confetti === 'function') confetti({ particleCount: 80, spread: 80 });
               } catch(e) {}
             }}
+          />
+        ) : activeTab === 'FRIDAY_REPORT' ? (
+          <FridayExecutiveReportView 
+            currentUser={currentUser}
+            projects={roleFilteredProjects}
+            onShowToast={showToast}
           />
         ) : activeTab === 'TAX_INVOICES' ? (
           <InvoiceTab 
