@@ -19,9 +19,13 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
   // Filter Assigned Projects from Live CRM Sheet for Logged-In Staff
   const staffNameLower = (currentUser?.name || '').toLowerCase();
   const staffEmailLower = (currentUser?.email || '').toLowerCase();
+  const emailPrefix = staffEmailLower.includes('@') ? staffEmailLower.split('@')[0] : staffEmailLower;
   const assignedProjects = projects.filter(p => {
     const assignee = (p.assignedTo || p.assignee || p.owner || '').toLowerCase();
-    return assignee.includes(staffNameLower) || assignee.includes(staffEmailLower.split('@')[0]) || isCeo;
+    if (isCeo) return true;
+    if (staffNameLower && assignee.includes(staffNameLower)) return true;
+    if (emailPrefix && assignee.includes(emailPrefix)) return true;
+    return false;
   });
   const availableProjects = assignedProjects.length > 0 ? assignedProjects : projects;
 
@@ -298,7 +302,7 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Friday_Report_${rep.staffName.replace(/\s+/g, '_')}_${rep.weekEnding}.doc`;
+    a.download = `Friday_Report_${(rep?.staffName || 'Staff').replace(/\s+/g, '_')}_${rep?.weekEnding || 'Statement'}.doc`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -307,7 +311,7 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
 
   const handleExportIndividualPDF = (rep) => {
     const origTitle = document.title;
-    document.title = `Friday_Executive_Report_${rep.staffName.replace(/\s+/g, '_')}_${rep.weekEnding}`;
+    document.title = `Friday_Executive_Report_${(rep?.staffName || 'Staff').replace(/\s+/g, '_')}_${rep?.weekEnding || 'Statement'}`;
     window.print();
     setTimeout(() => { document.title = origTitle; }, 1000);
   };
@@ -524,7 +528,7 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
                       onClick={() => handleExportIndividualPDF(rep)}
                       style={{ background: '#2563EB', color: '#FFF', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
-                      <Printer size={13} /> Export {rep.staffName.split(' ')[0]} Report (PDF)
+                      <Printer size={13} /> Export {(rep?.staffName || 'Staff').split(' ')[0]} Report (PDF)
                     </button>
                   </div>
 
