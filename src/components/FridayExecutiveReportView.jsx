@@ -11,9 +11,9 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
                 (currentUser?.role || '').toLowerCase().includes('ceo');
 
   const now = new Date();
-  const dayOfWeekNum = now.getDay(); // 0 = Sun, 1 = Mon, 2 = Tue, 5 = Fri, 6 = Sat
-  // Unlocked on Friday (5) and Tuesday (2) for live testing
-  const isFridayOrTuesday = dayOfWeekNum === 5 || dayOfWeekNum === 2;
+  const dayOfWeekNum = now.getDay(); // 0 = Sun, 1 = Mon, 2 = Tue, 3 = Wed, 4 = Thu, 5 = Fri, 6 = Sat
+  const isFridayOrSaturday = dayOfWeekNum === 5 || dayOfWeekNum === 6;
+  const canAccessPortal = isFridayOrSaturday || isCeo;
 
   // Form State
   const [fullName, setFullName] = useState(currentUser?.name || '');
@@ -209,8 +209,8 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
     window.print();
   };
 
-  // Non-Friday Lock Screen for Staff (CEO retains access anytime)
-  if (!isFridayOrTuesday && !isCeo) {
+  // Non-Friday/Saturday Lock Screen for Staff (CEO retains access anytime)
+  if (!canAccessPortal) {
     return (
       <div style={{ padding: '60px 20px', textAlign: 'center', background: '#FFFFFF', borderRadius: '16px', margin: '24px auto', maxWidth: '600px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
         <div style={{ width: '64px', height: '64px', background: '#FEF3C7', color: '#D97706', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
@@ -220,10 +220,10 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
           Friday Task Update Portal Closed
         </h2>
         <p style={{ fontSize: '0.85rem', color: '#64748B', lineHeight: 1.6, marginBottom: '20px' }}>
-          The Friday Executive Staff Weekly Report Portal opens <strong>EXCLUSIVELY EVERY FRIDAY</strong> for staff to complete and send weekly updates directly to CEO Walter Dantis.
+          The Friday Executive Staff Weekly Report Portal opens <strong>EXCLUSIVELY EVERY FRIDAY & SATURDAY</strong> for all staff members to complete and send weekly updates directly to CEO Walter Dantis.
         </p>
         <div style={{ background: '#F8FAFC', padding: '12px 18px', borderRadius: '10px', fontSize: '0.78rem', color: '#475569', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', border: '1px solid #CBD5E1' }}>
-          <Clock size={16} style={{ color: '#2563EB' }} /> Opens: Every Friday (8:00 AM – 11:59 PM)
+          <Clock size={16} style={{ color: '#2563EB' }} /> Opens: Every Friday & Saturday
         </div>
       </div>
     );
