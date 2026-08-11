@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, User, Mail, Building, Award, CheckCircle2, Clock, AlertCircle, Plus, Trash2, Send, Printer, RotateCcw, Eye, ShieldCheck, Sparkles, FileText } from 'lucide-react';
+import { Calendar, User, Mail, Building, Award, CheckCircle2, Clock, AlertCircle, Plus, Trash2, Send, Printer, RotateCcw, Eye, ShieldCheck, Sparkles, FileText, Check, X, Filter } from 'lucide-react';
 import { SYSTEM_USERS, fetchGlobalWeeklyTasks, saveGlobalWeeklyTasks, sendGlobalNotification } from '../services/googleSheets';
 
 const FRIDAY_REPORTS_KEY = 'tp_friday_executive_reports_v2';
@@ -13,9 +13,19 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
   const now = new Date();
   const dayOfWeekNum = now.getDay(); // 0 = Sun, 1 = Mon, 2 = Tue, 3 = Wed, 4 = Thu, 5 = Fri, 6 = Sat
   const isFridayOrSaturday = dayOfWeekNum === 5 || dayOfWeekNum === 6;
+  const isCeoVerificationWindow = dayOfWeekNum === 6 || dayOfWeekNum === 0 || dayOfWeekNum === 1; // Sat, Sun, Mon
   const canAccessPortal = isFridayOrSaturday || isCeo;
 
-  // Form State
+  // Filter Assigned Projects from Live CRM Sheet for Logged-In Staff
+  const staffNameLower = (currentUser?.name || '').toLowerCase();
+  const staffEmailLower = (currentUser?.email || '').toLowerCase();
+  const assignedProjects = projects.filter(p => {
+    const assignee = (p.assignedTo || p.assignee || p.owner || '').toLowerCase();
+    return assignee.includes(staffNameLower) || assignee.includes(staffEmailLower.split('@')[0]) || isCeo;
+  });
+  const availableProjects = assignedProjects.length > 0 ? assignedProjects : projects;
+
+  // Form State for Staff
   const [fullName, setFullName] = useState(currentUser?.name || '');
   const [roleDesignation, setRoleDesignation] = useState(currentUser?.role || '');
   const [weekEnding, setWeekEnding] = useState('15-08-2026');
@@ -27,7 +37,7 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
   const [tasks, setTasks] = useState([
     {
       id: `task-1`,
-      projectArea: projects[0]?.companyName || 'General Operations',
+      projectArea: availableProjects[0]?.companyName || 'General Operations',
       taskTitle: '',
       deadline: '15-08-2026',
       priorityLevel: 'Medium',
@@ -45,13 +55,14 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
   const [blockersOrRisks, setBlockersOrRisks] = useState('');
   const [additionalNotes, setAdditionalNotes] = useState('');
 
-  // Preview & Submitted Reports List State
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  // Submitted Reports State & CEO Verification State
   const [submittedReports, setSubmittedReports] = useState([]);
-  const [selectedReportForReview, setSelectedReportForReview] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [selectedReportId, setSelectedReportId] = useState(null);
   const [ceoFeedbackInput, setCeoFeedbackInput] = useState('');
+  const [selectedStaffFilter, setSelectedStaffFilter] = useState('ALL');
 
-  // Sync Reports from Storage & Cloud
+  // Sync Reports from Local Storage & Google Sheets Cloud Backend
   const loadReports = async () => {
     try {
       const saved = localStorage.getItem(FRIDAY_REPORTS_KEY);
@@ -77,13 +88,13 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
     saveGlobalWeeklyTasks(null, updated);
   };
 
-  // Task Manipulation Handlers
+  // Staff Task Form Handlers
   const handleAddTaskEntry = () => {
     setTasks([
       ...tasks,
       {
         id: `task-${Date.now()}`,
-        projectArea: projects[0]?.companyName || 'General Operations',
+        projectArea: availableProjects[0]?.companyName || 'General Operations',
         taskTitle: '',
         deadline: '15-08-2026',
         priorityLevel: 'Medium',
@@ -114,7 +125,7 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
     setTasks([
       {
         id: `task-${Date.now()}`,
-        projectArea: projects[0]?.companyName || 'General Operations',
+        projectArea: availableProjects[0]?.companyName || 'General Operations',
         taskTitle: '',
         deadline: '15-08-2026',
         priorityLevel: 'Medium',
@@ -127,7 +138,6 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
     ]);
   };
 
-  // Submit Report Directly to CEO
   const handleSubmitReportToCeo = (e) => {
     e.preventDefault();
 
@@ -168,7 +178,6 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
     const updated = [reportPayload, ...submittedReports];
     saveReportsList(updated);
 
-    // Trigger Notification for CEO Walter Dantis
     sendGlobalNotification(null, {
       recipientEmail: 'walterdantis@turningpointretail.com',
       title: `📥 New Friday Weekly Report Submitted by ${fullName}`,
@@ -183,7 +192,7 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
     handleClearForm();
   };
 
-  // CEO Verification Handlers
+  // CEO Verification & Individual Report Export Handlers
   const handleCeoVerifyReport = (reportId, actionType) => {
     const updated = submittedReports.map(r => {
       if (r.id === reportId) {
@@ -199,17 +208,106 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
     });
 
     saveReportsList(updated);
-    setSelectedReportForReview(null);
+    setSelectedReportId(null);
     setCeoFeedbackInput('');
 
-    if (onShowToast) onShowToast(`Report status updated by CEO Walter Dantis!`);
+    if (onShowToast) onShowToast(`Report verified by CEO Walter Dantis!`);
   };
 
-  const handlePrintForm = () => {
+  const handleExportIndividualWord = (rep) => {
+    const content = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <title>Friday Executive Weekly Report - ${rep.staffName}</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #0F172A; }
+          h1 { color: #0F172A; border-bottom: 3px solid #10B981; padding-bottom: 6px; font-size: 18px; }
+          h2 { color: #1E293B; margin-top: 18px; font-size: 15px; border-bottom: 1px solid #CBD5E1; padding-bottom: 4px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th, td { border: 1px solid #CBD5E1; padding: 6px 10px; text-align: left; font-size: 12px; }
+          th { background-color: #0F172A; color: #FFFFFF; }
+          .box { background-color: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px; margin-bottom: 12px; border-radius: 6px; }
+        </style>
+      </head>
+      <body>
+        <h1>Turning Point Retail Solutions — Friday Executive Staff Report</h1>
+        <div class="box">
+          <p><strong>Staff Member:</strong> ${rep.staffName} (${rep.roleDesignation}) | <strong>Email:</strong> ${rep.userEmail}</p>
+          <p><strong>Week Ending (Saturday):</strong> ${rep.weekEnding} | <strong>Submitted Date:</strong> ${new Date(rep.submittedAt).toLocaleDateString()}</p>
+          <p><strong>Department / Reporting To:</strong> ${rep.departmentReportingTo || 'CEO Walter Dantis'}</p>
+        </div>
+
+        <h2>1. Weekly Summary & Key Achievements</h2>
+        <div class="box">
+          <p>${rep.keyAchievements || 'N/A'}</p>
+        </div>
+
+        <h2>2. Assigned CRM Task Updates (${(rep.tasks || []).length} Items)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Assigned Project</th>
+              <th>Task Title & Scope</th>
+              <th>Deadline</th>
+              <th>Priority</th>
+              <th>Progress %</th>
+              <th>Status</th>
+              <th>CEO Support Needed</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(rep.tasks || []).map((t, idx) => `
+              <tr>
+                <td>${idx + 1}</td>
+                <td><strong>${t.projectArea}</strong></td>
+                <td>${t.taskTitle}<br/><em>${t.progressThisWeek || ''}</em></td>
+                <td>${t.deadline}</td>
+                <td>${t.priorityLevel}</td>
+                <td>${t.progressPct}%</td>
+                <td><strong>${t.taskStatus}</strong></td>
+                <td>${t.supportNeededForTask || 'None'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <h2>3. Priorities & CEO Support Required</h2>
+        <div class="box">
+          <p><strong>Top Priority for Next Week:</strong> ${rep.topPriorityNextWeek || 'N/A'}</p>
+          <p><strong>Support Needed from CEO:</strong> ${rep.supportNeededFromCeo || 'None'}</p>
+          <p><strong>Blockers / Risks Flagged:</strong> ${rep.blockersOrRisks || 'None'}</p>
+          <p><strong>Additional Notes:</strong> ${rep.additionalNotes || 'N/A'}</p>
+        </div>
+
+        <div style="margin-top: 30px; border-top: 2px dashed #CBD5E1; padding-top: 15px;">
+          <p><strong>Verification Status:</strong> ${rep.status} | <strong>CEO Sign-off:</strong> CEO Walter Dantis</p>
+          ${rep.ceoFeedback ? `<p style="color:#047857;"><strong>CEO Feedback:</strong> ${rep.ceoFeedback}</p>` : ''}
+          <p style="font-size: 11px; color: #64748B;">Turning Point Retail Solutions • Executive CEO Verification Approved Report</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\ufeff' + content], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Friday_Report_${rep.staffName.replace(/\s+/g, '_')}_${rep.weekEnding}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportIndividualPDF = (rep) => {
+    const origTitle = document.title;
+    document.title = `Friday_Executive_Report_${rep.staffName.replace(/\s+/g, '_')}_${rep.weekEnding}`;
     window.print();
+    setTimeout(() => { document.title = origTitle; }, 1000);
   };
 
-  // Non-Friday/Saturday Lock Screen for Staff (CEO retains access anytime)
+  // Lock screen for non-Friday/Saturday staff access
   if (!canAccessPortal) {
     return (
       <div style={{ padding: '60px 20px', textAlign: 'center', background: '#FFFFFF', borderRadius: '16px', margin: '24px auto', maxWidth: '600px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
@@ -229,6 +327,260 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
     );
   }
 
+  // =========================================================================
+  // CEO EXECUTIVE REVIEW DASHBOARD VIEW (CEO DOES NOT FILL FORM)
+  // =========================================================================
+  if (isCeo) {
+    const filteredReports = submittedReports.filter(r => {
+      if (selectedStaffFilter === 'ALL') return true;
+      return (r.userEmail || '').toLowerCase() === selectedStaffFilter.toLowerCase();
+    });
+
+    const pendingCount = submittedReports.filter(r => !r.ceoVerified).length;
+    const approvedCount = submittedReports.filter(r => r.ceoVerified).length;
+
+    return (
+      <div style={{ maxWidth: '1080px', margin: '24px auto', fontFamily: 'Segoe UI, Arial, sans-serif' }}>
+        
+        {/* CEO Executive Banner */}
+        <div style={{
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+          borderRadius: '16px',
+          padding: '24px 28px',
+          color: '#FFFFFF',
+          marginBottom: '24px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+          display: 'flex',
+          justify: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+              <span style={{ background: 'var(--brand-green)', color: '#FFF', fontSize: '0.72rem', fontWeight: 900, padding: '3px 10px', borderRadius: '20px', textTransform: 'uppercase' }}>
+                Executive CEO Portal
+              </span>
+              <span style={{ background: '#2563EB', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
+                📅 Verification Window: Sat–Mon 12:00 PM
+              </span>
+            </div>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#FFFFFF', margin: 0 }}>
+              CEO Executive Staff Weekly Reports Verification Center 📋
+            </h2>
+            <p style={{ fontSize: '0.82rem', color: '#94A3B8', margin: '4px 0 0 0' }}>
+              Review, verify, approve, and export individual staff weekly report submissions for CEO sign-off.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              onClick={() => window.print()}
+              className="btn-secondary"
+              style={{ padding: '8px 14px', fontSize: '0.8rem', fontWeight: 800, background: 'rgba(255,255,255,0.1)', color: '#FFF', border: '1px solid rgba(255,255,255,0.2)' }}
+            >
+              <Printer size={15} /> Print All Statements
+            </button>
+          </div>
+        </div>
+
+        {/* CEO Quick Stats Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+          <div style={{ background: '#FFFFFF', padding: '18px', borderRadius: '14px', border: '1px solid #CBD5E1', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Total Reports Submitted</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0F172A', marginTop: '4px' }}>{submittedReports.length} Reports</div>
+          </div>
+
+          <div style={{ background: '#ECFDF5', padding: '18px', borderRadius: '14px', border: '1px solid #A7F3D0', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase' }}>Verified & Approved</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#047857', marginTop: '4px' }}>{approvedCount} Verified</div>
+          </div>
+
+          <div style={{ background: '#EFF6FF', padding: '18px', borderRadius: '14px', border: '1px solid #BFDBFE', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase' }}>Pending CEO Review</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#1E40AF', marginTop: '4px' }}>{pendingCount} Pending</div>
+          </div>
+        </div>
+
+        {/* Filter Staff Dropdown */}
+        <div style={{ background: '#FFFFFF', padding: '14px 20px', borderRadius: '12px', border: '1px solid #CBD5E1', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Filter size={16} style={{ color: '#2563EB' }} />
+            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0F172A' }}>Filter Staff Reports:</span>
+            <select
+              value={selectedStaffFilter}
+              onChange={e => setSelectedStaffFilter(e.target.value)}
+              style={{ padding: '6px 12px', fontSize: '0.8rem', fontWeight: 700, borderRadius: '8px', border: '1px solid #CBD5E1', background: '#F8FAFC' }}
+            >
+              <option value="ALL">All Staff Members ({submittedReports.length})</option>
+              {SYSTEM_USERS.map(u => (
+                <option key={u.email} value={u.email}>{u.name} ({u.role})</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Individual Staff Reports List */}
+        {filteredReports.length === 0 ? (
+          <div style={{ background: '#FFFFFF', padding: '40px 20px', borderRadius: '16px', border: '1px dashed #CBD5E1', textAlign: 'center', color: '#64748B' }}>
+            No staff report submissions found for this filter.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {filteredReports.map((rep, idx) => (
+              <div key={rep.id} style={{ background: '#FFFFFF', borderRadius: '16px', border: '1.5px solid ' + (rep.ceoVerified ? '#A7F3D0' : '#BFDBFE'), padding: '24px', boxShadow: '0 4px 16px rgba(0,0,0,0.04)' }}>
+                
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '16px', borderBottom: '1px solid #E2E8F0', paddingBottom: '14px' }}>
+                  <div>
+                    <span style={{ background: '#0F172A', color: '#FFF', fontSize: '0.7rem', fontWeight: 900, padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>
+                      Report #{idx + 1}
+                    </span>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0F172A', margin: '6px 0 2px 0' }}>
+                      {rep.staffName} — {rep.roleDesignation}
+                    </h3>
+                    <span style={{ fontSize: '0.78rem', color: '#64748B' }}>
+                      Email: <strong>{rep.userEmail}</strong> | Department: {rep.departmentReportingTo || 'Retail Advisory'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                    <span style={{
+                      padding: '4px 12px',
+                      borderRadius: '12px',
+                      fontSize: '0.7rem',
+                      fontWeight: 900,
+                      background: rep.ceoVerified ? '#ECFDF5' : '#EFF6FF',
+                      color: rep.ceoVerified ? '#047857' : '#1E40AF',
+                      border: '1px solid ' + (rep.ceoVerified ? '#A7F3D0' : '#BFDBFE')
+                    }}>
+                      {rep.status}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600 }}>
+                      Week Ending: <strong>{rep.weekEnding}</strong>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Key Achievements */}
+                <div style={{ background: '#F8FAFC', padding: '12px 16px', borderRadius: '10px', border: '1px solid #E2E8F0', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0F172A', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    🏆 Key Achievements This Week:
+                  </div>
+                  <div style={{ fontSize: '0.84rem', color: '#334155', lineHeight: 1.5 }}>
+                    {rep.keyAchievements}
+                  </div>
+                </div>
+
+                {/* Assigned CRM Tasks Breakdown */}
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0F172A', marginBottom: '8px', textTransform: 'uppercase' }}>
+                    📋 Assigned CRM Task Updates ({(rep.tasks || []).length} Items):
+                  </div>
+
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+                      <thead>
+                        <tr style={{ background: '#0F172A', color: '#FFF' }}>
+                          <th style={{ padding: '8px 10px', textAlign: 'left' }}>Assigned Project</th>
+                          <th style={{ padding: '8px 10px', textAlign: 'left' }}>Task Title</th>
+                          <th style={{ padding: '8px 10px', textAlign: 'left' }}>Deadline</th>
+                          <th style={{ padding: '8px 10px', textAlign: 'left' }}>Priority</th>
+                          <th style={{ padding: '8px 10px', textAlign: 'left' }}>% Done</th>
+                          <th style={{ padding: '8px 10px', textAlign: 'left' }}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(rep.tasks || []).map((t, tIdx) => (
+                          <tr key={tIdx} style={{ borderBottom: '1px solid #E2E8F0', background: tIdx % 2 === 0 ? '#FFFFFF' : '#F8FAFC' }}>
+                            <td style={{ padding: '8px 10px', fontWeight: 800 }}>{t.projectArea}</td>
+                            <td style={{ padding: '8px 10px' }}>
+                              <strong>{t.taskTitle}</strong>
+                              {t.progressThisWeek && <div style={{ fontSize: '0.7rem', color: '#64748B' }}>{t.progressThisWeek}</div>}
+                            </td>
+                            <td style={{ padding: '8px 10px' }}>{t.deadline}</td>
+                            <td style={{ padding: '8px 10px' }}>{t.priorityLevel}</td>
+                            <td style={{ padding: '8px 10px', fontWeight: 800 }}>{t.progressPct}%</td>
+                            <td style={{ padding: '8px 10px' }}><span style={{ background: '#ECFDF5', color: '#047857', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>{t.taskStatus}</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Priorities & Blockers */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+                  <div style={{ background: '#EFF6FF', padding: '10px 14px', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1E40AF' }}>🎯 Top Priority Next Week:</div>
+                    <div style={{ fontSize: '0.8rem', color: '#1E293B', marginTop: '2px' }}>{rep.topPriorityNextWeek}</div>
+                  </div>
+
+                  <div style={{ background: '#FEF3C7', padding: '10px 14px', borderRadius: '8px', border: '1px solid #FDE68A' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#B45309' }}>📢 Support Needed from CEO:</div>
+                    <div style={{ fontSize: '0.8rem', color: '#1E293B', marginTop: '2px' }}>{rep.supportNeededFromCeo || 'None'}</div>
+                  </div>
+                </div>
+
+                {/* Individual Export & CEO Verification Actions */}
+                <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  
+                  {/* Export Buttons for CEO */}
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => handleExportIndividualWord(rep)}
+                      style={{ background: '#0F172A', color: '#FFF', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <FileText size={13} /> Export Word (.doc)
+                    </button>
+                    <button
+                      onClick={() => handleExportIndividualPDF(rep)}
+                      style={{ background: '#2563EB', color: '#FFF', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <Printer size={13} /> Export {rep.staffName.split(' ')[0]} Report (PDF)
+                    </button>
+                  </div>
+
+                  {/* CEO Verify Controls */}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      placeholder="Add CEO feedback note..."
+                      value={selectedReportId === rep.id ? ceoFeedbackInput : ''}
+                      onChange={e => {
+                        setSelectedReportId(rep.id);
+                        setCeoFeedbackInput(e.target.value);
+                      }}
+                      style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '0.78rem', width: '220px' }}
+                    />
+                    <button
+                      onClick={() => handleCeoVerifyReport(rep.id, 'APPROVE')}
+                      style={{ background: '#059669', color: '#FFF', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleCeoVerifyReport(rep.id, 'REVISION')}
+                      style={{ background: '#DC2626', color: '#FFF', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
+                    >
+                      Revision
+                    </button>
+                  </div>
+
+                </div>
+
+              </div>
+            ))}
+          </div>
+        )}
+
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // REGULAR STAFF FRIDAY SUBMISSION FORM VIEW
+  // =========================================================================
   return (
     <div style={{ maxWidth: '960px', margin: '24px auto', fontFamily: 'Segoe UI, Arial, sans-serif' }}>
       
@@ -252,7 +604,7 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
               Turning Point Retail Solutions
             </span>
             <span style={{ background: '#2563EB', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
-              📅 Friday Executive Submission
+              📅 Friday Submission Window
             </span>
           </div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#FFFFFF', margin: 0 }}>
@@ -269,10 +621,10 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
             className="btn-secondary"
             style={{ padding: '8px 14px', fontSize: '0.8rem', fontWeight: 800, background: 'rgba(255,255,255,0.1)', color: '#FFF', border: '1px solid rgba(255,255,255,0.2)' }}
           >
-            <Eye size={15} /> Preview Reports ({submittedReports.length})
+            <Eye size={15} /> Preview My Reports ({submittedReports.length})
           </button>
           <button 
-            onClick={handlePrintForm}
+            onClick={() => window.print()}
             className="btn-secondary"
             style={{ padding: '8px 14px', fontSize: '0.8rem', fontWeight: 800, background: 'rgba(255,255,255,0.1)', color: '#FFF', border: '1px solid rgba(255,255,255,0.2)' }}
           >
@@ -387,14 +739,14 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
           </div>
         </div>
 
-        {/* SECTION 3: TASK UPDATES */}
+        {/* SECTION 3: TASK UPDATES (LIVE CRM ASSIGNED PROJECTS) */}
         <div style={{ borderBottom: '1px solid #E2E8F0', paddingBottom: '20px', marginBottom: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div>
               <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <CheckCircle2 size={18} style={{ color: '#10B981' }} /> Task Updates
               </h3>
-              <span style={{ fontSize: '0.72rem', color: '#64748B' }}>Add one entry per project or task area</span>
+              <span style={{ fontSize: '0.72rem', color: '#64748B' }}>Add one entry per project or task area (picked from your assigned live CRM projects)</span>
             </div>
 
             <button 
@@ -431,10 +783,13 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
                   <select 
                     value={t.projectArea}
                     onChange={e => handleUpdateTaskField(t.id, 'projectArea', e.target.value)}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '0.82rem' }}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '0.82rem', fontWeight: 700 }}
                   >
-                    {projects.map(p => (
-                      <option key={p.id} value={p.companyName}>{p.companyName} ({p.sector})</option>
+                    <option value="">Select project / area...</option>
+                    {availableProjects.map(p => (
+                      <option key={p.id} value={p.companyName}>
+                        {p.companyName} ({p.sector || 'Advisory'})
+                      </option>
                     ))}
                     <option value="General Operations">General Operations</option>
                   </select>
@@ -648,13 +1003,13 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
 
       </form>
 
-      {/* SUBMITTED REPORTS LIST & CEO VERIFICATION MODAL */}
+      {/* STAFF PREVIEW MODAL */}
       {showPreviewModal && (
         <div className="modal-overlay" style={{ zIndex: 10000 }}>
           <div className="modal-content" style={{ width: '92%', maxWidth: '850px', maxHeight: '90vh', overflowY: 'auto', borderRadius: '16px', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #E2E8F0', paddingBottom: '12px' }}>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0F172A', margin: 0 }}>
-                Friday Weekly Reports Ledger ({submittedReports.length})
+                My Submitted Friday Reports ({submittedReports.length})
               </h3>
               <button onClick={() => setShowPreviewModal(false)} className="btn-secondary" style={{ padding: '4px 10px' }}>
                 Close
@@ -663,7 +1018,7 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
 
             {submittedReports.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748B' }}>
-                No Friday reports submitted yet.
+                No reports submitted yet.
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -695,39 +1050,9 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
                       <strong>Key Achievements:</strong> {rep.keyAchievements}
                     </div>
 
-                    <div style={{ fontSize: '0.78rem', color: '#475569', marginBottom: '10px' }}>
+                    <div style={{ fontSize: '0.78rem', color: '#475569' }}>
                       <strong>Top Priority Next Week:</strong> {rep.topPriorityNextWeek}
                     </div>
-
-                    {isCeo && !rep.ceoVerified && (
-                      <div style={{ marginTop: '12px', background: '#FFFFFF', padding: '12px', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#1E40AF', marginBottom: '6px' }}>CEO Verification Action:</div>
-                        <input 
-                          type="text" 
-                          placeholder="Enter CEO feedback or approval note..."
-                          value={selectedReportForReview === rep.id ? ceoFeedbackInput : ''}
-                          onChange={e => {
-                            setSelectedReportForReview(rep.id);
-                            setCeoFeedbackInput(e.target.value);
-                          }}
-                          style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '0.78rem', marginBottom: '8px' }}
-                        />
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button 
-                            onClick={() => handleCeoVerifyReport(rep.id, 'APPROVE')}
-                            style={{ background: '#059669', color: '#FFF', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
-                          >
-                            Approve Report
-                          </button>
-                          <button 
-                            onClick={() => handleCeoVerifyReport(rep.id, 'REVISION')}
-                            style={{ background: '#DC2626', color: '#FFF', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
-                          >
-                            Request Revision
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
