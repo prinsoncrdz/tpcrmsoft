@@ -171,7 +171,7 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
   // Role-Based Field Edit & Deletion Permissions
   const isCeo = currentUser?.role === 'CEO' || (currentUser?.name || '').toLowerCase().includes('walter') || (currentUser?.role || '').toLowerCase().includes('ceo');
   const canEditAllFields = currentUser?.role === 'CEO' || currentUser?.role === 'Admin' || isCeo;
-  const canDeleteProject = true; // Delete button is ALWAYS active, protected by the CEO Mobile QR Code 2FA Security Protocol Modal
+  const canDeleteProject = isCeo; // Project deletion is STRICTLY reserved for CEO Walter Dantis
   const canEditProgressUpdate = true; // Everyone assigned can edit Progress Update
 
   // Filter projects by search query, sector tab, and assignment tab
@@ -1144,12 +1144,13 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
       {detailsProject && (
         <ProjectDetailsModal
           project={detailsProject}
+          currentUser={currentUser}
           subTasks={subTasksMap[detailsProject.id] || []}
           onClose={() => setDetailsProject(null)}
-          onDeleteProject={(proj) => {
+          onDeleteProject={isCeo ? (proj) => {
             setDetailsProject(null);
             openCeoDeleteModal(proj);
-          }}
+          } : null}
           onCellEdit={onCellEdit}
         />
       )}

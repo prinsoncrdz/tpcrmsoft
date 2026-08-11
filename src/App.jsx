@@ -153,6 +153,11 @@ export default function App() {
   };
 
   const handleDeleteProject = (projectId, deleteReason) => {
+    const isCeo = currentUser?.role === 'CEO' || (currentUser?.name || '').toLowerCase().includes('walter') || (currentUser?.role || '').toLowerCase().includes('ceo');
+    if (!isCeo) {
+      showToast('🔒 Access Denied: Only CEO Walter Dantis can delete projects!');
+      return;
+    }
     const updated = projects.filter(p => p.id !== projectId);
     setProjects(updated);
     showToast(`Project deleted successfully. Reason logged: "${deleteReason || 'Executive Cleanup'}"`);

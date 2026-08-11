@@ -1,8 +1,10 @@
 import React from 'react';
 import { X, Building2, User, Phone, Mail, MapPin, Calendar, DollarSign, CheckCircle2, Clock, FileText, Printer, ShieldCheck, PieChart, Sparkles } from 'lucide-react';
 
-export default function ProjectDetailsModal({ project, subTasks = [], onClose, onDeleteProject, onCellEdit }) {
+export default function ProjectDetailsModal({ project, currentUser, subTasks = [], onClose, onDeleteProject, onCellEdit }) {
   if (!project) return null;
+
+  const isCeo = currentUser?.role === 'CEO' || (currentUser?.name || '').toLowerCase().includes('walter') || (currentUser?.role || '').toLowerCase().includes('ceo');
 
   const totalContract = parseFloat(project.totalContractValue || project.value || 0);
   const paidAmount = parseFloat(project.depositPaid || project.amountPaid || 0);
@@ -125,7 +127,7 @@ export default function ProjectDetailsModal({ project, subTasks = [], onClose, o
             >
               <Printer size={15} /> Print / PDF Report
             </button>
-            {onDeleteProject && (
+            {isCeo && onDeleteProject && (
               <button 
                 onClick={() => onDeleteProject(project)}
                 style={{ background: '#DC2626', color: '#FFF', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
