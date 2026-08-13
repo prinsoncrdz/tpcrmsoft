@@ -190,12 +190,20 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
 
   // Filter projects by search query, sector tab, and assignment tab
   const filteredProjects = projects.filter(p => {
+    if (!p) return false;
+    const pName = (p.projectName || p.companyName || '').toLowerCase();
+    const pId = (p.projectId || p.id || '').toLowerCase();
+    const pClient = (p.client || '').toLowerCase();
+    const pOwner = (p.owner || '').toLowerCase();
+    const pAssignee = (p.assignee || '').toLowerCase();
+    const sQuery = (searchQuery || '').toLowerCase();
+
     const matchesSearch = (
-      p.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.projectId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.owner.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.assignee.toLowerCase().includes(searchQuery.toLowerCase())
+      pName.includes(sQuery) ||
+      pId.includes(sQuery) ||
+      pClient.includes(sQuery) ||
+      pOwner.includes(sQuery) ||
+      pAssignee.includes(sQuery)
     );
 
     const matchesSector = selectedSector === 'ALL' || (p.sector && p.sector.toUpperCase().includes(selectedSector));
@@ -206,8 +214,8 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
     const uName = (currentUser?.name || '').toLowerCase();
 
     const isAssignedToUser = 
-      p.assignee.toLowerCase().includes(uName) ||
-      p.owner.toLowerCase().includes(uName) ||
+      pAssignee.includes(uName) ||
+      pOwner.includes(uName) ||
       pSubTasks.some(st => 
         (st.assigneeEmail && st.assigneeEmail.toLowerCase() === uEmail) ||
         (st.assigneeName && st.assigneeName.toLowerCase().includes(uName))

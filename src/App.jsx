@@ -193,8 +193,30 @@ export default function App() {
     }
 
     try {
+      const projId = newProjData.projectId || newProjData.id || `TP-PRJ-${Date.now()}`;
+      const projName = newProjData.projectName || newProjData.companyName || 'New Project';
+
       const newProject = {
-        id: `p-${Date.now()}`,
+        id: projId,
+        projectId: projId,
+        projectName: projName,
+        companyName: projName,
+        client: newProjData.client || 'Turning Point Retail',
+        sector: newProjData.sector || 'RETAIL & FRANCHISE',
+        owner: newProjData.owner || 'Walter Dantis (CEO)',
+        assignee: newProjData.assignee || 'Sreylang Thim',
+        startDate: newProjData.startDate || new Date().toISOString().split('T')[0],
+        targetEndDate: newProjData.targetEndDate || '2026-12-31',
+        completion: newProjData.completion || '0%',
+        status: newProjData.status || (isCeo ? 'In Progress' : 'Pending CEO Approval'),
+        priority: newProjData.priority || 'High',
+        statusUpdate: newProjData.statusUpdate || 'Project Initiation Form submitted.',
+        driveLink: newProjData.driveLink || '',
+        nextAction: newProjData.nextAction || '',
+        nextActionDueDate: newProjData.nextActionDueDate || '',
+        daysToDeadline: 0,
+        lastUpdated: new Date().toLocaleDateString('en-GB'),
+        remarks: newProjData.remarks || '',
         rowIndex: (projects.length || 0) + 11,
         ...newProjData
       };
@@ -202,21 +224,21 @@ export default function App() {
       const updatedProjects = [newProject, ...(projects || [])];
       setProjects(updatedProjects);
 
+      localStorage.setItem('tp_last_known_projects_v2', JSON.stringify(updatedProjects));
+
       setIsSyncing(true);
-      showToast('Pushing new project to Google Sheet...');
+      showToast(`Pushing "${projName}" to Google Sheet database...`);
 
       await addProjectToGoogleSheet(gasUrl, newProject);
 
       setIsSyncing(false);
-      showToast(`Project "${newProjData.projectName || 'New Project'}" saved to Google Sheet!`);
+      showToast(`Project "${projName}" saved to Google Sheet!`);
 
       try {
         if (typeof confetti === 'function') {
           confetti({ particleCount: 70, spread: 70 });
         }
-      } catch (cErr) {
-        console.warn('Confetti animation:', cErr);
-      }
+      } catch (cErr) {}
     } catch (err) {
       console.error('handleAddProject error:', err);
       setIsSyncing(false);
