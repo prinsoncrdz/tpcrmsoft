@@ -233,6 +233,9 @@ export default function ProjectApprovalsPortal({ projects = [], currentUser, onA
 // Inner Modal Component for CEO to Review & Approve
 function CeoProjectReviewModal({ project, currentUser, isCeo, onClose, onApproveProject }) {
   const [formData, setFormData] = useState({
+    projectObjective: project.projectObjective || project.statusUpdate || '',
+    scopeOfWork: project.scopeOfWork || project.notes || '',
+    keyDeliverables: project.keyDeliverables || '',
     contractValueUsd: project.contractValueUsd || project.value || '',
     advanceRetainerPct: project.advanceRetainerPct || '25',
     advanceAmountUsd: project.advanceAmountUsd || project.depositPaid || '',
@@ -319,17 +322,41 @@ function CeoProjectReviewModal({ project, currentUser, isCeo, onClose, onApprove
             </div>
           </div>
 
-          {/* SECTION B SUMMARY */}
-          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '0.85rem', fontWeight: 900, color: '#0F172A', margin: '0 0 10px 0', textTransform: 'uppercase' }}>
-              SECTION B – SCOPE & OBJECTIVES SUMMARY
+          {/* SECTION B - SCOPE & OBJECTIVES (CEO EDITABLE) */}
+          <div style={{ background: '#FFFBEB', border: '1.5px solid #FCD34D', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '0.85rem', fontWeight: 900, color: '#92400E', margin: '0 0 10px 0', textTransform: 'uppercase' }}>
+              SECTION B – SCOPE & OBJECTIVES (CEO Edit Unlocked)
             </h3>
-            <p style={{ fontSize: '0.8rem', color: '#334155', margin: '0 0 6px 0' }}>
-              <strong>Objective:</strong> {project.projectObjective || project.statusUpdate || 'Retail consulting and execution.'}
-            </p>
-            <p style={{ fontSize: '0.8rem', color: '#334155', margin: 0 }}>
-              <strong>Scope of Work:</strong> {project.scopeOfWork || 'Full project management and delivery.'}
-            </p>
+            
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#78350F', display: 'block', marginBottom: '4px' }}>
+                🎯 Project Objective (CEO Editable)
+              </label>
+              <textarea 
+                name="projectObjective" 
+                rows="2"
+                value={formData.projectObjective} 
+                onChange={handleChange}
+                disabled={!isCeo}
+                placeholder="Type or edit project objective..."
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #FCD34D', fontSize: '0.82rem', background: '#FFF' }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#78350F', display: 'block', marginBottom: '4px' }}>
+                📋 Scope of Work (CEO Editable)
+              </label>
+              <textarea 
+                name="scopeOfWork" 
+                rows="3"
+                value={formData.scopeOfWork} 
+                onChange={handleChange}
+                disabled={!isCeo}
+                placeholder="Type or edit detailed scope of work..."
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #FCD34D', fontSize: '0.82rem', background: '#FFF' }}
+              />
+            </div>
           </div>
 
           {/* SECTION C - FINANCIAL SUMMARY (CEO UNLOCKED FOR UPDATE) */}
