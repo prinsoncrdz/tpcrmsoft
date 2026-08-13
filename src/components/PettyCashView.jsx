@@ -330,6 +330,18 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   const septTotal = filteredSeptData.reduce((acc, r) => acc + parseVal(r.cardSpent || r.cashOut), 0);
   const totalYTD = julyTotal + augTotal + septTotal;
 
+  // Dynamic automatic mathematical calculations across active non-deleted rows
+  const startingCashNum = parseVal(headerSummary.startingCash);
+  const cashInNum = parseVal(headerSummary.cashIn);
+
+  const liveCashOut = filteredActiveTabData.reduce((acc, r) => {
+    const isCash = (r.paymentMethod || '').toLowerCase().includes('cash') || parseVal(r.cashOut) > 0;
+    return acc + (isCash ? parseVal(r.cashOut || r.cardSpent) : 0);
+  }, 0);
+
+  const liveTotalSpent = filteredActiveTabData.reduce((acc, r) => acc + parseVal(r.cardSpent || r.cashOut), 0);
+  const dynamicRemainingCash = Math.max(0, startingCashNum + cashInNum - liveCashOut);
+
   // Category breakdown compile
   const allRows = [...filteredJulyData, ...filteredAugData, ...filteredSeptData];
   const categoryMap = {};
@@ -558,31 +570,31 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Starting Cash Balance</span>
             <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--brand-green)' }}>
-              {headerSummary.startingCash || '$0.00'}
+              ${startingCashNum.toFixed(2)}
             </div>
           </div>
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Total Cash In</span>
             <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#2563EB' }}>
-              {headerSummary.cashIn || '$0.00'}
+              ${cashInNum.toFixed(2)}
             </div>
           </div>
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Total Cash Out</span>
             <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#DC2626' }}>
-              {headerSummary.cashOut || '$0.00'}
+              ${liveCashOut.toFixed(2)}
             </div>
           </div>
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Remaining Cash Balance</span>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--brand-green)' }}>
-              {headerSummary.remainingCash || '$0.00'}
+            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#047857', background: '#ECFDF5', padding: '2px 8px', borderRadius: '6px', display: 'inline-block' }}>
+              ${dynamicRemainingCash.toFixed(2)}
             </div>
           </div>
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Card / Online Spent</span>
             <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#7C3AED' }}>
-              {headerSummary.cardSpent || `$${filteredActiveTabData.reduce((acc, r) => acc + parseVal(r.cardSpent || r.cashOut), 0).toFixed(2)}`}
+              ${liveTotalSpent.toFixed(2)}
             </div>
           </div>
         </div>
