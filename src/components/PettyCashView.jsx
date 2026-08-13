@@ -355,6 +355,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   const liveCashIn = targetRowsForSummary.reduce((acc, r) => acc + parseVal(r.cashIn), 0);
   const parsedCashIn = parseVal(safeHeaderSummary.cashIn);
   const liveTotalSpent = targetRowsForSummary.reduce((acc, r) => acc + parseVal(r.cardSpent || r.cashOut), 0);
+  const liveCashOut = liveTotalSpent;
 
   // Total replenished cash in funds (Auto-calculates replenishment level if spent exceeds starting float)
   const totalCashInNum = Math.max(parsedCashIn, liveCashIn, liveTotalSpent > startingCashNum ? Math.ceil((liveTotalSpent - startingCashNum + 28.80) / 10) * 10 : 0);
