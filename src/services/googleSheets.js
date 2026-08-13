@@ -718,4 +718,40 @@ export async function saveGlobalDeletedProjects(gasUrl, deletedProjectKeys) {
   return null;
 }
 
+// FETCH GLOBAL RICH PROJECT DETAILS (Scope of Work, Objective, Pricing, Payment Terms) FROM CLOUD BACKEND
+export async function fetchGlobalProjectsDetails(gasUrl) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(`${targetUrl}?action=getProjectsDetails&t=${Date.now()}`);
+    if (!response.ok) throw new Error('Network response not ok');
+    const json = await response.json();
+    if (json.status === 'success' && json.data) {
+      return json.data;
+    }
+  } catch (err) {
+    console.warn('Global Projects Details fetch error:', err);
+  }
+  return null;
+}
+
+// SAVE GLOBAL RICH PROJECT DETAILS TO CLOUD BACKEND
+export async function saveGlobalProjectsDetails(gasUrl, projectsMap) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'saveProjectsDetails',
+        projectsDetails: projectsMap || {}
+      })
+    });
+    const json = await response.json();
+    return json.data || null;
+  } catch (err) {
+    console.warn('Global Projects Details save error:', err);
+  }
+  return null;
+}
+
 

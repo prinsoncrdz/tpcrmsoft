@@ -20,6 +20,8 @@ import {
   addPettyCashToGoogleSheet,
   fetchGlobalDeletedProjects,
   saveGlobalDeletedProjects,
+  fetchGlobalProjectsDetails,
+  saveGlobalProjectsDetails,
   SHEET_GIDS,
   DEFAULT_GAS_URL 
 } from './services/googleSheets';
@@ -96,6 +98,11 @@ export default function App() {
       }
     } catch(e) {}
 
+    let cloudDetails = null;
+    try {
+      cloudDetails = await fetchGlobalProjectsDetails(gasUrl);
+    } catch(e) {}
+
     const res = await fetchSheetData(SHEET_GIDS.CRM);
     if (res.success && Array.isArray(res.data) && res.data.length > 0) {
       const validDeleted = (currentDeleted || []).filter(Boolean);
@@ -125,6 +132,14 @@ export default function App() {
         (prevProjects || []).forEach(p => {
           if (p.projectId || p.id) detailMap.set(p.projectId || p.id, p);
         });
+
+        // Overlay Cloud Details (Scope of Work, Objective, Pricing, Payment Terms)
+        if (cloudDetails && typeof cloudDetails === 'object') {
+          Object.keys(cloudDetails).forEach(k => {
+            const existing = detailMap.get(k) || {};
+            detailMap.set(k, { ...existing, ...cloudDetails[k] });
+          });
+        }
 
         const mergedProjects = activeProjects.map(sheetProj => {
           const key = sheetProj.projectId || sheetProj.id;
@@ -256,8 +271,32 @@ export default function App() {
     }
   };
 
+  // Helper to persist rich Section B & C details (Scope of Work, Objective, Pricing, Payment Terms) to Google Apps Script cloud storage
+  const syncProjectsDetailsToCloud = async (projectsList) => {
+    try {
+      const map = {};
+      (projectsList || []).forEach(p => {
+        const key = p.projectId || p.id;
+        if (key) {
+          map[key] = {
+            clientContact: p.clientContact || '',
+            projectObjective: p.projectObjective || '',
+            scopeOfWork: p.scopeOfWork || '',
+            keyDeliverables: p.keyDeliverables || '',
+            keyPartners: p.keyPartners || '',
+            contractValueUsd: p.contractValueUsd || p.value || '',
+            advanceAmountUsd: p.advanceAmountUsd || p.depositPaid || '',
+            paymentTerms: p.paymentTerms || '',
+            invoiceSchedule: p.invoiceSchedule || ''
+          };
+        }
+      });
+      await saveGlobalProjectsDetails(gasUrl, map);
+    } catch(e) {}
+  };
+
   // Save full project details & Section B/C inline edits permanently
-  const handleSaveProjectDetails = (targetProject, updatedFields) => {
+  const handleSaveProjectDetails = async (targetProject, updatedFields) => {
     const updatedProjects = projects.map(p => {
       if (p.id === targetProject.id || p.projectId === targetProject.projectId) {
         return {
@@ -274,6 +313,7 @@ export default function App() {
     localStorage.setItem('tp_last_known_projects_v2', JSON.stringify(updatedProjects));
     broadcastProjectUpdate(updatedProjects);
     showToast('Project Scope of Work & Section C Financials updated successfully!');
+    await syncProjectsDetailsToCloud(updatedProjects);
   };
 
   // Add new project live
@@ -325,6 +365,7 @@ export default function App() {
       showToast(`Pushing "${projName}" to Google Sheet database...`);
 
       await addProjectToGoogleSheet(gasUrl, newProject);
+      await syncProjectsDetailsToCloud(updatedProjects);
 
       setIsSyncing(false);
       showToast(`Project "${projName}" saved to Google Sheet!`);
