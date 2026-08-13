@@ -372,9 +372,18 @@ function parsePettyCashRows(rows, gid) {
   return { transactions, headerSummary };
 }
 
-// Filter projects based on User Role permissions (CEO & Sreylang see all; Staff see assigned only)
+// Filter projects based on User Role permissions (CEO & Sreylang see all active; Staff see assigned active only)
 export function filterProjectsByRole(projects, currentUser, subTasksMap = {}) {
   if (!currentUser) return [];
+
+  // Filter out any deleted projects for EVERYONE including CEO Walter Dantis
+  const activeProjects = (projects || []).filter(p => {
+    if (!p) return false;
+    const st = (p.status || '').toLowerCase();
+    if (st.includes('deleted') || st === 'deleted') return false;
+    return true;
+  });
+
   const uRole = currentUser.role || '';
   const uName = (currentUser.name || '').toLowerCase();
   const uEmail = (currentUser.email || '').toLowerCase();
@@ -382,11 +391,11 @@ export function filterProjectsByRole(projects, currentUser, subTasksMap = {}) {
   const isCeo = uRole === 'CEO' || uName.includes('walter') || uRole.toLowerCase().includes('ceo');
   const isSrelyang = uName.includes('sreylang') || uEmail.includes('sreylang.thim');
 
-  // CEO Walter Dantis & Sreylang Thim see all company projects
-  if (isCeo || isSrelyang) return projects || [];
+  // CEO Walter Dantis & Sreylang Thim see all active non-deleted company projects
+  if (isCeo || isSrelyang) return activeProjects;
 
   // Team members (e.g. Prinson Cardozo) see ONLY projects assigned to them by CEO or where they have assigned sub-tasks
-  return (projects || []).filter(p => {
+  return activeProjects.filter(p => {
     const pAssignee = (p.assignee || '').toLowerCase();
     const pOwner = (p.owner || '').toLowerCase();
     const pSubTasks = subTasksMap[p.id] || [];
