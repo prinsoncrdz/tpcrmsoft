@@ -540,16 +540,23 @@ export async function fetchGlobalSubTasks(gasUrl) {
 }
 
 // SAVE GLOBAL LIVE SUB-TASKS TO CLOUD ENDPOINT
-export async function saveGlobalSubTasks(gasUrl, projectId, subTasks) {
+export async function saveGlobalSubTasks(gasUrl, projectIdOrMap, subTasks) {
   const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  
+  let payloadMap = {};
+  if (typeof projectIdOrMap === 'object' && projectIdOrMap !== null) {
+    payloadMap = projectIdOrMap;
+  } else if (typeof projectIdOrMap === 'string') {
+    payloadMap = { [projectIdOrMap]: subTasks || [] };
+  }
+
   try {
     const response = await fetch(targetUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action: 'saveSubTasks',
-        projectId,
-        subTasks
+        subTasks: payloadMap
       })
     });
     const json = await response.json();

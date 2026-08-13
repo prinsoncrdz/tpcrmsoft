@@ -74,8 +74,15 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
     setSubTasksMap(prevMap => {
       const updatedMap = { ...prevMap, [projectId]: tasks };
       localStorage.setItem(SUBTASKS_STORAGE_KEY, JSON.stringify(updatedMap));
+      
+      try {
+        const bc = new BroadcastChannel('tp_subtasks_sync_channel');
+        bc.postMessage({ subTasksMap: updatedMap });
+        bc.close();
+      } catch(e) {}
+
       // Save to Cloud Endpoint for cross-device sync
-      saveGlobalSubTasks(null, projectId, tasks);
+      saveGlobalSubTasks(null, updatedMap);
       return updatedMap;
     });
 
