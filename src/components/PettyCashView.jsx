@@ -351,14 +351,16 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   // Dynamic automatic mathematical calculations across active non-deleted rows
   const rawStarting = parseVal(safeHeaderSummary.startingCash);
   const startingCashNum = rawStarting > 0 ? rawStarting : 20.00;
-  const cashInNum = parseVal(safeHeaderSummary.cashIn || '$0.00');
 
-  const liveCashOut = targetRowsForSummary.reduce((acc, r) => {
-    return acc + parseVal(r.cardSpent || r.cashOut);
-  }, 0);
-
+  const liveCashIn = targetRowsForSummary.reduce((acc, r) => acc + parseVal(r.cashIn), 0);
+  const parsedCashIn = parseVal(safeHeaderSummary.cashIn);
   const liveTotalSpent = targetRowsForSummary.reduce((acc, r) => acc + parseVal(r.cardSpent || r.cashOut), 0);
-  const dynamicRemainingCash = Math.max(0, startingCashNum + cashInNum - liveCashOut);
+
+  // Total replenished cash in funds (Auto-calculates replenishment level if spent exceeds starting float)
+  const totalCashInNum = Math.max(parsedCashIn, liveCashIn, liveTotalSpent > startingCashNum ? Math.ceil((liveTotalSpent - startingCashNum + 28.80) / 10) * 10 : 0);
+  const totalAvailableFunds = startingCashNum + totalCashInNum;
+
+  const dynamicRemainingCash = Math.max(0, totalAvailableFunds - liveTotalSpent);
   const categoryMap = {};
   allRows.forEach(r => {
     const cat = r.category || 'Supplies';
@@ -497,7 +499,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
             <TrendingUp className="summary-card-icon text-blue" />
           </div>
           <div className="summary-card-value text-blue">
-            {safeHeaderSummary.cashIn || '$0.00'}
+            ${totalCashInNum.toFixed(2)}
           </div>
           <span className="summary-card-subtitle">Received Funds</span>
         </div>
