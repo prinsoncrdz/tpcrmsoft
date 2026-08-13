@@ -154,26 +154,41 @@ function sanitizeAssigneeName(rawName) {
 
 // Parse CRM Sheet rows strictly from user's live Google Sheet (Sanitizing legacy template names)
 function parseCRMRows(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) return [];
   const projects = [];
   let currentSector = 'RETAIL & FRANCHISE';
   
   let headerIndex = -1;
   for (let i = 0; i < rows.length; i++) {
-    if (rows[i] && rows[i].some(cell => cell && cell.toString().toLowerCase().includes('project id'))) {
+    if (rows[i] && rows[i].some(cell => {
+      const c = (cell || '').toString().toLowerCase();
+      return c.includes('project id') || c.includes('project name') || c === 'id' || c.includes('company');
+    })) {
       headerIndex = i;
       break;
     }
   }
   
-  if (headerIndex === -1) return [];
+  if (headerIndex === -1) {
+    headerIndex = 0;
+  }
   
-  for (let i = headerIndex + 1; i < rows.length; i++) {
+  for (let i = headerIndex; i < rows.length; i++) {
     const row = rows[i];
     if (!row || row.length < 2) continue;
     
     const col0 = (row[0] || '').toString().trim();
     const col1 = (row[1] || '').toString().trim();
     
+    if (!col0 && !col1) continue;
+
+    const lower0 = col0.toLowerCase();
+    const lower1 = col1.toLowerCase();
+
+    if (lower0.includes('project id') || lower0.includes('project name') || lower1.includes('project name')) {
+      continue;
+    }
+
     if (col0 === 'TP-HC-001' || col0 === 'TP-RT-002' || col0 === 'TP-TC-003') {
       continue;
     }
