@@ -422,16 +422,16 @@ export default function App() {
       return;
     }
 
-    const targetProject = projects.find(p => p.id === projectId);
-    const companyName = targetProject?.companyName;
+    const targetProject = projects.find(p => p.id === projectId || p.projectId === projectId);
+    const companyName = targetProject?.companyName || targetProject?.projectName;
 
-    const newDeleted = Array.from(new Set([...deletedProjectKeys, projectId, companyName].filter(Boolean)));
+    const newDeleted = Array.from(new Set([...deletedProjectKeys, projectId, companyName, targetProject?.projectId].filter(Boolean)));
     saveDeletedKeys(newDeleted);
 
-    const updated = projects.filter(p => p.id !== projectId && p.companyName !== companyName);
+    const updated = projects.filter(p => p.id !== projectId && p.projectId !== projectId && p.companyName !== companyName);
     setProjects(updated);
 
-    showToast(`Project "${companyName || projectId}" deleted by CEO. Syncing to Google Sheet...`);
+    showToast(`Project "${companyName || projectId}" hidden from Web App. Updating Excel status to 'DELETED'...`);
 
     if (targetProject && targetProject.rowIndex) {
       await syncCellToGoogleSheet(gasUrl, {
@@ -442,7 +442,7 @@ export default function App() {
       });
     }
 
-    showToast(`Project deleted permanently across system! Reason logged: "${deleteReason || 'Executive Cleanup'}"`);
+    showToast(`Project hidden from Web App UI! Preserved in Google Sheet Excel as 'DELETED'. Reason: "${deleteReason || 'Executive Action'}"`);
   };
 
   if (!currentUser) {
