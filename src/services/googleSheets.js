@@ -379,7 +379,7 @@ export function filterProjectsByRole(projects, currentUser, subTasksMap = {}) {
   // Filter out any deleted projects for EVERYONE including CEO Walter Dantis
   const activeProjects = (projects || []).filter(p => {
     if (!p) return false;
-    const st = (p.status || '').toLowerCase();
+    const st = (p.status || '').toString().toLowerCase();
     if (st.includes('deleted') || st === 'deleted') return false;
     return true;
   });
@@ -389,21 +389,34 @@ export function filterProjectsByRole(projects, currentUser, subTasksMap = {}) {
   const uEmail = (currentUser.email || '').toLowerCase();
 
   const isCeo = uRole === 'CEO' || uName.includes('walter') || uRole.toLowerCase().includes('ceo');
-  const isSrelyang = uName.includes('sreylang') || uEmail.includes('sreylang.thim');
+  const isSrelyang = uName.includes('sreylang') || uEmail.includes('sreylang.thim') || uRole.toLowerCase().includes('operations');
 
   // CEO Walter Dantis & Sreylang Thim see all active non-deleted company projects
   if (isCeo || isSrelyang) return activeProjects;
 
-  // Team members (e.g. Prinson Cardozo) see ONLY projects assigned to them by CEO or where they have assigned sub-tasks
+  const isNameMatch = (targetStr, userNameStr) => {
+    if (!targetStr || !userNameStr) return false;
+    const t = targetStr.toLowerCase();
+    const u = userNameStr.toLowerCase();
+    
+    if (t.includes(u) || u.includes(t)) return true;
+
+    const tTokens = t.split(/[\s,._/-]+/).filter(Boolean);
+    const uTokens = u.split(/[\s,._/-]+/).filter(Boolean);
+
+    return tTokens.some(tTok => uTokens.some(uTok => tTok.length >= 3 && (tTok === uTok || tTok.includes(uTok) || uTok.includes(tTok))));
+  };
+
+  // Team members (e.g. Prinson Cardozo, Ajay Dsouza) see ONLY projects assigned to them by CEO or where they have assigned sub-tasks
   return activeProjects.filter(p => {
-    const pAssignee = (p.assignee || '').toLowerCase();
-    const pOwner = (p.owner || '').toLowerCase();
+    const pAssignee = p.assignee || '';
+    const pOwner = p.owner || '';
     const pSubTasks = subTasksMap[p.id] || [];
 
-    const isAssigned = pAssignee.includes(uName) || pOwner.includes(uName) || uName.includes(pAssignee);
+    const isAssigned = isNameMatch(pAssignee, uName) || isNameMatch(pOwner, uName);
     const hasSubTask = pSubTasks.some(st => 
       (st.assigneeEmail && st.assigneeEmail.toLowerCase() === uEmail) ||
-      (st.assigneeName && st.assigneeName.toLowerCase().includes(uName))
+      (st.assigneeName && isNameMatch(st.assigneeName, uName))
     );
 
     return isAssigned || hasSubTask;
