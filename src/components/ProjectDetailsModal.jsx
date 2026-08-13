@@ -54,10 +54,10 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
           <tr>
             <td>
               <h1>Turning Point Retail Solutions</h1>
-              <div class="subtitle">PROJECT INITIATION FORM (CONFIDENTIAL & OFFICIAL EXECUTIVE SPECIFICATION)</div>
+              <div class="subtitle">PROJECT INITIATION FORM (OFFICIAL EXECUTIVE SPECIFICATION)</div>
             </td>
             <td style="text-align: right;">
-              <strong>Project ID:</strong> ${project.projectId || project.id || 'N/A'}<br/>
+              <strong>Project ID:</strong> ${project.projectId || project.id || '-'}<br/>
               <strong>Date:</strong> ${new Date().toLocaleDateString()}<br/>
               <strong>Status:</strong> ${project.status || 'In Progress'}
             </td>
@@ -66,48 +66,48 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
 
         <h2>SECTION A – BASIC PROJECT INFORMATION</h2>
         <table>
-          <tr><th>Project Name</th><td><strong>${project.projectName || project.companyName || 'N/A'}</strong></td></tr>
-          <tr><th>Project ID (TP-SL-MM-YY)</th><td><strong>${project.projectId || project.id || 'N/A'}</strong></td></tr>
-          <tr><th>Client Name</th><td>${project.client || project.companyName || 'N/A'}</td></tr>
-          <tr><th>Client Contact Person</th><td>${project.clientContact || project.contactPerson || project.phone || 'N/A'}</td></tr>
-          <tr><th>Lead Generation Source</th><td>${project.leadGeneration || 'Direct Referral'}</td></tr>
+          <tr><th>Project Name</th><td><strong>${project.projectName || project.companyName || '-'}</strong></td></tr>
+          <tr><th>Project ID (TP-SL-MM-YY)</th><td><strong>${project.projectId || project.id || '-'}</strong></td></tr>
+          <tr><th>Client Name</th><td>${project.client || project.companyName || '-'}</td></tr>
+          <tr><th>Client Contact Details</th><td>${project.clientContact || project.contactPerson || project.phone || '-'}</td></tr>
+          <tr><th>Lead Generation Source</th><td>${project.leadGeneration || '-'}</td></tr>
           <tr><th>Project Manager / Owner</th><td>${project.owner || 'Walter Dantis (CEO)'}</td></tr>
-          <tr><th>Lead Assignee</th><td>${project.assignee || 'Sreylang Thim'}</td></tr>
-          <tr><th>Core Team Members</th><td>${project.coreTeamMembers || 'Chan Sombath, Sreylang Thim, Prinson Cardozo'}</td></tr>
+          <tr><th>Lead Assignee</th><td>${project.assignee || '-'}</td></tr>
+          <tr><th>Core Team Members</th><td>${project.coreTeamMembers || '-'}</td></tr>
           <tr><th>Sector / Category</th><td>${project.sector || 'RETAIL & FRANCHISE'}</td></tr>
           <tr><th>Priority Level</th><td>${project.priority || 'High'}</td></tr>
-          <tr><th>Start Date & Target End Date</th><td>${project.startDate || 'N/A'} to ${project.targetEndDate || project.targetDate || 'N/A'}</td></tr>
+          <tr><th>Start Date & Target End Date</th><td>${project.startDate || '-'} to ${project.targetEndDate || project.targetDate || '-'}</td></tr>
         </table>
 
         <h2>SECTION B – SCOPE & OBJECTIVES</h2>
         <table>
-          <tr><th>Project Objective</th><td>${project.projectObjective || project.statusUpdate || 'Primary retail consulting and operational implementation objective.'}</td></tr>
-          <tr><th>Scope of Work</th><td>${project.scopeOfWork || project.notes || 'End-to-end business management, retail licensing, and deployment in Cambodia.'}</td></tr>
-          <tr><th>Key Deliverables</th><td>${project.keyDeliverables || 'Milestone outputs, SOP manuals, and weekly progress reports.'}</td></tr>
-          <tr><th>Key Partners & Stakeholders</th><td>${project.keyPartners || 'Turning Point Executive Team, Retail Partners, Ministry Authorities.'}</td></tr>
-          <tr><th>Success Criteria</th><td>${project.successCriteria || '100% on-time milestone delivery within agreed budget guidelines.'}</td></tr>
-          <tr><th>Known Risks & Constraints</th><td>${project.knownRisks || 'Regulatory approval timelines, supply chain lead times.'}</td></tr>
-          <tr><th>Out of Scope Tasks</th><td>${project.outOfScope || 'Explicitly excluded tasks outside initial signed scope.'}</td></tr>
-          <tr><th>Dependencies</th><td>${project.dependencies || 'Timely client document provision and advance retainer payment.'}</td></tr>
+          <tr><th>Project Objective</th><td>${project.projectObjective || project.statusUpdate || '-'}</td></tr>
+          <tr><th>Scope of Work</th><td>${project.scopeOfWork || project.notes || '-'}</td></tr>
+          <tr><th>Key Deliverables</th><td>${project.keyDeliverables || '-'}</td></tr>
+          <tr><th>Key Partners & Stakeholders</th><td>${project.keyPartners || '-'}</td></tr>
+          <tr><th>Success Criteria</th><td>${project.successCriteria || '-'}</td></tr>
+          <tr><th>Known Risks & Constraints</th><td>${project.knownRisks || '-'}</td></tr>
+          <tr><th>Out of Scope Tasks</th><td>${project.outOfScope || '-'}</td></tr>
+          <tr><th>Dependencies</th><td>${project.dependencies || '-'}</td></tr>
         </table>
 
         <h2>SECTION C – FINANCIAL SUMMARY (CEO EXCLUSIVE)</h2>
         <table>
-          <tr><th>Contract Value (USD)</th><td><strong>${formatCurrency(totalContract)}</strong></td></tr>
-          <tr><th>Advance Retainer Amount</th><td>${formatCurrency(paidAmount)} (${project.advanceRetainerPct || '25'}%)</td></tr>
-          <tr><th>Outstanding Balance Due</th><td><strong>${formatCurrency(balanceDue)}</strong></td></tr>
-          <tr><th>Payment Terms</th><td>${project.paymentTerms || '25% advance / 50% mid-way / 25% completion'}</td></tr>
+          <tr><th>Contract Value (USD)</th><td><strong>${totalContract > 0 ? formatCurrency(totalContract) : '-'}</strong></td></tr>
+          <tr><th>Advance Retainer Amount</th><td>${paidAmount > 0 ? formatCurrency(paidAmount) : '-'} ${project.advanceRetainerPct ? `(${project.advanceRetainerPct}%)` : ''}</td></tr>
+          <tr><th>Outstanding Balance Due</th><td><strong>${totalContract > 0 ? formatCurrency(balanceDue) : '-'}</strong></td></tr>
+          <tr><th>Payment Terms</th><td>${project.paymentTerms || '-'}</td></tr>
           <tr><th>Billing Currency</th><td>${project.billingCurrency || 'USD'}</td></tr>
-          <tr><th>Estimated Gross Margin</th><td>${project.estimatedGrossMargin || 'N/A'}</td></tr>
-          <tr><th>Invoice Schedule</th><td>${project.invoiceSchedule || 'Milestone-based billing upon key deliverable completion.'}</td></tr>
+          <tr><th>Estimated Gross Margin</th><td>${project.estimatedGrossMargin || '-'}</td></tr>
+          <tr><th>Invoice Schedule</th><td>${project.invoiceSchedule || '-'}</td></tr>
         </table>
 
         <h2>SECTION D – APPROVAL SIGN-OFF & STATUS</h2>
         <table>
-          <tr><th>Prepared By</th><td>${project.preparedBy || 'Admin Manager'}</td></tr>
+          <tr><th>Prepared By</th><td>${project.preparedBy || '-'}</td></tr>
           <tr><th>Reviewed By</th><td>${project.reviewedBy || 'Walter Dantis (CEO)'}</td></tr>
           <tr><th>CEO Approval Status</th><td>Walter Dantis (CEO) — <strong>${project.status || 'In Progress'}</strong></td></tr>
-          <tr><th>Progress Update / Remarks</th><td>${project.statusUpdate || 'Project active.'}</td></tr>
+          <tr><th>Progress Update / Remarks</th><td>${project.statusUpdate || '-'}</td></tr>
         </table>
 
         <div style="margin-top: 40px; display: flex; justify-content: space-between;">
@@ -226,9 +226,9 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
                 <option value="Planning">Status: Planning</option>
               </select>
               <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
-                <p style={{ margin: 0 }}><strong>ID:</strong> {project.projectId || project.id || 'N/A'}</p>
+                <p style={{ margin: 0 }}><strong>ID:</strong> {project.projectId || project.id || '-'}</p>
                 <p style={{ margin: '2px 0 0 0' }}><strong>Progress:</strong> {calculatedProgress}% Completed</p>
-                <p style={{ margin: '2px 0 0 0' }}><strong>Target Date:</strong> {project.targetEndDate || project.targetDate || 'N/A'}</p>
+                <p style={{ margin: '2px 0 0 0' }}><strong>Target Date:</strong> {project.targetEndDate || project.targetDate || '-'}</p>
               </div>
             </div>
           </div>
@@ -240,23 +240,23 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '0.82rem', color: '#334155' }}>
               <div>
-                <p style={{ margin: '0 0 6px 0' }}><strong>Project Name:</strong> {project.projectName || project.companyName || 'N/A'}</p>
-                <p style={{ margin: '0 0 6px 0' }}><strong>Project ID:</strong> {project.projectId || project.id || 'N/A'}</p>
-                <p style={{ margin: '0 0 6px 0' }}><strong>Client Name:</strong> {project.client || project.companyName || 'N/A'}</p>
-                <p style={{ margin: '0 0 6px 0' }}><strong>Client Contact:</strong> {project.clientContact || project.contactPerson || project.phone || 'N/A'}</p>
-                <p style={{ margin: 0 }}><strong>Lead Source:</strong> {project.leadGeneration || 'Direct Referral'}</p>
+                <p style={{ margin: '0 0 6px 0' }}><strong>Project Name:</strong> {project.projectName || project.companyName || '-'}</p>
+                <p style={{ margin: '0 0 6px 0' }}><strong>Project ID:</strong> {project.projectId || project.id || '-'}</p>
+                <p style={{ margin: '0 0 6px 0' }}><strong>Client Name:</strong> {project.client || project.companyName || '-'}</p>
+                <p style={{ margin: '0 0 6px 0' }}><strong>Client Contact Details:</strong> {project.clientContact || project.contactPerson || project.phone || '-'}</p>
+                <p style={{ margin: 0 }}><strong>Lead Source:</strong> {project.leadGeneration || '-'}</p>
               </div>
               <div>
                 <p style={{ margin: '0 0 6px 0' }}><strong>Project Manager:</strong> {project.owner || 'Walter Dantis (CEO)'}</p>
-                <p style={{ margin: '0 0 6px 0' }}><strong>Lead Assignee:</strong> {project.assignee || 'Sreylang Thim'}</p>
+                <p style={{ margin: '0 0 6px 0' }}><strong>Lead Assignee:</strong> {project.assignee || '-'}</p>
                 <p style={{ margin: '0 0 6px 0' }}><strong>Sector:</strong> {project.sector || 'RETAIL & FRANCHISE'}</p>
                 <p style={{ margin: '0 0 6px 0' }}><strong>Priority:</strong> {project.priority || 'High'}</p>
-                <p style={{ margin: 0 }}><strong>Duration:</strong> {project.startDate || 'N/A'} → {project.targetEndDate || project.targetDate || 'N/A'}</p>
+                <p style={{ margin: 0 }}><strong>Duration:</strong> {project.startDate || '-'} → {project.targetEndDate || project.targetDate || '-'}</p>
               </div>
             </div>
           </div>
 
-          {/* SECTION B – SCOPE & OBJECTIVES (PROMINENTLY DISPLAYED) */}
+          {/* SECTION B – SCOPE & OBJECTIVES */}
           <div style={{ background: '#FFFFFF', border: '1.5px solid #F59E0B', borderRadius: '12px', padding: '18px', marginBottom: '20px', boxShadow: '0 2px 8px rgba(245,158,11,0.08)' }}>
             <h4 style={{ fontSize: '0.88rem', fontWeight: 900, color: '#92400E', margin: '0 0 12px 0', textTransform: 'uppercase', borderBottom: '1px solid #FDE68A', paddingBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Layers size={16} style={{ color: '#F59E0B' }} /> SECTION B – SCOPE & OBJECTIVES
@@ -265,37 +265,37 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', fontSize: '0.82rem' }}>
               <div style={{ background: '#FEF3C7', padding: '10px 14px', borderRadius: '8px', border: '1px solid #FDE68A' }}>
                 <strong style={{ color: '#78350F', display: 'block', marginBottom: '4px' }}>🎯 Project Objective:</strong>
-                <span style={{ color: '#1E293B' }}>{project.projectObjective || project.statusUpdate || 'Primary retail consulting and operational implementation objective in Cambodia.'}</span>
+                <span style={{ color: '#1E293B' }}>{project.projectObjective || project.statusUpdate || '-'}</span>
               </div>
 
               <div style={{ background: '#F8FAFC', padding: '10px 14px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
                 <strong style={{ color: '#0F172A', display: 'block', marginBottom: '4px' }}>📋 Scope of Work:</strong>
-                <span style={{ color: '#334155', lineHeight: '1.5' }}>{project.scopeOfWork || project.notes || 'End-to-end business management, retail licensing, and deployment.'}</span>
+                <span style={{ color: '#334155', lineHeight: '1.5' }}>{project.scopeOfWork || project.notes || '-'}</span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div style={{ background: '#ECFDF5', padding: '10px 14px', borderRadius: '8px', border: '1px solid #A7F3D0' }}>
                   <strong style={{ color: '#065F46', display: 'block', marginBottom: '4px' }}>🏆 Key Deliverables:</strong>
-                  <span style={{ color: '#047857' }}>{project.keyDeliverables || 'Milestone outputs, SOP manuals, and weekly deliverable reports.'}</span>
+                  <span style={{ color: '#047857' }}>{project.keyDeliverables || '-'}</span>
                 </div>
 
                 <div style={{ background: '#EFF6FF', padding: '10px 14px', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
                   <strong style={{ color: '#1E40AF', display: 'block', marginBottom: '4px' }}>🤝 Key Partners & Stakeholders:</strong>
-                  <span style={{ color: '#1E3A8A' }}>{project.keyPartners || 'Turning Point Executive Team, Retail Partners, Ministry Authorities.'}</span>
+                  <span style={{ color: '#1E3A8A' }}>{project.keyPartners || '-'}</span>
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div style={{ background: '#FAF5FF', padding: '10px 14px', borderRadius: '8px', border: '1px solid #E9D5FF' }}>
                   <strong style={{ color: '#6B21A8', display: 'block', marginBottom: '4px' }}>🌟 Success Criteria:</strong>
-                  <span style={{ color: '#581C87' }}>{project.successCriteria || '100% on-time milestone delivery within agreed budget guidelines.'}</span>
+                  <span style={{ color: '#581C87' }}>{project.successCriteria || '-'}</span>
                 </div>
 
                 <div style={{ background: '#FEF2F2', padding: '10px 14px', borderRadius: '8px', border: '1px solid #FCA5A5' }}>
                   <strong style={{ color: '#991B1B', display: 'block', marginBottom: '4px' }}>⚠️ Known Risks & Out of Scope:</strong>
                   <span style={{ color: '#7F1D1D' }}>
-                    <strong>Risks:</strong> {project.knownRisks || 'Regulatory timelines.'} <br/>
-                    <strong>Excluded:</strong> {project.outOfScope || 'Tasks outside signed scope.'}
+                    <strong>Risks:</strong> {project.knownRisks || '-'} <br/>
+                    <strong>Excluded:</strong> {project.outOfScope || '-'}
                   </span>
                 </div>
               </div>
@@ -309,14 +309,14 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '0.82rem', color: '#334155' }}>
               <div>
-                <p style={{ margin: '0 0 6px 0' }}><strong>Contract Value:</strong> <span style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{formatCurrency(totalContract)}</span></p>
-                <p style={{ margin: '0 0 6px 0' }}><strong>Advance Paid:</strong> {formatCurrency(paidAmount)} ({project.advanceRetainerPct || '25'}%)</p>
-                <p style={{ margin: 0 }}><strong>Outstanding Due:</strong> <span style={{ fontWeight: 800, color: '#DC2626' }}>{formatCurrency(balanceDue)}</span></p>
+                <p style={{ margin: '0 0 6px 0' }}><strong>Contract Value:</strong> <span style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{totalContract > 0 ? formatCurrency(totalContract) : '-'}</span></p>
+                <p style={{ margin: '0 0 6px 0' }}><strong>Advance Paid:</strong> {paidAmount > 0 ? formatCurrency(paidAmount) : '-'} {project.advanceRetainerPct ? `(${project.advanceRetainerPct}%)` : ''}</p>
+                <p style={{ margin: 0 }}><strong>Outstanding Due:</strong> <span style={{ fontWeight: 800, color: '#DC2626' }}>{totalContract > 0 ? formatCurrency(balanceDue) : '-'}</span></p>
               </div>
               <div>
-                <p style={{ margin: '0 0 6px 0' }}><strong>Payment Terms:</strong> {project.paymentTerms || '25% advance / 50% mid-way / 25% completion'}</p>
-                <p style={{ margin: '0 0 6px 0' }}><strong>Invoice Schedule:</strong> {project.invoiceSchedule || 'Milestone-based billing'}</p>
-                <p style={{ margin: 0 }}><strong>Margin Estimate:</strong> {project.estimatedGrossMargin || 'N/A'}</p>
+                <p style={{ margin: '0 0 6px 0' }}><strong>Payment Terms:</strong> {project.paymentTerms || '-'}</p>
+                <p style={{ margin: '0 0 6px 0' }}><strong>Invoice Schedule:</strong> {project.invoiceSchedule || '-'}</p>
+                <p style={{ margin: 0 }}><strong>Margin Estimate:</strong> {project.estimatedGrossMargin || '-'}</p>
               </div>
             </div>
           </div>
@@ -327,7 +327,7 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
               <ShieldCheck size={16} style={{ color: '#2563EB' }} /> SECTION D – APPROVAL SIGN-OFF
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', fontSize: '0.78rem', color: '#334155' }}>
-              <p style={{ margin: 0 }}><strong>Prepared By:</strong> {project.preparedBy || 'Admin Manager'}</p>
+              <p style={{ margin: 0 }}><strong>Prepared By:</strong> {project.preparedBy || '-'}</p>
               <p style={{ margin: 0 }}><strong>Reviewed By:</strong> {project.reviewedBy || 'Walter Dantis (CEO)'}</p>
               <p style={{ margin: 0 }}><strong>Executive Sign-off:</strong> <span style={{ color: '#047857', fontWeight: 800 }}>Walter Dantis (CEO) ✅</span></p>
             </div>

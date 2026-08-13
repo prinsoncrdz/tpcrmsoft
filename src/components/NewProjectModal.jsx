@@ -34,10 +34,10 @@ export default function NewProjectModal({ onClose, onAddProject, currentUser }) 
     clientContact: '',
     leadGeneration: '',
     owner: 'Walter Dantis (CEO)',
-    assignee: 'Sreylang Thim',
-    coreTeamMembers: 'Chan Sombath, Sreylang Thim, Prinson Cardozo',
+    assignee: '',
+    coreTeamMembers: '',
     startDate: new Date().toISOString().split('T')[0],
-    targetEndDate: '2026-12-31',
+    targetEndDate: '',
     budgetUsd: '',
     estimatedRevenueUsd: '',
     sector: 'RETAIL & FRANCHISE',
@@ -55,19 +55,19 @@ export default function NewProjectModal({ onClose, onAddProject, currentUser }) 
 
     // SECTION C – FINANCIAL SUMMARY (CEO EXCLUSIVE UPDATE SECTION)
     contractValueUsd: '',
-    advanceRetainerPct: '25',
+    advanceRetainerPct: '',
     advanceAmountUsd: '',
-    paymentTerms: '25% advance / 50% mid-way / 25% completion',
+    paymentTerms: '',
     billingCurrency: 'USD',
     estimatedDirectCosts: '',
     estimatedGrossMargin: '',
-    invoiceSchedule: 'Milestone-based billing upon key deliverable completion',
+    invoiceSchedule: '',
 
     // SECTION D – APPROVALS
-    preparedBy: currentUser?.name || 'Admin Manager',
+    preparedBy: currentUser?.name || '',
     reviewedBy: 'Walter Dantis (CEO)',
     status: isCeo ? 'In Progress' : 'Pending CEO Approval',
-    statusUpdate: 'Project Initiation Form submitted for CEO review and sign-off.'
+    statusUpdate: ''
   });
 
   const [submitted, setSubmitted] = useState(false);
