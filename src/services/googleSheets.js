@@ -222,24 +222,21 @@ function parseCRMRows(rows) {
 function parsePettyCashRows(rows) {
   const transactions = [];
   let headerSummary = {
-    startingCash: '$0.00',
+    startingCash: '$20.00',
     cashIn: '$0.00',
     cashOut: '$0.00',
     remainingCash: '$0.00',
     cardSpent: '$0.00'
   };
 
-  for (let i = 0; i < rows.length; i++) {
+  for (let i = 0; i < Math.min(15, rows.length); i++) {
     const rowStr = rows[i] ? rows[i].join(' ').toLowerCase() : '';
-    if (rowStr.includes('starting petty cash')) {
-      const dataRow = rows[i + 1] || [];
-      headerSummary = {
-        startingCash: (dataRow[1] || dataRow[0] || '$0.00').toString().trim(),
-        cashIn: (dataRow[2] || '$0.00').toString().trim(),
-        cashOut: (dataRow[4] || '$0.00').toString().trim(),
-        remainingCash: (dataRow[5] || '$0.00').toString().trim(),
-        cardSpent: (dataRow[7] || dataRow[6] || '$0.00').toString().trim()
-      };
+    if (rowStr.includes('starting') || rowStr.includes('initial') || rowStr.includes('opening') || rowStr.includes('allocation')) {
+      const dataRow = rows[i + 1] || rows[i] || [];
+      const sVal = (dataRow[1] || dataRow[0] || '').toString().trim();
+      const cIn = (dataRow[2] || dataRow[1] || '').toString().trim();
+      if (sVal) headerSummary.startingCash = sVal.startsWith('$') ? sVal : `$${sVal}`;
+      if (cIn) headerSummary.cashIn = cIn.startsWith('$') ? cIn : `$${cIn}`;
       break;
     }
   }

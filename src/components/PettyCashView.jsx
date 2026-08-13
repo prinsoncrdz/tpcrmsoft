@@ -341,7 +341,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
 
   // Safe header summary fallback object
   const safeHeaderSummary = headerSummary || {
-    startingCash: '$0.00',
+    startingCash: '$20.00',
     cashIn: '$0.00',
     cashOut: '$0.00',
     remainingCash: '$0.00',
@@ -349,12 +349,12 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   };
 
   // Dynamic automatic mathematical calculations across active non-deleted rows
-  const startingCashNum = parseVal(safeHeaderSummary.startingCash || '$0.00');
+  const rawStarting = parseVal(safeHeaderSummary.startingCash);
+  const startingCashNum = rawStarting > 0 ? rawStarting : 20.00;
   const cashInNum = parseVal(safeHeaderSummary.cashIn || '$0.00');
 
   const liveCashOut = targetRowsForSummary.reduce((acc, r) => {
-    const isCash = (r.paymentMethod || '').toLowerCase().includes('cash') || parseVal(r.cashOut) > 0;
-    return acc + (isCash ? parseVal(r.cashOut || r.cardSpent) : 0);
+    return acc + parseVal(r.cardSpent || r.cashOut);
   }, 0);
 
   const liveTotalSpent = targetRowsForSummary.reduce((acc, r) => acc + parseVal(r.cardSpent || r.cashOut), 0);
@@ -486,7 +486,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
             <Wallet className="summary-card-icon text-emerald" />
           </div>
           <div className="summary-card-value text-emerald">
-            {safeHeaderSummary.startingCash || '$0.00'}
+            ${startingCashNum.toFixed(2)}
           </div>
           <span className="summary-card-subtitle">Approved Allocation</span>
         </div>
