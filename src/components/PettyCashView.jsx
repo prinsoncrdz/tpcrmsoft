@@ -330,20 +330,23 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   const septTotal = filteredSeptData.reduce((acc, r) => acc + parseVal(r.cardSpent || r.cashOut), 0);
   const totalYTD = julyTotal + augTotal + septTotal;
 
+  // Category breakdown compile
+  const allRows = [...filteredJulyData, ...filteredAugData, ...filteredSeptData];
+
+  // Target rows for financial summary bar (All rows when on Dashboard, active month rows otherwise)
+  const targetRowsForSummary = isDashboardTab ? allRows : filteredActiveTabData;
+
   // Dynamic automatic mathematical calculations across active non-deleted rows
   const startingCashNum = parseVal(headerSummary.startingCash);
   const cashInNum = parseVal(headerSummary.cashIn);
 
-  const liveCashOut = filteredActiveTabData.reduce((acc, r) => {
+  const liveCashOut = targetRowsForSummary.reduce((acc, r) => {
     const isCash = (r.paymentMethod || '').toLowerCase().includes('cash') || parseVal(r.cashOut) > 0;
     return acc + (isCash ? parseVal(r.cashOut || r.cardSpent) : 0);
   }, 0);
 
-  const liveTotalSpent = filteredActiveTabData.reduce((acc, r) => acc + parseVal(r.cardSpent || r.cashOut), 0);
+  const liveTotalSpent = targetRowsForSummary.reduce((acc, r) => acc + parseVal(r.cardSpent || r.cashOut), 0);
   const dynamicRemainingCash = Math.max(0, startingCashNum + cashInNum - liveCashOut);
-
-  // Category breakdown compile
-  const allRows = [...filteredJulyData, ...filteredAugData, ...filteredSeptData];
   const categoryMap = {};
   allRows.forEach(r => {
     const cat = r.category || 'Supplies';
