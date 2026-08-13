@@ -172,6 +172,15 @@ export default function App() {
     setIsSyncing(false);
   };
 
+  // Helper to broadcast project updates instantly (0ms) across all open screens & tabs
+  const broadcastProjectUpdate = (updatedList) => {
+    try {
+      const bc = new BroadcastChannel('tp_projects_edit_channel');
+      bc.postMessage({ projects: updatedList });
+      bc.close();
+    } catch(e) {}
+  };
+
   // Real-time automatic background polling every 1 second + BroadcastChannel sync
   useEffect(() => {
     loadData();
@@ -179,21 +188,30 @@ export default function App() {
       loadData();
     }, 1000);
 
-    let bc;
+    let bcDel, bcEdit;
     try {
-      bc = new BroadcastChannel('tp_projects_deletion_channel');
-      bc.onmessage = (event) => {
+      bcDel = new BroadcastChannel('tp_projects_deletion_channel');
+      bcDel.onmessage = (event) => {
         if (event.data && Array.isArray(event.data.deletedKeys)) {
           setDeletedProjectKeys(event.data.deletedKeys);
           localStorage.setItem('tp_deleted_project_keys_v2', JSON.stringify(event.data.deletedKeys));
           loadData();
         }
       };
+
+      bcEdit = new BroadcastChannel('tp_projects_edit_channel');
+      bcEdit.onmessage = (event) => {
+        if (event.data && Array.isArray(event.data.projects)) {
+          setProjects(event.data.projects);
+          localStorage.setItem('tp_last_known_projects_v2', JSON.stringify(event.data.projects));
+        }
+      };
     } catch(e) {}
 
     return () => {
       clearInterval(interval);
-      if (bc) bc.close();
+      if (bcDel) bcDel.close();
+      if (bcEdit) bcEdit.close();
     };
   }, []);
 
@@ -219,6 +237,8 @@ export default function App() {
   const handleCellEdit = async (project, field, colIndex, newValue) => {
     const updatedProjects = projects.map(p => p.id === project.id ? { ...p, [field]: newValue } : p);
     setProjects(updatedProjects);
+    localStorage.setItem('tp_last_known_projects_v2', JSON.stringify(updatedProjects));
+    broadcastProjectUpdate(updatedProjects);
 
     setIsSyncing(true);
     showToast(`Updating ${field} in Google Sheet...`);
@@ -252,6 +272,7 @@ export default function App() {
 
     setProjects(updatedProjects);
     localStorage.setItem('tp_last_known_projects_v2', JSON.stringify(updatedProjects));
+    broadcastProjectUpdate(updatedProjects);
     showToast('Project Scope of Work & Section C Financials updated successfully!');
   };
 
@@ -298,6 +319,7 @@ export default function App() {
       setProjects(updatedProjects);
 
       localStorage.setItem('tp_last_known_projects_v2', JSON.stringify(updatedProjects));
+      broadcastProjectUpdate(updatedProjects);
 
       setIsSyncing(true);
       showToast(`Pushing "${projName}" to Google Sheet database...`);
