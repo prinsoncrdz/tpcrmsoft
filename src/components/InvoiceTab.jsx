@@ -38,14 +38,21 @@ export default function InvoiceTab({ currentUser }) {
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [previewInvoice, setPreviewInvoice] = useState(null);
 
-  // Live real-time sync with Google Apps Script cloud property backend (every 3 seconds)
+  // Live real-time sync with Google Apps Script cloud property backend (every 2 seconds)
   useEffect(() => {
     let isMounted = true;
     const syncCloudData = async () => {
       const cloudInvoices = await fetchGlobalTaxInvoices();
-      if (isMounted && Array.isArray(cloudInvoices) && cloudInvoices.length > 0) {
-        setInvoices(cloudInvoices);
-        localStorage.setItem(INVOICES_STORAGE_KEY, JSON.stringify(cloudInvoices));
+      const saved = localStorage.getItem(INVOICES_STORAGE_KEY);
+      let local = saved ? JSON.parse(saved) : [];
+
+      if (isMounted && Array.isArray(cloudInvoices)) {
+        const map = new Map();
+        (local || []).forEach(i => map.set(i.id, i));
+        (cloudInvoices || []).forEach(i => map.set(i.id, i));
+        const merged = Array.from(map.values());
+        setInvoices(merged);
+        localStorage.setItem(INVOICES_STORAGE_KEY, JSON.stringify(merged));
       }
 
       const sealSig = await fetchGlobalSealSignature();
@@ -55,8 +62,24 @@ export default function InvoiceTab({ currentUser }) {
       }
     };
     syncCloudData();
-    const interval = setInterval(syncCloudData, 3000);
-    return () => { isMounted = false; clearInterval(interval); };
+    const interval = setInterval(syncCloudData, 2000);
+
+    let bc;
+    try {
+      bc = new BroadcastChannel('tp_tax_invoices_channel');
+      bc.onmessage = (event) => {
+        if (isMounted && event.data && Array.isArray(event.data.invoices)) {
+          setInvoices(event.data.invoices);
+          localStorage.setItem(INVOICES_STORAGE_KEY, JSON.stringify(event.data.invoices));
+        }
+      };
+    } catch(e) {}
+
+    return () => { 
+      isMounted = false; 
+      clearInterval(interval);
+      if (bc) bc.close();
+    };
   }, []);
 
   const handleSaveSealSignature = ({ signatureUrl, sealUrl }) => {

@@ -69,21 +69,42 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
   // Sync Reports from Local Storage & Google Sheets Cloud Backend
   const loadReports = async () => {
     try {
-      const saved = localStorage.getItem(FRIDAY_REPORTS_KEY);
-      if (saved) setSubmittedReports(JSON.parse(saved));
-      
       const cloud = await fetchGlobalWeeklyTasks();
-      if (Array.isArray(cloud) && cloud.length > 0) {
-        setSubmittedReports(cloud);
-        localStorage.setItem(FRIDAY_REPORTS_KEY, JSON.stringify(cloud));
+      const saved = localStorage.getItem(FRIDAY_REPORTS_KEY);
+      let local = saved ? JSON.parse(saved) : [];
+
+      if (Array.isArray(cloud)) {
+        const map = new Map();
+        (local || []).forEach(r => map.set(r.id, r));
+        (cloud || []).forEach(r => map.set(r.id, r));
+        const merged = Array.from(map.values());
+        setSubmittedReports(merged);
+        localStorage.setItem(FRIDAY_REPORTS_KEY, JSON.stringify(merged));
+      } else if (local.length > 0) {
+        setSubmittedReports(local);
       }
     } catch(err) {}
   };
 
   useEffect(() => {
     loadReports();
-    const interval = setInterval(loadReports, 8000);
-    return () => clearInterval(interval);
+    const interval = setInterval(loadReports, 2000);
+
+    let bc;
+    try {
+      bc = new BroadcastChannel('tp_friday_executive_reports_channel');
+      bc.onmessage = (event) => {
+        if (event.data && Array.isArray(event.data.submittedReports)) {
+          setSubmittedReports(event.data.submittedReports);
+          localStorage.setItem(FRIDAY_REPORTS_KEY, JSON.stringify(event.data.submittedReports));
+        }
+      };
+    } catch(e) {}
+
+    return () => {
+      clearInterval(interval);
+      if (bc) bc.close();
+    };
   }, []);
 
   const saveReportsList = (updated) => {

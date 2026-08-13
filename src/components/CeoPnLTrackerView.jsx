@@ -82,7 +82,7 @@ export default function CeoPnLTrackerView({ currentUser }) {
   const [saveToast, setSaveToast] = useState(null);
   const [isCloudSyncing, setIsCloudSyncing] = useState(false);
 
-  // Fetch real-time cloud P&L data on component mount
+  // Fetch real-time cloud P&L data on component mount + 2s polling pulse + BroadcastChannel sync
   useEffect(() => {
     async function loadCloudPnL() {
       setIsCloudSyncing(true);
@@ -94,6 +94,23 @@ export default function CeoPnLTrackerView({ currentUser }) {
       setIsCloudSyncing(false);
     }
     loadCloudPnL();
+    const interval = setInterval(loadCloudPnL, 2000);
+
+    let bc;
+    try {
+      bc = new BroadcastChannel('tp_ceo_pnl_channel');
+      bc.onmessage = (event) => {
+        if (event.data && event.data.pnlData) {
+          setPnlData(event.data.pnlData);
+          localStorage.setItem(PNL_STORAGE_KEY, JSON.stringify(event.data.pnlData));
+        }
+      };
+    } catch(e) {}
+
+    return () => {
+      clearInterval(interval);
+      if (bc) bc.close();
+    };
   }, []);
 
   const triggerToast = (msg) => {
