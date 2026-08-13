@@ -139,16 +139,16 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
 
     if (activeTab === 'PETTY_CASH_JULY') {
       setActiveTabData(jT);
-      if (julyRes.success) setHeaderSummary(julyRes.data.headerSummary);
+      if (julyRes.success && julyRes.data && julyRes.data.headerSummary) setHeaderSummary(julyRes.data.headerSummary);
     } else if (activeTab === 'PETTY_CASH_AUG') {
       setActiveTabData(aT);
-      if (augRes.success) setHeaderSummary(augRes.data.headerSummary);
+      if (augRes.success && augRes.data && augRes.data.headerSummary) setHeaderSummary(augRes.data.headerSummary);
     } else if (activeTab === 'PETTY_CASH_SEPT') {
       setActiveTabData(sT);
-      if (septRes.success) setHeaderSummary(septRes.data.headerSummary);
+      if (septRes.success && septRes.data && septRes.data.headerSummary) setHeaderSummary(septRes.data.headerSummary);
     } else {
       setActiveTabData([...jT, ...aT, ...sT]);
-      if (septRes.success) setHeaderSummary(septRes.data.headerSummary);
+      if (septRes.success && septRes.data && septRes.data.headerSummary) setHeaderSummary(septRes.data.headerSummary);
     }
 
     setLoading(false);
@@ -339,9 +339,18 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   // Target rows for financial summary bar (All rows when on Dashboard, active month rows otherwise)
   const targetRowsForSummary = isDashboardTab ? allRows : filteredActiveTabData;
 
+  // Safe header summary fallback object
+  const safeHeaderSummary = headerSummary || {
+    startingCash: '$0.00',
+    cashIn: '$0.00',
+    cashOut: '$0.00',
+    remainingCash: '$0.00',
+    cardSpent: '$0.00'
+  };
+
   // Dynamic automatic mathematical calculations across active non-deleted rows
-  const startingCashNum = parseVal(headerSummary.startingCash);
-  const cashInNum = parseVal(headerSummary.cashIn);
+  const startingCashNum = parseVal(safeHeaderSummary.startingCash || '$0.00');
+  const cashInNum = parseVal(safeHeaderSummary.cashIn || '$0.00');
 
   const liveCashOut = targetRowsForSummary.reduce((acc, r) => {
     const isCash = (r.paymentMethod || '').toLowerCase().includes('cash') || parseVal(r.cashOut) > 0;
@@ -477,7 +486,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
             <Wallet className="summary-card-icon text-emerald" />
           </div>
           <div className="summary-card-value text-emerald">
-            {headerSummary.startingCash || '$0.00'}
+            {safeHeaderSummary.startingCash || '$0.00'}
           </div>
           <span className="summary-card-subtitle">Approved Allocation</span>
         </div>
@@ -488,7 +497,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
             <TrendingUp className="summary-card-icon text-blue" />
           </div>
           <div className="summary-card-value text-blue">
-            {headerSummary.cashIn || '$0.00'}
+            {safeHeaderSummary.cashIn || '$0.00'}
           </div>
           <span className="summary-card-subtitle">Received Funds</span>
         </div>
