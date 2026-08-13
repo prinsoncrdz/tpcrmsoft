@@ -462,7 +462,20 @@ function CeoProjectReviewModal({ project, currentUser, isCeo, onClose, onApprove
               <strong style={{ fontSize: '0.9rem', color: '#10B981' }}>Approved By: Walter Dantis (CEO)</strong>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <button 
+                type="button" 
+                onClick={() => {
+                  const origTitle = document.title;
+                  document.title = `Project_Initiation_Form_${(project.projectName || project.companyName || 'Project').replace(/\s+/g, '_')}`;
+                  window.print();
+                  setTimeout(() => { document.title = origTitle; }, 1000);
+                }} 
+                style={{ background: '#2563EB', color: '#FFF', border: 'none', borderRadius: '8px', padding: '10px 16px', fontSize: '0.82rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                title="Download / Save Project Initiation Form as PDF"
+              >
+                📥 Download PDF
+              </button>
               <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
               {isCeo ? (
                 <button type="submit" className="btn-primary" style={{ background: '#10B981', borderColor: '#10B981' }}>

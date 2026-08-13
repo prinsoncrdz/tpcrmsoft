@@ -196,8 +196,9 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
             <button 
               onClick={handlePrintPDF}
               style={{ background: 'var(--brand-green)', color: '#FFF', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              title="Download / Save Project Initiation Form as PDF"
             >
-              <Printer size={15} /> Print / PDF Report
+              📥 Download PDF
             </button>
             {isCeo && onDeleteProject && (
               <button 
