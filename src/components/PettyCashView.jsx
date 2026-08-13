@@ -180,16 +180,16 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     return deletionRequests.some(r => {
       if (r.status !== 'APPROVED') return false;
       if (r.itemKey && r.itemKey === itemKey) return true;
-      if (itemVoucher && itemVoucher !== '-' && cleanStr(r.itemVoucherNo) === itemVoucher) return true;
+      
+      const reqVoucher = cleanStr(r.itemVoucherNo);
+      if (itemVoucher && itemVoucher !== '-' && reqVoucher && reqVoucher !== '-' && itemVoucher === reqVoucher) return true;
 
       const reqDesc = cleanStr(r.itemDescription);
       const reqDate = cleanStr(r.itemDate);
       const reqAmt = cleanStr(r.itemAmount);
 
-      if (descClean && reqDesc && (descClean === reqDesc || descClean.includes(reqDesc) || reqDesc.includes(descClean))) {
-        if ((itemDate && reqDate && itemDate === reqDate) || (itemAmt && reqAmt && itemAmt === reqAmt)) {
-          return true;
-        }
+      if (descClean && reqDesc && descClean === reqDesc && itemDate === reqDate && itemAmt === reqAmt) {
+        return true;
       }
       return false;
     });
