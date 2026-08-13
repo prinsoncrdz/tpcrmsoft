@@ -195,8 +195,8 @@ function parseCRMRows(rows) {
         else if (c.includes('sector') || c.includes('category')) colMap.sector = colIdx;
         else if (c.includes('value') || c.includes('pricing') || c.includes('amount') || c.includes('contract')) colMap.value = colIdx;
         else if (c.includes('deposit') || c.includes('advance') || c.includes('paid')) colMap.depositPaid = colIdx;
-        else if (c.includes('owner') || c.includes('lead') || c.includes('director')) colMap.owner = colIdx;
-        else if (c.includes('assignee') || c.includes('manager') || c.includes('pm')) colMap.assignee = colIdx;
+        else if (c.includes('owner') || c.includes('lead') || c.includes('director') || c.includes('ceo')) colMap.owner = colIdx;
+        else if (c.includes('assign') || c.includes('assignee') || c.includes('manager') || c.includes('pm') || c.includes('staff') || c.includes('person') || c.includes('responsible')) colMap.assignee = colIdx;
         else if (c.includes('start date') || c.includes('start')) colMap.startDate = colIdx;
         else if (c.includes('target') || c.includes('end date') || c.includes('deadline')) colMap.targetEndDate = colIdx;
         else if (c.includes('completion') || c.includes('%')) colMap.completion = colIdx;
