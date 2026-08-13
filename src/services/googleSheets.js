@@ -233,11 +233,15 @@ function parseCRMRows(rows) {
   return projects;
 }
 
-// Universal robust Petty Cash parser
-function parsePettyCashRows(rows) {
+// Universal robust Petty Cash parser with GID month isolation
+function parsePettyCashRows(rows, gid) {
+  const monthTag = gid === SHEET_GIDS.PETTY_CASH_JULY ? 'july' :
+                   gid === SHEET_GIDS.PETTY_CASH_AUG ? 'aug' :
+                   gid === SHEET_GIDS.PETTY_CASH_SEPT ? 'sept' : 'gen';
+
   const transactions = [];
   let headerSummary = {
-    startingCash: '$20.00',
+    startingCash: '$0.00',
     cashIn: '$0.00',
     cashOut: '$0.00',
     remainingCash: '$0.00',
@@ -303,7 +307,8 @@ function parsePettyCashRows(rows) {
     const formattedSpent = rawSpent ? (rawSpent.startsWith('$') ? rawSpent : `$${rawSpent}`) : '$0.00';
 
     transactions.push({
-      id: `pc-${i}`,
+      id: `pc-${monthTag}-${i}`,
+      monthTag: monthTag,
       rowIndex: i + 1,
       date: dateVal || '2026-08-01',
       description: descVal || 'Petty Cash Item',

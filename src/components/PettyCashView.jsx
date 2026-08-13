@@ -340,11 +340,19 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     );
   }
 
-  // Filter out approved deleted rows for active display & totals calculation
-  const filteredJulyData = julyData.filter(r => !isItemDeleted(r));
-  const filteredAugData = augData.filter(r => !isItemDeleted(r));
-  const filteredSeptData = septData.filter(r => !isItemDeleted(r));
-  const filteredActiveTabData = activeTabData.filter(r => !isItemDeleted(r));
+  // Filter out approved deleted rows & enforce strict month isolation for each tab
+  const isJulyRow = (r) => r.monthTag === 'july' || (r.date || '').toLowerCase().includes('jul') || (r.date || '').includes('-07-') || (r.date || '').includes('/07/');
+  const isAugRow = (r) => r.monthTag === 'aug' || (r.date || '').toLowerCase().includes('aug') || (r.date || '').includes('-08-') || (r.date || '').includes('/08/');
+  const isSeptRow = (r) => r.monthTag === 'sept' || (r.date || '').toLowerCase().includes('sep') || (r.date || '').includes('-09-') || (r.date || '').includes('/09/');
+
+  const filteredJulyData = julyData.filter(r => !isItemDeleted(r) && isJulyRow(r));
+  const filteredAugData = augData.filter(r => !isItemDeleted(r) && isAugRow(r));
+  const filteredSeptData = septData.filter(r => !isItemDeleted(r) && isSeptRow(r));
+
+  const filteredActiveTabData = activeTab === 'PETTY_CASH_JULY' ? filteredJulyData :
+                                activeTab === 'PETTY_CASH_AUG' ? filteredAugData :
+                                activeTab === 'PETTY_CASH_SEPT' ? filteredSeptData :
+                                [...filteredJulyData, ...filteredAugData, ...filteredSeptData];
 
   // Calculate live analytics across non-deleted rows
   const parseVal = (str) => parseFloat((str || '0').toString().replace('$', '').replace(',', '')) || 0;
