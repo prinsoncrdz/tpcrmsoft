@@ -129,33 +129,58 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   // Helper Keys and Deletion Handlers
   const getItemKey = (item) => item.id || item.voucherNo || `${item.date}_${item.description}_${item.cardSpent || item.cashOut}`;
 
+  const cleanStr = (s) => (s || '').toString().toLowerCase().replace(/[^a-z0-9]/g, '');
+
   const isItemDeleted = (item) => {
     if (!item) return false;
-    const desc = (item.description || '').toLowerCase().trim();
-    if (desc.startsWith('[deleted]')) return true;
-    const key = getItemKey(item);
-    const voucher = (item.voucherNo || '').trim();
+    const descClean = cleanStr(item.description);
+    if (descClean.includes('deleted')) return true;
+
+    const itemVoucher = cleanStr(item.voucherNo);
+    const itemDate = cleanStr(item.date);
+    const itemAmt = cleanStr(item.cardSpent || item.cashOut);
+    const itemKey = getItemKey(item);
 
     return deletionRequests.some(r => {
       if (r.status !== 'APPROVED') return false;
-      if (r.itemKey && r.itemKey === key) return true;
-      if (voucher && voucher !== '-' && r.itemVoucherNo === voucher) return true;
-      if (desc && r.itemDescription && r.itemDescription.toLowerCase().trim() === desc) return true;
+      if (r.itemKey && r.itemKey === itemKey) return true;
+      if (itemVoucher && itemVoucher !== '-' && cleanStr(r.itemVoucherNo) === itemVoucher) return true;
+
+      const reqDesc = cleanStr(r.itemDescription);
+      const reqDate = cleanStr(r.itemDate);
+      const reqAmt = cleanStr(r.itemAmount);
+
+      if (descClean && reqDesc && (descClean === reqDesc || descClean.includes(reqDesc) || reqDesc.includes(descClean))) {
+        if ((itemDate && reqDate && itemDate === reqDate) || (itemAmt && reqAmt && itemAmt === reqAmt)) {
+          return true;
+        }
+      }
       return false;
     });
   };
 
   const getPendingDeletionRequest = (item) => {
     if (!item) return null;
-    const desc = (item.description || '').toLowerCase().trim();
-    const key = getItemKey(item);
-    const voucher = (item.voucherNo || '').trim();
+    const descClean = cleanStr(item.description);
+    const itemVoucher = cleanStr(item.voucherNo);
+    const itemDate = cleanStr(item.date);
+    const itemAmt = cleanStr(item.cardSpent || item.cashOut);
+    const itemKey = getItemKey(item);
 
     return deletionRequests.find(r => {
       if (r.status !== 'PENDING') return false;
-      if (r.itemKey && r.itemKey === key) return true;
-      if (voucher && voucher !== '-' && r.itemVoucherNo === voucher) return true;
-      if (desc && r.itemDescription && r.itemDescription.toLowerCase().trim() === desc) return true;
+      if (r.itemKey && r.itemKey === itemKey) return true;
+      if (itemVoucher && itemVoucher !== '-' && cleanStr(r.itemVoucherNo) === itemVoucher) return true;
+
+      const reqDesc = cleanStr(r.itemDescription);
+      const reqDate = cleanStr(r.itemDate);
+      const reqAmt = cleanStr(r.itemAmount);
+
+      if (descClean && reqDesc && (descClean === reqDesc || descClean.includes(reqDesc) || reqDesc.includes(descClean))) {
+        if ((itemDate && reqDate && itemDate === reqDate) || (itemAmt && reqAmt && itemAmt === reqAmt)) {
+          return true;
+        }
+      }
       return false;
     });
   };
