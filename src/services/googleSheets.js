@@ -254,46 +254,55 @@ function parsePettyCashRows(rows) {
 
   if (headerIndex === -1) {
     for (let i = 0; i < rows.length; i++) {
-      if (rows[i] && rows[i].length >= 3 && (rows[i][1] || rows[i][2])) {
-        headerIndex = i - 1;
-        break;
+      if (rows[i] && rows[i].length >= 2 && (rows[i][0] || rows[i][1] || rows[i][2])) {
+        const firstCell = (rows[i][0] || '').toString().trim().toLowerCase();
+        if (firstCell !== 'date' && !firstCell.includes('starting')) {
+          headerIndex = Math.max(0, i - 1);
+          break;
+        }
       }
     }
   }
 
-  if (headerIndex !== -1) {
-    for (let i = headerIndex + 1; i < rows.length; i++) {
-      const row = rows[i];
-      if (!row || row.length < 2) continue;
+  if (headerIndex === -1) {
+    headerIndex = 0;
+  }
 
-      const dateVal = (row[1] || row[0] || '').toString().trim();
-      const descVal = (row[2] || row[1] || '').toString().trim();
-      
-      if (!dateVal && !descVal) continue;
-      const lowerDesc = descVal.toLowerCase();
-      const lowerDate = dateVal.toLowerCase();
-      
-      if (lowerDate === 'date' || lowerDesc === 'description' || lowerDesc === 'total spent' || lowerDesc.includes('starting petty cash')) {
-        continue;
-      }
+  for (let i = headerIndex; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.length < 2) continue;
 
-      const rawSpent = (row[9] || row[8] || row[7] || '0').toString().trim();
-      const formattedSpent = rawSpent ? (rawSpent.startsWith('$') ? rawSpent : `$${rawSpent}`) : '$0.00';
+    const cell0 = (row[0] || '').toString().trim();
+    const cell1 = (row[1] || '').toString().trim();
+    const cell2 = (row[2] || '').toString().trim();
 
-      transactions.push({
-        id: `pc-${i}`,
-        rowIndex: i + 1,
-        date: dateVal || '2026-08-01',
-        description: descVal || 'Petty Cash Item',
-        voucherNo: (row[3] || '-').toString().trim() || '-',
-        category: (row[4] || 'Supplies').toString().trim() || 'Supplies',
-        paymentMethod: (row[5] || 'Card/Online').toString().trim() || 'Card/Online',
-        paidBy: (row[6] || 'Admin Manager').toString().trim() || 'Admin Manager',
-        cashIn: (row[7] || '$0.00').toString().trim(),
-        cashOut: (row[8] || '$0.00').toString().trim(),
-        cardSpent: formattedSpent
-      });
+    const dateVal = cell1 || cell0;
+    const descVal = cell2 || cell1 || cell0;
+    
+    if (!dateVal && !descVal) continue;
+    const lowerDesc = descVal.toLowerCase();
+    const lowerDate = dateVal.toLowerCase();
+    
+    if (lowerDate === 'date' || lowerDesc === 'description' || lowerDesc === 'total spent' || lowerDesc.includes('starting petty cash') || lowerDesc === 'total') {
+      continue;
     }
+
+    const rawSpent = (row[9] || row[8] || row[7] || row[3] || '0').toString().trim();
+    const formattedSpent = rawSpent ? (rawSpent.startsWith('$') ? rawSpent : `$${rawSpent}`) : '$0.00';
+
+    transactions.push({
+      id: `pc-${i}`,
+      rowIndex: i + 1,
+      date: dateVal || '2026-08-01',
+      description: descVal || 'Petty Cash Item',
+      voucherNo: (row[3] || row[2] || '-').toString().trim() || '-',
+      category: (row[4] || 'Supplies').toString().trim() || 'Supplies',
+      paymentMethod: (row[5] || 'Card/Online').toString().trim() || 'Card/Online',
+      paidBy: (row[6] || 'Admin Manager').toString().trim() || 'Admin Manager',
+      cashIn: (row[7] || '$0.00').toString().trim(),
+      cashOut: (row[8] || '$0.00').toString().trim(),
+      cardSpent: formattedSpent
+    });
   }
 
   return { transactions, headerSummary };
