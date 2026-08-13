@@ -668,6 +668,68 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Responsive Cards View for Dashboard */}
+          <div className="mobile-crm-cards no-print">
+            {allRows.map((item, idx) => (
+              <div key={item.id || idx} style={{
+                background: '#FFFFFF',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '16px',
+                marginBottom: '12px',
+                boxShadow: 'var(--shadow-card)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>{item.date}</span>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: '2px 0 0 0' }}>{item.description}</h4>
+                  </div>
+                  <span style={{ 
+                    fontSize: '1rem', 
+                    fontWeight: 900, 
+                    color: 'var(--brand-green)',
+                    background: '#ECFDF5',
+                    padding: '4px 10px',
+                    borderRadius: '8px',
+                    border: '1px solid #A7F3D0'
+                  }}>
+                    {item.cardSpent || item.cashOut || '$0.00'}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.75rem', alignItems: 'center' }}>
+                  <span style={{ background: '#F1F5F9', color: '#475569', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                    Bill: {item.voucherNo || '-'}
+                  </span>
+                  <span style={{ background: '#FEF3C7', color: '#B45309', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                    {item.category || 'Supplies'}
+                  </span>
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>
+                    Via: {item.paymentMethod || 'Card/Online'}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', marginTop: '6px', paddingTop: '8px', borderTop: '1px dashed #E2E8F0' }}>
+                  <button
+                    onClick={() => handleOpenEditModal(item)}
+                    style={{ flex: 1, background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  >
+                    <Edit2 size={14} /> Edit Entry
+                  </button>
+                  <button
+                    onClick={() => handleDirectDelete(item)}
+                    style={{ flex: 1, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -729,6 +791,68 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Responsive Cards View for Monthly Tab */}
+          <div className="mobile-crm-cards no-print">
+            {filteredActiveTabData.map((item, idx) => (
+              <div key={item.id || idx} style={{
+                background: '#FFFFFF',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '16px',
+                marginBottom: '12px',
+                boxShadow: 'var(--shadow-card)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>{item.date}</span>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: '2px 0 0 0' }}>{item.description}</h4>
+                  </div>
+                  <span style={{ 
+                    fontSize: '1rem', 
+                    fontWeight: 900, 
+                    color: 'var(--brand-green)',
+                    background: '#ECFDF5',
+                    padding: '4px 10px',
+                    borderRadius: '8px',
+                    border: '1px solid #A7F3D0'
+                  }}>
+                    {item.cardSpent || item.cashOut || '$0.00'}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.75rem', alignItems: 'center' }}>
+                  <span style={{ background: '#F1F5F9', color: '#475569', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                    Bill: {item.voucherNo || '-'}
+                  </span>
+                  <span style={{ background: '#FEF3C7', color: '#B45309', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                    {item.category || 'Supplies'}
+                  </span>
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>
+                    Via: {item.paymentMethod || 'Card/Online'}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', marginTop: '6px', paddingTop: '8px', borderTop: '1px dashed #E2E8F0' }}>
+                  <button
+                    onClick={() => handleOpenEditModal(item)}
+                    style={{ flex: 1, background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  >
+                    <Edit2 size={14} /> Edit Entry
+                  </button>
+                  <button
+                    onClick={() => handleDirectDelete(item)}
+                    style={{ flex: 1, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
