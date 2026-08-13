@@ -28,9 +28,20 @@ import { LogOut } from 'lucide-react';
 import './App.css';
 
 export default function App() {
-  // Clear any legacy dummy cache from browser storage
+  // Automatic Production Clean State Launch Purge (Clears all test/demo localStorage data)
   useEffect(() => {
-    localStorage.removeItem('tp_crm_cache');
+    const prodCleanVersion = 'v2_prod_clean_release_2026';
+    if (localStorage.getItem('tp_prod_clean_version') !== prodCleanVersion) {
+      localStorage.removeItem('tp_crm_subtasks_v2');
+      localStorage.removeItem('tp_crm_project_financials_v1');
+      localStorage.removeItem('tp_friday_executive_reports_v2');
+      localStorage.removeItem('tp_crm_tax_invoices_v1');
+      localStorage.removeItem('tp_deleted_project_keys_v2');
+      localStorage.removeItem('tp_last_known_projects_v2');
+      localStorage.removeItem('tp_team_chat_messages_v3');
+      localStorage.removeItem('tp_petty_cash_deletion_requests_v2');
+      localStorage.setItem('tp_prod_clean_version', prodCleanVersion);
+    }
   }, []);
 
   const [currentUser, setCurrentUser] = useState(() => {
