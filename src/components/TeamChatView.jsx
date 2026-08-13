@@ -83,28 +83,15 @@ export default function TeamChatView({ currentUser }) {
     if (combinedMessages.length === 0) {
       combinedMessages = [
         {
-          id: 'msg-1',
+          id: 'msg-welcome',
           channel: 'GROUP',
           senderEmail: 'walterdantis@turningpointretail.com',
           receiverEmail: null,
           senderName: 'Walter Dantis (CEO)',
           senderRole: 'CEO',
-          senderAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-          text: 'Welcome team! Use this channel for public announcements or select any team member for a private DM.',
-          timestamp: now - (2 * 60 * 60 * 1000),
-          seenBy: ['walterdantis@turningpointretail.com', 'admin@turningpointretail.com', 'srelyang.thim@turningpointretail.com']
-        },
-        {
-          id: 'msg-2',
-          channel: 'GROUP',
-          senderEmail: 'srelyang.thim@turningpointretail.com',
-          receiverEmail: null,
-          senderName: 'Srelyang Thim',
-          senderRole: 'Project Owner',
-          senderAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=150',
-          text: 'Understood Walter. Project notes are updated live in the CRM.',
-          timestamp: now - (1 * 60 * 60 * 1000),
-          seenBy: ['srelyang.thim@turningpointretail.com', 'walterdantis@turningpointretail.com']
+          text: 'Welcome team to Turning Point Retail Solutions Official Communication Channel.',
+          timestamp: now,
+          seenBy: ['walterdantis@turningpointretail.com']
         }
       ];
     }

@@ -26,33 +26,7 @@ export default function InvoiceTab({ currentUser }) {
     } catch (err) {
       console.error('Error parsing saved invoices:', err);
     }
-    return [
-      {
-        id: 'inv-1001',
-        companyName: 'Cambodia Retail Ventures Co., Ltd',
-        taxInvoiceNo: 'TP-INV-2026-001',
-        contactPerson: 'Mr. Sokha Chan',
-        customerAddress: 'Building 18, Street 288, Chamkarmon, Phnom Penh, Cambodia',
-        invoiceDate: '2026-08-01',
-        telephoneNumber: '+855 12 888 999',
-        dueDate: '2026-08-15',
-        amountReceived: 1375.00,
-        includeVat: true,
-        companyAddress: 'Office no:-#17F-10D, Morgan Towers, Sopheak Mongkul Street, Koh Pich, Phnom Penh, Cambodia',
-        customPaymentTerms: '50% advance for deposit and another 50% after completion of business registration.',
-        customClosingMessage: 'Thank you for your interest in our services. We are committed to supporting your business journey in Cambodia with reliability, transparency, and efficiency. We are looking forward to working with you.',
-        driveLink: OFFICIAL_GOOGLE_DRIVE_BACKUP_URL,
-        items: [
-          { description: 'Business Registration & License Processing Service in Cambodia', quantity: 1, unitPrice: 2500.00 }
-        ],
-        subtotal: 2500.00,
-        vatAmount: 250.00,
-        grandTotal: 2750.00,
-        balanceDue: 1375.00,
-        createdBy: 'Walter Dantis (CEO)',
-        createdAt: new Date().toISOString()
-      }
-    ];
+    return [];
   });
 
   const [searchQuery, setSearchQuery] = useState('');

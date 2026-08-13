@@ -26,29 +26,29 @@ const MONTHS = [
 const INITIAL_PNL_DATA = {
   // Revenue
   revenue: {
-    advisory: { label: 'Retail Advisory & Consultancy Fees', values: { aug26: 3500, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
-    coaching: { label: 'Training & Coaching Programs', values: { aug26: 800, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
+    advisory: { label: 'Retail Advisory & Consultancy Fees', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
+    coaching: { label: 'Training & Coaching Programs', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
     franchise: { label: 'Franchise Introduction / Brand Rep Fees', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
     softwareCommission: { label: 'Software Partnership Commission (e.g. Gilbarco/POS)', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
-    projectReports: { label: 'Project Reports & Business Planning Fees', values: { aug26: 1200, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
+    projectReports: { label: 'Project Reports & Business Planning Fees', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
     otherIncome: { label: 'Other Income', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } }
   },
   // Cost of Sales (Direct Project Costs)
   costOfSales: {
-    subcontractorFees: { label: 'Associate / Subcontractor Consultant Fees', values: { aug26: 500, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
-    travelSiteVisits: { label: 'Project Travel & Site Visits', values: { aug26: 150, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
+    subcontractorFees: { label: 'Associate / Subcontractor Consultant Fees', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
+    travelSiteVisits: { label: 'Project Travel & Site Visits', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
     softwareLicensing: { label: 'Software Pass-through / Licensing Costs', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } }
   },
   // Operating Expenses
   operatingExpenses: {
-    salaries: { label: 'Salaries & Staff / Intern Stipends', values: { aug26: 1800, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
-    rent: { label: 'Office Rent & Service Charges', values: { aug26: 650, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
-    utilities: { label: 'Utilities', values: { aug26: 80, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
-    marketing: { label: 'Marketing & Business Development (incl. Events)', values: { aug26: 150, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
-    softwareSubs: { label: 'Software & Subscriptions (CRM, Canva, MS Office)', values: { aug26: 120, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
-    transport: { label: 'Travel & Local Transport', values: { aug26: 100, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
-    legalAccounting: { label: 'Professional, Legal & Accounting Fees', values: { aug26: 150, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
-    bankAdmin: { label: 'Bank Charges & Admin', values: { aug26: 30, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
+    salaries: { label: 'Salaries & Staff / Intern Stipends', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
+    rent: { label: 'Office Rent & Service Charges', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
+    utilities: { label: 'Utilities', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
+    marketing: { label: 'Marketing & Business Development (incl. Events)', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
+    softwareSubs: { label: 'Software & Subscriptions (CRM, Canva, MS Office)', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
+    transport: { label: 'Travel & Local Transport', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
+    legalAccounting: { label: 'Professional, Legal & Accounting Fees', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
+    bankAdmin: { label: 'Bank Charges & Admin', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } },
     otherExpenses: { label: 'Other Operating Expenses', values: { aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, mar27: 0, apr27: 0, may27: 0, jun27: 0, jul27: 0 } }
   },
   // Depreciation
