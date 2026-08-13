@@ -32,7 +32,7 @@ import './App.css';
 export default function App() {
   // Automatic Production Clean State Launch Purge (Clears all test/demo localStorage data)
   useEffect(() => {
-    const prodCleanVersion = 'v5_instant_sync_force_purge_2026';
+    const prodCleanVersion = 'v6_new_gas_deployment_2026';
     if (localStorage.getItem('tp_prod_clean_version') !== prodCleanVersion) {
       localStorage.removeItem('tp_crm_subtasks_v2');
       localStorage.removeItem('tp_crm_project_financials_v1');
