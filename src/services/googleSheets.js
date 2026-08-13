@@ -12,7 +12,7 @@ export const SHEET_GIDS = {
 };
 
 // User's Updated Live Google Apps Script Web App Deployment URL with Global Cloud Chat, Sub-Tasks & Invoice Engine
-export const DEPLOYED_GAS_URL = 'https://script.google.com/macros/s/AKfycbw3YduNU1dMuFClYeRNprmdQvTDjlpEkT_YHYUaHruZRSiz3NpWgN1ykD8bhxrYlVgIoQ/exec';
+export const DEPLOYED_GAS_URL = 'https://script.google.com/macros/s/AKfycbygTxd89WdzGCGfQz5cK5xrmADcTnAUdoY4WU9-FtU721-BkBL66b_FVeaKFD_DBBHTvg/exec';
 export const DEFAULT_GAS_URL = DEPLOYED_GAS_URL;
 
 // Registered Turning Point Retail Team Users with UNIQUE passwords for each user
@@ -688,6 +688,42 @@ export async function saveGlobalPettyCashDeletions(gasUrl, deletionRequests) {
     return json.data || null;
   } catch (err) {
     console.warn('Global Petty Cash Deletions save error:', err);
+  }
+  return null;
+}
+
+// FETCH GLOBAL DELETED PROJECTS REGISTRY FROM CLOUD BACKEND
+export async function fetchGlobalDeletedProjects(gasUrl) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(`${targetUrl}?action=getDeletedProjects&t=${Date.now()}`);
+    if (!response.ok) throw new Error('Network response not ok');
+    const json = await response.json();
+    if (json.status === 'success' && Array.isArray(json.data)) {
+      return json.data;
+    }
+  } catch (err) {
+    console.warn('Global Deleted Projects fetch error:', err);
+  }
+  return null;
+}
+
+// SAVE GLOBAL DELETED PROJECTS REGISTRY TO CLOUD BACKEND
+export async function saveGlobalDeletedProjects(gasUrl, deletedProjectKeys) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'saveDeletedProjects',
+        deletedProjectKeys: deletedProjectKeys || []
+      })
+    });
+    const json = await response.json();
+    return json.data || null;
+  } catch (err) {
+    console.warn('Global Deleted Projects save error:', err);
   }
   return null;
 }

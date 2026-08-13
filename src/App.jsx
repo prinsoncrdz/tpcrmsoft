@@ -18,6 +18,8 @@ import {
   syncCellToGoogleSheet, 
   addProjectToGoogleSheet,
   addPettyCashToGoogleSheet,
+  fetchGlobalDeletedProjects,
+  saveGlobalDeletedProjects,
   SHEET_GIDS,
   DEFAULT_GAS_URL 
 } from './services/googleSheets';
@@ -48,26 +50,78 @@ export default function App() {
   const [gasUrl, setGasUrl] = useState(localStorage.getItem('tp_gas_url') || DEFAULT_GAS_URL);
   const [toast, setToast] = useState(null);
 
-  // Pure live fetch from published Google Sheet CSV feed
+  // Deleted Projects Registry for Persistent Real-time Removal Across System
+  const [deletedProjectKeys, setDeletedProjectKeys] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tp_deleted_project_keys_v2');
+      return saved ? JSON.parse(saved) : [];
+    } catch(e) { return []; }
+  });
+
+  const saveDeletedKeys = (keys) => {
+    setDeletedProjectKeys(keys);
+    localStorage.setItem('tp_deleted_project_keys_v2', JSON.stringify(keys));
+    saveGlobalDeletedProjects(gasUrl, keys);
+    try {
+      const bc = new BroadcastChannel('tp_projects_deletion_channel');
+      bc.postMessage({ deletedKeys: keys });
+      bc.close();
+    } catch(e) {}
+  };
+
+  // Pure live fetch from published Google Sheet CSV feed with Real-time Deletion Filtering
   const loadData = async () => {
     setIsSyncing(true);
+
+    let currentDeleted = deletedProjectKeys;
+    try {
+      const saved = localStorage.getItem('tp_deleted_project_keys_v2');
+      if (saved) currentDeleted = JSON.parse(saved);
+      const cloudDeleted = await fetchGlobalDeletedProjects(gasUrl);
+      if (Array.isArray(cloudDeleted) && cloudDeleted.length > 0) {
+        currentDeleted = Array.from(new Set([...currentDeleted, ...cloudDeleted]));
+        localStorage.setItem('tp_deleted_project_keys_v2', JSON.stringify(currentDeleted));
+        setDeletedProjectKeys(currentDeleted);
+      }
+    } catch(e) {}
+
     const res = await fetchSheetData(SHEET_GIDS.CRM);
     if (res.success && Array.isArray(res.data)) {
-      setProjects(res.data);
+      const activeProjects = res.data.filter(p => 
+        !currentDeleted.includes(p.id) && 
+        !currentDeleted.includes(p.companyName) &&
+        !(p.status || '').toLowerCase().includes('deleted')
+      );
+      setProjects(activeProjects);
     } else {
       setProjects([]);
     }
     setIsSyncing(false);
   };
 
-  // Real-time automatic background polling every 8 seconds
+  // Real-time automatic background polling every 5 seconds + BroadcastChannel sync
   useEffect(() => {
     loadData();
     const interval = setInterval(() => {
       loadData();
-      syncGlobalNotifications();
-    }, 8000); // 8-second real-time polling pulse
-    return () => clearInterval(interval);
+    }, 5000);
+
+    let bc;
+    try {
+      bc = new BroadcastChannel('tp_projects_deletion_channel');
+      bc.onmessage = (event) => {
+        if (event.data && Array.isArray(event.data.deletedKeys)) {
+          setDeletedProjectKeys(event.data.deletedKeys);
+          localStorage.setItem('tp_deleted_project_keys_v2', JSON.stringify(event.data.deletedKeys));
+          loadData();
+        }
+      };
+    } catch(e) {}
+
+    return () => {
+      clearInterval(interval);
+      if (bc) bc.close();
+    };
   }, []);
 
   const handleLogin = (user) => {
@@ -168,15 +222,36 @@ export default function App() {
     confetti({ particleCount: 60, spread: 60 });
   };
 
-  const handleDeleteProject = (projectId, deleteReason) => {
-    const isCeo = currentUser?.role === 'CEO' || (currentUser?.name || '').toLowerCase().includes('walter') || (currentUser?.role || '').toLowerCase().includes('ceo');
+  const handleDeleteProject = async (projectId, deleteReason) => {
+    const isCeo = currentUser?.role === 'CEO' || 
+                  (currentUser?.name || '').toLowerCase().includes('walter') || 
+                  (currentUser?.role || '').toLowerCase().includes('ceo');
     if (!isCeo) {
       showToast('🔒 Access Denied: Only CEO Walter Dantis can delete projects!');
       return;
     }
-    const updated = projects.filter(p => p.id !== projectId);
+
+    const targetProject = projects.find(p => p.id === projectId);
+    const companyName = targetProject?.companyName;
+
+    const newDeleted = Array.from(new Set([...deletedProjectKeys, projectId, companyName].filter(Boolean)));
+    saveDeletedKeys(newDeleted);
+
+    const updated = projects.filter(p => p.id !== projectId && p.companyName !== companyName);
     setProjects(updated);
-    showToast(`Project deleted successfully. Reason logged: "${deleteReason || 'Executive Cleanup'}"`);
+
+    showToast(`Project "${companyName || projectId}" deleted by CEO. Syncing to Google Sheet...`);
+
+    if (targetProject && targetProject.rowIndex) {
+      await syncCellToGoogleSheet(gasUrl, {
+        gid: SHEET_GIDS.CRM,
+        rowIndex: targetProject.rowIndex,
+        columnIndex: 10,
+        value: 'DELETED'
+      });
+    }
+
+    showToast(`Project deleted permanently across system! Reason logged: "${deleteReason || 'Executive Cleanup'}"`);
   };
 
   if (!currentUser) {
