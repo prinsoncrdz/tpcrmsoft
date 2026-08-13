@@ -194,6 +194,7 @@ function parseCRMRows(rows) {
         rowIndex: i + 1,
         projectId: col0 || `TP-${i}`,
         projectName: col1 || col0 || `Project ${i}`,
+        companyName: col1 || col0 || `Project ${i}`,
         client: (row[2] || '').toString().trim() || 'Turning Point Retail',
         sector: currentSector || (row[3] || '').toString().trim() || 'RETAIL & FRANCHISE',
         owner: sanitizeOwnerName(rawOwner),

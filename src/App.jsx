@@ -87,11 +87,15 @@ export default function App() {
 
     const res = await fetchSheetData(SHEET_GIDS.CRM);
     if (res.success && Array.isArray(res.data)) {
-      const activeProjects = res.data.filter(p => 
-        !currentDeleted.includes(p.id) && 
-        !currentDeleted.includes(p.companyName) &&
-        !(p.status || '').toLowerCase().includes('deleted')
-      );
+      const validDeleted = (currentDeleted || []).filter(Boolean);
+      const activeProjects = res.data.filter(p => {
+        if ((p.status || '').toLowerCase().includes('deleted')) return false;
+        if (p.id && validDeleted.includes(p.id)) return false;
+        if (p.projectName && validDeleted.includes(p.projectName)) return false;
+        if (p.companyName && validDeleted.includes(p.companyName)) return false;
+        if (p.projectId && validDeleted.includes(p.projectId)) return false;
+        return true;
+      });
       setProjects(activeProjects);
     } else {
       setProjects([]);
@@ -99,12 +103,12 @@ export default function App() {
     setIsSyncing(false);
   };
 
-  // Real-time automatic background polling every 5 seconds + BroadcastChannel sync
+  // Real-time automatic background polling every 3 seconds + BroadcastChannel sync
   useEffect(() => {
     loadData();
     const interval = setInterval(() => {
       loadData();
-    }, 5000);
+    }, 3000);
 
     let bc;
     try {
