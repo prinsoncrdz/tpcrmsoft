@@ -95,19 +95,31 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
     }
   };
 
-  // Calculate overall CEO Work Progress % across ALL projects & sub-tasks
-  const allSubTasks = Object.values(subTasksMap).flat();
-  const totalSubTasksCount = allSubTasks.length;
-  const approvedSubTasksCount = allSubTasks.filter(t => t.status === 'Approved').length;
-  const pendingReviewSubTasksCount = allSubTasks.filter(t => t.status === 'Submitted').length;
-  const globalCeoProgressPct = totalSubTasksCount > 0 ? Math.round((approvedSubTasksCount / totalSubTasksCount) * 100) : 0;
+  // Calculate overall CEO Work Progress % strictly across ACTIVE live projects
+  const activeProjectIds = new Set((projects || []).map(p => p.id));
+  const activeSubTasks = Object.keys(subTasksMap)
+    .filter(pId => activeProjectIds.has(pId))
+    .map(pId => subTasksMap[pId])
+    .flat()
+    .filter(Boolean);
 
-  // Calculate Portfolio Financials for CEO
-  const totalPortfolioRevenue = Object.values(financialsMap).reduce((sum, item) => sum + (parseFloat(item.revenue) || 0), 0);
-  const totalPortfolioSpent = Object.values(financialsMap).reduce((sum, item) => {
-    const itemSpent = (item.expenses || []).reduce((expSum, e) => expSum + (parseFloat(e.amount) || 0), 0);
-    return sum + itemSpent;
-  }, 0);
+  const totalSubTasksCount = activeSubTasks.length;
+  const approvedSubTasksCount = activeSubTasks.filter(t => t.status === 'Approved').length;
+  const pendingReviewSubTasksCount = activeSubTasks.filter(t => t.status === 'Submitted').length;
+  const globalCeoProgressPct = totalSubTasksCount > 0 ? Math.round((approvedSubTasksCount / totalSubTasksCount) * 100) : 100;
+
+  // Calculate Portfolio Financials for CEO strictly across active live projects
+  const totalPortfolioRevenue = Object.keys(financialsMap)
+    .filter(pId => activeProjectIds.has(pId))
+    .reduce((sum, pId) => sum + (parseFloat(financialsMap[pId]?.revenue) || 0), 0);
+
+  const totalPortfolioSpent = Object.keys(financialsMap)
+    .filter(pId => activeProjectIds.has(pId))
+    .reduce((sum, pId) => {
+      const itemSpent = (financialsMap[pId]?.expenses || []).reduce((expSum, e) => expSum + (parseFloat(e.amount) || 0), 0);
+      return sum + itemSpent;
+    }, 0);
+
   const netPortfolioProfit = totalPortfolioRevenue - totalPortfolioSpent;
 
   const formatShortCurrency = (val) => {
@@ -299,7 +311,7 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
               {totalSubTasksCount > 0 ? `${globalCeoProgressPct}%` : '100%'}
             </span>
             <span className="stat-label" style={{ color: '#065F46', fontWeight: 600 }}>
-              CEO Work Progress ({approvedSubTasksCount}/{totalSubTasksCount} Approved)
+              CEO Work Progress {totalSubTasksCount > 0 ? `(${approvedSubTasksCount}/${totalSubTasksCount} Approved)` : '(100% On Track)'}
             </span>
           </div>
         </div>
