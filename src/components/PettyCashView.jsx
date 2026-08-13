@@ -43,20 +43,26 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   // Real-time Cloud + BroadcastChannel Sync for Deletion Requests & Permanently Deleted Items
   const loadDeletionRequests = async () => {
     try {
-      const saved = localStorage.getItem(DELETION_REQUESTS_KEY);
-      if (saved) setDeletionRequests(JSON.parse(saved));
-
       const cloud = await fetchGlobalPettyCashDeletions();
-      if (Array.isArray(cloud) && cloud.length > 0) {
-        setDeletionRequests(cloud);
-        localStorage.setItem(DELETION_REQUESTS_KEY, JSON.stringify(cloud));
+      const saved = localStorage.getItem(DELETION_REQUESTS_KEY);
+      let local = saved ? JSON.parse(saved) : [];
+
+      if (Array.isArray(cloud)) {
+        const map = new Map();
+        (local || []).forEach(r => map.set(r.id, r));
+        (cloud || []).forEach(r => map.set(r.id, r));
+        const merged = Array.from(map.values());
+        setDeletionRequests(merged);
+        localStorage.setItem(DELETION_REQUESTS_KEY, JSON.stringify(merged));
+      } else if (local.length > 0) {
+        setDeletionRequests(local);
       }
     } catch (e) {}
   };
 
   useEffect(() => {
     loadDeletionRequests();
-    const interval = setInterval(loadDeletionRequests, 4000);
+    const interval = setInterval(loadDeletionRequests, 2000);
 
     let bc;
     try {
@@ -124,13 +130,34 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   const getItemKey = (item) => item.id || item.voucherNo || `${item.date}_${item.description}_${item.cardSpent || item.cashOut}`;
 
   const isItemDeleted = (item) => {
+    if (!item) return false;
+    const desc = (item.description || '').toLowerCase().trim();
+    if (desc.startsWith('[deleted]')) return true;
     const key = getItemKey(item);
-    return deletionRequests.some(r => r.itemKey === key && r.status === 'APPROVED');
+    const voucher = (item.voucherNo || '').trim();
+
+    return deletionRequests.some(r => {
+      if (r.status !== 'APPROVED') return false;
+      if (r.itemKey && r.itemKey === key) return true;
+      if (voucher && voucher !== '-' && r.itemVoucherNo === voucher) return true;
+      if (desc && r.itemDescription && r.itemDescription.toLowerCase().trim() === desc) return true;
+      return false;
+    });
   };
 
   const getPendingDeletionRequest = (item) => {
+    if (!item) return null;
+    const desc = (item.description || '').toLowerCase().trim();
     const key = getItemKey(item);
-    return deletionRequests.find(r => r.itemKey === key && r.status === 'PENDING');
+    const voucher = (item.voucherNo || '').trim();
+
+    return deletionRequests.find(r => {
+      if (r.status !== 'PENDING') return false;
+      if (r.itemKey && r.itemKey === key) return true;
+      if (voucher && voucher !== '-' && r.itemVoucherNo === voucher) return true;
+      if (desc && r.itemDescription && r.itemDescription.toLowerCase().trim() === desc) return true;
+      return false;
+    });
   };
 
   const handleOpenDeleteModal = (item) => {
