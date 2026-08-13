@@ -372,7 +372,7 @@ export default function App() {
     return <LoginModal onLogin={handleLogin} />;
   }
 
-  // Filter projects by logged-in user role
+  // Filter projects by logged-in user role (CEO & Sreylang see all; Staff see assigned only)
   const roleFilteredProjects = filterProjectsByRole(projects, currentUser);
 
   return (

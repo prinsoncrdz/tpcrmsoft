@@ -299,10 +299,33 @@ function parsePettyCashRows(rows) {
   return { transactions, headerSummary };
 }
 
-// Filter projects based on User Role permissions (All team members have full real-time visibility)
-export function filterProjectsByRole(projects, currentUser) {
+// Filter projects based on User Role permissions (CEO & Sreylang see all; Staff see assigned only)
+export function filterProjectsByRole(projects, currentUser, subTasksMap = {}) {
   if (!currentUser) return [];
-  return projects || [];
+  const uRole = currentUser.role || '';
+  const uName = (currentUser.name || '').toLowerCase();
+  const uEmail = (currentUser.email || '').toLowerCase();
+
+  const isCeo = uRole === 'CEO' || uName.includes('walter') || uRole.toLowerCase().includes('ceo');
+  const isSreylang = uName.includes('sreylang') || uEmail.includes('sreylang.thim');
+
+  // CEO Walter Dantis & Sreylang Thim see all company projects
+  if (isCeo || isSrelyang) return projects || [];
+
+  // Team members (e.g. Prinson Cardozo) see ONLY projects assigned to them by CEO or where they have assigned sub-tasks
+  return (projects || []).filter(p => {
+    const pAssignee = (p.assignee || '').toLowerCase();
+    const pOwner = (p.owner || '').toLowerCase();
+    const pSubTasks = subTasksMap[p.id] || [];
+
+    const isAssigned = pAssignee.includes(uName) || pOwner.includes(uName) || uName.includes(pAssignee);
+    const hasSubTask = pSubTasks.some(st => 
+      (st.assigneeEmail && st.assigneeEmail.toLowerCase() === uEmail) ||
+      (st.assigneeName && st.assigneeName.toLowerCase().includes(uName))
+    );
+
+    return isAssigned || hasSubTask;
+  });
 }
 
 // Update cell in Google Sheet via Google Apps Script Web App
