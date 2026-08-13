@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, ShieldAlert, DollarSign, Calendar, CheckCircle2, TrendingUp, RefreshCw, Plus, PieChart, BarChart3, CreditCard, Wallet, Layers, Eye, Table, ArrowUpRight, ArrowDownRight, Tag, User, Printer, FileText, Trash2, AlertTriangle, Check, X, Clock, Send, ShieldCheck, AlertCircle } from 'lucide-react';
-import { fetchSheetData, SHEET_GIDS, PUBLISHED_SHEET_ID, sendGlobalNotification } from '../services/googleSheets';
+import { fetchSheetData, SHEET_GIDS, PUBLISHED_SHEET_ID, sendGlobalNotification, fetchGlobalPettyCashDeletions, saveGlobalPettyCashDeletions } from '../services/googleSheets';
 
 const DELETION_REQUESTS_KEY = 'tp_petty_cash_deletion_requests_v2';
 
@@ -40,17 +40,51 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     PETTY_CASH_SEPT: 'September 2026 Petty Cash Transactions (gid=1003)'
   };
 
-  // Sync Deletion Requests from Storage
-  useEffect(() => {
+  // Real-time Cloud + BroadcastChannel Sync for Deletion Requests & Permanently Deleted Items
+  const loadDeletionRequests = async () => {
     try {
       const saved = localStorage.getItem(DELETION_REQUESTS_KEY);
       if (saved) setDeletionRequests(JSON.parse(saved));
+
+      const cloud = await fetchGlobalPettyCashDeletions();
+      if (Array.isArray(cloud) && cloud.length > 0) {
+        setDeletionRequests(cloud);
+        localStorage.setItem(DELETION_REQUESTS_KEY, JSON.stringify(cloud));
+      }
     } catch (e) {}
+  };
+
+  useEffect(() => {
+    loadDeletionRequests();
+    const interval = setInterval(loadDeletionRequests, 4000);
+
+    let bc;
+    try {
+      bc = new BroadcastChannel('tp_petty_cash_deletions_channel');
+      bc.onmessage = (event) => {
+        if (event.data && Array.isArray(event.data.deletionRequests)) {
+          setDeletionRequests(event.data.deletionRequests);
+          localStorage.setItem(DELETION_REQUESTS_KEY, JSON.stringify(event.data.deletionRequests));
+        }
+      };
+    } catch(e) {}
+
+    return () => {
+      clearInterval(interval);
+      if (bc) bc.close();
+    };
   }, []);
 
   const saveDeletionRequests = (updated) => {
     setDeletionRequests(updated);
     localStorage.setItem(DELETION_REQUESTS_KEY, JSON.stringify(updated));
+    saveGlobalPettyCashDeletions(null, updated);
+
+    try {
+      const bc = new BroadcastChannel('tp_petty_cash_deletions_channel');
+      bc.postMessage({ deletionRequests: updated });
+      bc.close();
+    } catch(e) {}
   };
 
   const loadAllPettyCashData = async () => {
