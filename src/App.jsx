@@ -107,8 +107,62 @@ export default function App() {
         if (p.projectId && validDeleted.includes(p.projectId)) return false;
         return true;
       });
-      setProjects(activeProjects);
-      localStorage.setItem('tp_last_known_projects_v2', JSON.stringify(activeProjects));
+      setProjects(prevProjects => {
+        const detailMap = new Map();
+
+        try {
+          const cachedStr = localStorage.getItem('tp_last_known_projects_v2');
+          if (cachedStr) {
+            const cachedList = JSON.parse(cachedStr);
+            if (Array.isArray(cachedList)) {
+              cachedList.forEach(cp => {
+                if (cp.projectId || cp.id) detailMap.set(cp.projectId || cp.id, cp);
+              });
+            }
+          }
+        } catch(e) {}
+
+        (prevProjects || []).forEach(p => {
+          if (p.projectId || p.id) detailMap.set(p.projectId || p.id, p);
+        });
+
+        const mergedProjects = activeProjects.map(sheetProj => {
+          const key = sheetProj.projectId || sheetProj.id;
+          const localMatch = detailMap.get(key);
+          if (localMatch) {
+            return {
+              ...localMatch,
+              ...sheetProj,
+              clientContact: localMatch.clientContact || sheetProj.clientContact,
+              projectObjective: localMatch.projectObjective || sheetProj.projectObjective,
+              scopeOfWork: localMatch.scopeOfWork || sheetProj.scopeOfWork,
+              keyDeliverables: localMatch.keyDeliverables || sheetProj.keyDeliverables,
+              keyPartners: localMatch.keyPartners || sheetProj.keyPartners,
+              successCriteria: localMatch.successCriteria || sheetProj.successCriteria,
+              knownRisks: localMatch.knownRisks || sheetProj.knownRisks,
+              outOfScope: localMatch.outOfScope || sheetProj.outOfScope,
+              dependencies: localMatch.dependencies || sheetProj.dependencies,
+              contractValueUsd: localMatch.contractValueUsd || sheetProj.contractValueUsd,
+              advanceRetainerPct: localMatch.advanceRetainerPct || sheetProj.advanceRetainerPct,
+              advanceAmountUsd: localMatch.advanceAmountUsd || sheetProj.advanceAmountUsd,
+              paymentTerms: localMatch.paymentTerms || sheetProj.paymentTerms,
+              preparedBy: localMatch.preparedBy || sheetProj.preparedBy,
+              reviewedBy: localMatch.reviewedBy || sheetProj.reviewedBy
+            };
+          }
+          return sheetProj;
+        });
+
+        detailMap.forEach((localProj, k) => {
+          const existsInSheet = mergedProjects.some(mp => (mp.projectId || mp.id) === k);
+          if (!existsInSheet && !validDeleted.includes(k)) {
+            mergedProjects.unshift(localProj);
+          }
+        });
+
+        localStorage.setItem('tp_last_known_projects_v2', JSON.stringify(mergedProjects));
+        return mergedProjects;
+      });
     } else {
       try {
         const cached = localStorage.getItem('tp_last_known_projects_v2');
