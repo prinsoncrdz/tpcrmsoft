@@ -62,7 +62,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
 
   useEffect(() => {
     loadDeletionRequests();
-    const interval = setInterval(loadDeletionRequests, 2000);
+    const interval = setInterval(loadDeletionRequests, 1000);
 
     let bc;
     try {

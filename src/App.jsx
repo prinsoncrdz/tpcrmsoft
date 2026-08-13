@@ -118,12 +118,12 @@ export default function App() {
     setIsSyncing(false);
   };
 
-  // Real-time automatic background polling every 3 seconds + BroadcastChannel sync
+  // Real-time automatic background polling every 1 second + BroadcastChannel sync
   useEffect(() => {
     loadData();
     const interval = setInterval(() => {
       loadData();
-    }, 3000);
+    }, 1000);
 
     let bc;
     try {

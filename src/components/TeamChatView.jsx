@@ -134,11 +134,11 @@ export default function TeamChatView({ currentUser }) {
     updatePresence();
     loadAndProcessMessages();
 
-    // Fast 2-second Cloud Polling interval for instant messages across devices
+    // Fast 1-second Cloud Polling interval for instant messages across devices
     const interval = setInterval(() => {
       updatePresence();
       loadAndProcessMessages();
-    }, 2000);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [activeChannel]);

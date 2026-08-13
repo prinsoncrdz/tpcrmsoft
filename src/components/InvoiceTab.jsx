@@ -62,7 +62,7 @@ export default function InvoiceTab({ currentUser }) {
       }
     };
     syncCloudData();
-    const interval = setInterval(syncCloudData, 2000);
+    const interval = setInterval(syncCloudData, 1000);
 
     let bc;
     try {

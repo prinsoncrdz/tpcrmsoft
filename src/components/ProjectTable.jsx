@@ -66,7 +66,7 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
 
   useEffect(() => {
     loadCloudSubTasks();
-    const interval = setInterval(loadCloudSubTasks, 3000);
+    const interval = setInterval(loadCloudSubTasks, 1000);
     return () => clearInterval(interval);
   }, []);
 
