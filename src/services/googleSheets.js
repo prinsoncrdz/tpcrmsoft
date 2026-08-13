@@ -754,4 +754,40 @@ export async function saveGlobalProjectsDetails(gasUrl, projectsMap) {
   return null;
 }
 
+// FETCH GLOBAL PETTY CASH OVERLAY EDITS FROM CLOUD BACKEND
+export async function fetchGlobalPettyCashEdits(gasUrl) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(`${targetUrl}?action=getPettyCashEdits&t=${Date.now()}`);
+    if (!response.ok) throw new Error('Network response not ok');
+    const json = await response.json();
+    if (json.status === 'success' && json.data) {
+      return json.data;
+    }
+  } catch (err) {
+    console.warn('Global Petty Cash Edits fetch error:', err);
+  }
+  return null;
+}
+
+// SAVE GLOBAL PETTY CASH OVERLAY EDITS TO CLOUD BACKEND
+export async function saveGlobalPettyCashEdits(gasUrl, editsMap) {
+  const targetUrl = gasUrl || DEPLOYED_GAS_URL;
+  try {
+    const response = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'savePettyCashEdits',
+        pettyCashEdits: editsMap || {}
+      })
+    });
+    const json = await response.json();
+    return json.data || null;
+  } catch (err) {
+    console.warn('Global Petty Cash Edits save error:', err);
+  }
+  return null;
+}
+
 

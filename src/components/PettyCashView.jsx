@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, ShieldAlert, DollarSign, Calendar, CheckCircle2, TrendingUp, RefreshCw, Plus, PieChart, BarChart3, CreditCard, Wallet, Layers, Eye, Table, ArrowUpRight, ArrowDownRight, Tag, User, Printer, FileText, Trash2, Edit2, Save, AlertTriangle, Check, X, Clock, Send, ShieldCheck, AlertCircle } from 'lucide-react';
-import { fetchSheetData, SHEET_GIDS, PUBLISHED_SHEET_ID, sendGlobalNotification, fetchGlobalPettyCashDeletions, saveGlobalPettyCashDeletions, syncCellToGoogleSheet } from '../services/googleSheets';
+import { fetchSheetData, SHEET_GIDS, PUBLISHED_SHEET_ID, sendGlobalNotification, fetchGlobalPettyCashDeletions, saveGlobalPettyCashDeletions, fetchGlobalPettyCashEdits, saveGlobalPettyCashEdits, syncCellToGoogleSheet } from '../services/googleSheets';
 
 const DELETION_REQUESTS_KEY = 'tp_petty_cash_deletion_requests_v2';
 const PETTY_EDITS_KEY = 'tp_petty_cash_edits_v1';
@@ -106,21 +106,26 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   const loadAllPettyCashData = async () => {
     setLoading(true);
 
-    const [julyRes, augRes, septRes] = await Promise.all([
+    const [julyRes, augRes, septRes, cloudEdits] = await Promise.all([
       fetchSheetData(SHEET_GIDS.PETTY_CASH_JULY),
       fetchSheetData(SHEET_GIDS.PETTY_CASH_AUG),
-      fetchSheetData(SHEET_GIDS.PETTY_CASH_SEPT)
+      fetchSheetData(SHEET_GIDS.PETTY_CASH_SEPT),
+      fetchGlobalPettyCashEdits()
     ]);
 
     let jT = julyRes.success ? (julyRes.data.transactions || []) : [];
     let aT = augRes.success ? (augRes.data.transactions || []) : [];
     let sT = septRes.success ? (septRes.data.transactions || []) : [];
 
-    // Apply local overlay edits if any
+    // Apply cloud + local overlay edits across all devices
     try {
-      const editsStr = localStorage.getItem(PETTY_EDITS_KEY);
-      if (editsStr) {
-        const editsMap = JSON.parse(editsStr);
+      const editsMap = {};
+      const savedStr = localStorage.getItem(PETTY_EDITS_KEY);
+      if (savedStr) Object.assign(editsMap, JSON.parse(savedStr));
+      if (cloudEdits && typeof cloudEdits === 'object') Object.assign(editsMap, cloudEdits);
+
+      if (Object.keys(editsMap).length > 0) {
+        localStorage.setItem(PETTY_EDITS_KEY, JSON.stringify(editsMap));
         const applyEdits = (list) => list.map(item => editsMap[item.id] ? { ...item, ...editsMap[item.id] } : item);
         jT = applyEdits(jT);
         aT = applyEdits(aT);
@@ -268,12 +273,13 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
       cashOut: isCash ? formattedAmt : '$0.00'
     };
 
-    // Save overlay edits to local cache
+    // Save overlay edits to local cache & global cloud endpoint
     try {
       const savedStr = localStorage.getItem(PETTY_EDITS_KEY);
       const editsMap = savedStr ? JSON.parse(savedStr) : {};
       editsMap[editingItem.id] = updatedRow;
       localStorage.setItem(PETTY_EDITS_KEY, JSON.stringify(editsMap));
+      await saveGlobalPettyCashEdits(null, editsMap);
     } catch(e) {}
 
     // Update in-memory lists
