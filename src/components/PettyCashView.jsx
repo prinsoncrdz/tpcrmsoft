@@ -113,9 +113,9 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
       fetchGlobalPettyCashEdits()
     ]);
 
-    let jT = julyRes.success ? (julyRes.data.transactions || []) : [];
-    let aT = augRes.success ? (augRes.data.transactions || []) : [];
-    let sT = septRes.success ? (septRes.data.transactions || []) : [];
+    let jT = julyRes.success ? (Array.isArray(julyRes.data) ? julyRes.data : (julyRes.data?.transactions || [])) : [];
+    let aT = augRes.success ? (Array.isArray(augRes.data) ? augRes.data : (augRes.data?.transactions || [])) : [];
+    let sT = septRes.success ? (Array.isArray(septRes.data) ? septRes.data : (septRes.data?.transactions || [])) : [];
 
     // Apply cloud + local overlay edits across all devices
     try {
