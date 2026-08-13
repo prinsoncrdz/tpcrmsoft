@@ -520,9 +520,14 @@ export default function App() {
             projects={projects}
             currentUser={currentUser}
             onApproveProject={async (approvedProj) => {
-              const updated = projects.map(p => p.id === approvedProj.id ? approvedProj : p);
+              const updated = projects.map(p => (p.id === approvedProj.id || p.projectId === approvedProj.projectId) ? { ...p, ...approvedProj } : p);
               setProjects(updated);
-              showToast(`Project "${approvedProj.projectName}" approved by CEO Walter Dantis!`);
+              localStorage.setItem('tp_last_known_projects_v2', JSON.stringify(updated));
+              broadcastProjectUpdate(updated);
+              await syncProjectsDetailsToCloud(updated);
+
+              showToast(`Project "${approvedProj.projectName}" Section C Financials approved by CEO Walter Dantis!`);
+
               if (syncCellToGoogleSheet) {
                 await syncCellToGoogleSheet(gasUrl, {
                   gid: SHEET_GIDS.CRM,
@@ -530,6 +535,14 @@ export default function App() {
                   columnIndex: 10,
                   value: 'In Progress'
                 });
+                if (approvedProj.contractValueUsd) {
+                  await syncCellToGoogleSheet(gasUrl, {
+                    gid: SHEET_GIDS.CRM,
+                    rowIndex: approvedProj.rowIndex || 10,
+                    columnIndex: 6,
+                    value: `$${approvedProj.contractValueUsd}`
+                  });
+                }
               }
               try {
                 if (typeof confetti === 'function') confetti({ particleCount: 80, spread: 80 });
