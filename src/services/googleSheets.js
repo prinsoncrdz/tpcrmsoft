@@ -307,7 +307,7 @@ export function filterProjectsByRole(projects, currentUser, subTasksMap = {}) {
   const uEmail = (currentUser.email || '').toLowerCase();
 
   const isCeo = uRole === 'CEO' || uName.includes('walter') || uRole.toLowerCase().includes('ceo');
-  const isSreylang = uName.includes('sreylang') || uEmail.includes('sreylang.thim');
+  const isSrelyang = uName.includes('sreylang') || uEmail.includes('sreylang.thim');
 
   // CEO Walter Dantis & Sreylang Thim see all company projects
   if (isCeo || isSrelyang) return projects || [];
