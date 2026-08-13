@@ -26,6 +26,22 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState('ANALYTICS');
 
+  // Custom Header Allocations Editing State
+  const PETTY_HEADER_KEY = 'tp_petty_cash_header_summary_v2';
+  const [customHeader, setCustomHeader] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tp_petty_cash_header_summary_v2');
+      return saved ? JSON.parse(saved) : null;
+    } catch(e) {
+      return null;
+    }
+  });
+  const [showEditHeaderModal, setShowEditHeaderModal] = useState(false);
+  const [headerFormData, setHeaderFormData] = useState({
+    startingCash: '0.00',
+    cashIn: '0.00'
+  });
+
   // Deletions Registry
   const [deletionRequests, setDeletionRequests] = useState([]);
   
@@ -123,6 +139,11 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
       const savedStr = localStorage.getItem(PETTY_EDITS_KEY);
       if (savedStr) Object.assign(editsMap, JSON.parse(savedStr));
       if (cloudEdits && typeof cloudEdits === 'object') Object.assign(editsMap, cloudEdits);
+
+      if (editsMap['__HEADER_ALLOCATION__']) {
+        setCustomHeader(editsMap['__HEADER_ALLOCATION__']);
+        localStorage.setItem(PETTY_HEADER_KEY, JSON.stringify(editsMap['__HEADER_ALLOCATION__']));
+      }
 
       if (Object.keys(editsMap).length > 0) {
         localStorage.setItem(PETTY_EDITS_KEY, JSON.stringify(editsMap));
@@ -339,13 +360,44 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   // Target rows for financial summary bar (All rows when on Dashboard, active month rows otherwise)
   const targetRowsForSummary = isDashboardTab ? allRows : filteredActiveTabData;
 
-  // Safe header summary fallback object
-  const safeHeaderSummary = headerSummary || {
-    startingCash: '$20.00',
+  // Safe header summary fallback object (overlays user's custom edits)
+  const safeHeaderSummary = customHeader || headerSummary || {
+    startingCash: '$0.00',
     cashIn: '$0.00',
     cashOut: '$0.00',
     remainingCash: '$0.00',
     cardSpent: '$0.00'
+  };
+
+  const handleOpenEditHeaderModal = () => {
+    const sRaw = parseVal(safeHeaderSummary.startingCash);
+    const cRaw = parseVal(safeHeaderSummary.cashIn);
+    setHeaderFormData({
+      startingCash: sRaw.toFixed(2),
+      cashIn: cRaw.toFixed(2)
+    });
+    setShowEditHeaderModal(true);
+  };
+
+  const handleSaveHeaderAllocations = async (e) => {
+    e.preventDefault();
+    const updatedHeader = {
+      startingCash: `$${parseFloat(headerFormData.startingCash || 0).toFixed(2)}`,
+      cashIn: `$${parseFloat(headerFormData.cashIn || 0).toFixed(2)}`
+    };
+
+    setCustomHeader(updatedHeader);
+    localStorage.setItem(PETTY_HEADER_KEY, JSON.stringify(updatedHeader));
+
+    try {
+      const savedStr = localStorage.getItem(PETTY_EDITS_KEY);
+      const editsMap = savedStr ? JSON.parse(savedStr) : {};
+      editsMap['__HEADER_ALLOCATION__'] = updatedHeader;
+      localStorage.setItem(PETTY_EDITS_KEY, JSON.stringify(editsMap));
+      await saveGlobalPettyCashEdits(null, editsMap);
+    } catch(e) {}
+
+    setShowEditHeaderModal(false);
   };
 
   // Dynamic automatic mathematical calculations across active non-deleted rows
@@ -371,10 +423,6 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   // Allocation & dynamic funds calculations
   let startingCashNum = rawStarting;
   let totalCashInNum = Math.max(parsedCashIn, liveCashIn);
-
-  if (startingCashNum === 0 && totalCashInNum === 0 && liveTotalSpent > 0) {
-    startingCashNum = Math.ceil((liveTotalSpent + 28.80) / 10) * 10;
-  }
 
   const totalAvailableFunds = startingCashNum + totalCashInNum;
   const dynamicRemainingCash = Math.max(0, totalAvailableFunds - liveTotalSpent);
@@ -483,6 +531,10 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
         </div>
 
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <button onClick={handleOpenEditHeaderModal} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', background: '#FFFBEB', color: '#B45309', borderColor: '#FDE68A', fontWeight: 700 }}>
+            <Edit2 size={15} /> ✏️ Edit Allocations
+          </button>
+
           <button onClick={handleExportMonthlyWord} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem' }}>
             <FileText size={15} /> Export Word (.doc)
           </button>
@@ -1009,6 +1061,79 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
 
             </form>
 
+          </div>
+        </div>
+      )}
+
+      {/* EDIT HEADER FINANCIAL ALLOCATIONS MODAL */}
+      {showEditHeaderModal && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ width: '90%', maxWidth: '480px', borderRadius: '16px', padding: '24px', background: '#FFFFFF', boxShadow: 'var(--shadow-lg)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #E2E8F0', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <DollarSign size={20} style={{ color: 'var(--brand-green)' }} />
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0F172A', margin: 0 }}>
+                  Edit Financial Allocations
+                </h3>
+              </div>
+              <button onClick={() => setShowEditHeaderModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
+            </div>
+
+            <form onSubmit={handleSaveHeaderAllocations}>
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label className="form-label" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#475569', marginBottom: '6px' }}>
+                  Starting Petty Cash Float ($ USD)
+                </label>
+                <input 
+                  type="number"
+                  step="0.01"
+                  className="form-input"
+                  placeholder="e.g. 500.00"
+                  value={headerFormData.startingCash}
+                  onChange={(e) => setHeaderFormData({ ...headerFormData, startingCash: e.target.value })}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.9rem', fontWeight: 800 }}
+                  required 
+                />
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                  Base float allocated to the petty cash safe at start of period.
+                </span>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '20px' }}>
+                <label className="form-label" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: '#475569', marginBottom: '6px' }}>
+                  Cash In Replenishment ($ USD)
+                </label>
+                <input 
+                  type="number"
+                  step="0.01"
+                  className="form-input"
+                  placeholder="e.g. 5.00"
+                  value={headerFormData.cashIn}
+                  onChange={(e) => setHeaderFormData({ ...headerFormData, cashIn: e.target.value })}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.9rem', fontWeight: 800 }}
+                  required 
+                />
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                  Total incoming replenishment funds injected into petty cash.
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingTop: '12px', borderTop: '1px solid #E2E8F0' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowEditHeaderModal(false)} 
+                  style={{ padding: '9px 16px', background: '#F1F5F9', color: '#64748B', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  style={{ padding: '9px 18px', background: '#059669', color: '#FFF', border: 'none', borderRadius: '8px', fontWeight: 900, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <Save size={15} /> Save Allocations
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
