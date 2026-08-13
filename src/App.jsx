@@ -531,7 +531,7 @@ export default function App() {
           />
         ) : activeTab === 'PROJECT_APPROVALS' ? (
           <ProjectApprovalsPortal 
-            projects={projects}
+            projects={roleFilteredProjects}
             currentUser={currentUser}
             onApproveProject={async (approvedProj) => {
               const updated = projects.map(p => (p.id === approvedProj.id || p.projectId === approvedProj.projectId) ? { ...p, ...approvedProj } : p);

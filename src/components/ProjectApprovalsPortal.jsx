@@ -28,13 +28,21 @@ export default function ProjectApprovalsPortal({ projects = [], currentUser, onA
     );
   }
 
+  // Filter out DELETED status projects strictly
+  const activeNonDeletedProjects = (projects || []).filter(p => {
+    if (!p) return false;
+    const st = (p.status || '').toString().toLowerCase();
+    if (st.includes('deleted') || st === 'deleted') return false;
+    return true;
+  });
+
   // Filter projects by pending CEO approval vs approved
-  const pendingProjects = projects.filter(p => 
+  const pendingProjects = activeNonDeletedProjects.filter(p => 
     (p.status || '').toLowerCase().includes('pending') || 
     (p.status || '').toLowerCase().includes('review')
   );
 
-  const approvedProjects = projects.filter(p => 
+  const approvedProjects = activeNonDeletedProjects.filter(p => 
     !(p.status || '').toLowerCase().includes('pending')
   );
 

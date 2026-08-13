@@ -188,9 +188,12 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
   const canDeleteProject = isCeo; // Project deletion is STRICTLY reserved for CEO Walter Dantis
   const canEditProgressUpdate = true; // Everyone assigned can edit Progress Update
 
-  // Filter projects by search query, sector tab, and assignment tab
+  // Filter projects by search query, sector tab, assignment tab, and DELETED status
   const filteredProjects = projects.filter(p => {
     if (!p) return false;
+    const pStatus = (p.status || '').toString().toLowerCase();
+    if (pStatus.includes('deleted') || pStatus === 'deleted') return false;
+
     const pName = (p.projectName || p.companyName || '').toLowerCase();
     const pId = (p.projectId || p.id || '').toLowerCase();
     const pClient = (p.client || '').toLowerCase();
