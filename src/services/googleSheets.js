@@ -299,44 +299,10 @@ function parsePettyCashRows(rows) {
   return { transactions, headerSummary };
 }
 
-// Filter projects based on User Role permissions
+// Filter projects based on User Role permissions (All team members have full real-time visibility)
 export function filterProjectsByRole(projects, currentUser) {
   if (!currentUser) return [];
-  
-  const role = currentUser.role;
-  const userName = (currentUser.name || '').toLowerCase();
-  const userEmail = (currentUser.email || '').toLowerCase();
-  const userShort = userEmail.split('@')[0];
-
-  if (role === 'CEO' || role === 'Admin') {
-    return projects; // Unrestricted full access
-  }
-
-  // Load sub-tasks to ensure sub-task assignees can view their project
-  let subTasksMap = {};
-  try {
-    const saved = localStorage.getItem('tp_crm_subtasks_v2');
-    if (saved) subTasksMap = JSON.parse(saved);
-  } catch (err) { subTasksMap = {}; }
-  
-  return projects.filter(p => {
-    const owner = (p.owner || '').toLowerCase();
-    const assignee = (p.assignee || '').toLowerCase();
-
-    const isMainParty = owner.includes(userName) || 
-            owner.includes(userShort) || 
-            assignee.includes(userName) || 
-            assignee.includes(userShort);
-
-    if (isMainParty) return true;
-
-    // Check if user is assigned to any sub-task in this project
-    const pSubTasks = subTasksMap[p.id] || [];
-    return pSubTasks.some(st => 
-      (st.assigneeEmail && st.assigneeEmail.toLowerCase() === userEmail) ||
-      (st.assigneeName && st.assigneeName.toLowerCase().includes(userName))
-    );
-  });
+  return projects || [];
 }
 
 // Update cell in Google Sheet via Google Apps Script Web App

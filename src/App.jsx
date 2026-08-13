@@ -86,7 +86,7 @@ export default function App() {
     } catch(e) {}
 
     const res = await fetchSheetData(SHEET_GIDS.CRM);
-    if (res.success && Array.isArray(res.data)) {
+    if (res.success && Array.isArray(res.data) && res.data.length > 0) {
       const validDeleted = (currentDeleted || []).filter(Boolean);
       const activeProjects = res.data.filter(p => {
         if ((p.status || '').toLowerCase().includes('deleted')) return false;
@@ -97,8 +97,12 @@ export default function App() {
         return true;
       });
       setProjects(activeProjects);
+      localStorage.setItem('tp_last_known_projects_v2', JSON.stringify(activeProjects));
     } else {
-      setProjects([]);
+      try {
+        const cached = localStorage.getItem('tp_last_known_projects_v2');
+        if (cached) setProjects(JSON.parse(cached));
+      } catch(e) {}
     }
     setIsSyncing(false);
   };
