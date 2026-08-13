@@ -103,17 +103,30 @@ export default function App() {
       cloudDetails = await fetchGlobalProjectsDetails(gasUrl);
     } catch(e) {}
 
+    const isProjectDeleted = (proj, deletedList) => {
+      if (!proj || !Array.isArray(deletedList)) return false;
+      if ((proj.status || '').toLowerCase().includes('deleted')) return true;
+
+      const cleanStr = (s) => (s || '').toString().trim().toLowerCase();
+      const idClean = cleanStr(proj.id);
+      const pidClean = cleanStr(proj.projectId);
+      const compClean = cleanStr(proj.companyName || proj.projectName);
+
+      return deletedList.some(d => {
+        const dClean = cleanStr(d);
+        if (!dClean) return false;
+        return (idClean && idClean === dClean) || 
+               (pidClean && pidClean === dClean) || 
+               (compClean && compClean === dClean) ||
+               (compClean && dClean && (compClean === dClean || compClean.includes(dClean) || dClean.includes(compClean)));
+      });
+    };
+
     const res = await fetchSheetData(SHEET_GIDS.CRM);
     if (res.success && Array.isArray(res.data) && res.data.length > 0) {
       const validDeleted = (currentDeleted || []).filter(Boolean);
-      const activeProjects = res.data.filter(p => {
-        if ((p.status || '').toLowerCase().includes('deleted')) return false;
-        if (p.id && validDeleted.includes(p.id)) return false;
-        if (p.projectName && validDeleted.includes(p.projectName)) return false;
-        if (p.companyName && validDeleted.includes(p.companyName)) return false;
-        if (p.projectId && validDeleted.includes(p.projectId)) return false;
-        return true;
-      });
+      const activeProjects = res.data.filter(p => !isProjectDeleted(p, validDeleted));
+
       setProjects(prevProjects => {
         const detailMap = new Map();
 
@@ -170,13 +183,14 @@ export default function App() {
 
         detailMap.forEach((localProj, k) => {
           const existsInSheet = mergedProjects.some(mp => (mp.projectId || mp.id) === k);
-          if (!existsInSheet && !validDeleted.includes(k)) {
+          if (!existsInSheet && !isProjectDeleted(localProj, validDeleted)) {
             mergedProjects.unshift(localProj);
           }
         });
 
-        localStorage.setItem('tp_last_known_projects_v2', JSON.stringify(mergedProjects));
-        return mergedProjects;
+        const finalFilteredProjects = mergedProjects.filter(p => !isProjectDeleted(p, validDeleted));
+        localStorage.setItem('tp_last_known_projects_v2', JSON.stringify(finalFilteredProjects));
+        return finalFilteredProjects;
       });
     } else {
       try {
