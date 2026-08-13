@@ -352,10 +352,23 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   const rawStarting = parseVal(safeHeaderSummary.startingCash);
   const liveCashIn = targetRowsForSummary.reduce((acc, r) => acc + parseVal(r.cashIn), 0);
   const parsedCashIn = parseVal(safeHeaderSummary.cashIn);
+  
+  // 1. Cash Out (Physical cash expenditures)
+  const cashOutSpent = targetRowsForSummary.reduce((acc, r) => {
+    const isCash = (r.paymentMethod || '').toLowerCase().includes('cash') || parseVal(r.cashOut) > 0;
+    return acc + (isCash ? parseVal(r.cashOut || r.cardSpent) : 0);
+  }, 0);
+
+  // 2. Card Spent (Card / Online expenditures)
+  const cardSpentNum = targetRowsForSummary.reduce((acc, r) => {
+    const isCard = (r.paymentMethod || '').toLowerCase().includes('card') || (r.paymentMethod || '').toLowerCase().includes('online') || parseVal(r.cardSpent) > 0;
+    return acc + (isCard ? parseVal(r.cardSpent || r.cashOut) : 0);
+  }, 0);
+
   const liveTotalSpent = targetRowsForSummary.reduce((acc, r) => acc + parseVal(r.cardSpent || r.cashOut), 0);
   const liveCashOut = liveTotalSpent;
 
-  // Real allocation logic without hardcoded $20.00 defaults
+  // Allocation & dynamic funds calculations
   let startingCashNum = rawStarting;
   let totalCashInNum = Math.max(parsedCashIn, liveCashIn);
 
@@ -484,8 +497,8 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
         </div>
       </div>
 
-      {/* Master Financial Summary Cards Bar */}
-      <div className="summary-cards-grid no-print">
+      {/* Master Financial Summary Cards Bar - 5 Metric Columns */}
+      <div className="summary-cards-grid no-print" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
         <div className="summary-card text-emerald">
           <div className="summary-card-header">
             <span className="summary-card-title">Starting Petty Cash</span>
@@ -499,35 +512,46 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
 
         <div className="summary-card text-blue">
           <div className="summary-card-header">
-            <span className="summary-card-title">Total Cash In Replenished</span>
+            <span className="summary-card-title">Cash In</span>
             <TrendingUp className="summary-card-icon text-blue" />
           </div>
           <div className="summary-card-value text-blue">
             ${totalCashInNum.toFixed(2)}
           </div>
-          <span className="summary-card-subtitle">Received Funds</span>
+          <span className="summary-card-subtitle">Replenished Funds</span>
         </div>
 
         <div className="summary-card text-amber">
           <div className="summary-card-header">
-            <span className="summary-card-title">Live Total Cash Out Spent</span>
-            <CreditCard className="summary-card-icon text-amber" />
+            <span className="summary-card-title">Cash Out</span>
+            <ArrowDownRight className="summary-card-icon text-amber" />
           </div>
           <div className="summary-card-value text-amber">
-            ${liveCashOut.toFixed(2)}
+            ${cashOutSpent.toFixed(2)}
           </div>
-          <span className="summary-card-subtitle">Live Active Expenditures</span>
+          <span className="summary-card-subtitle">Cash Expenditures</span>
+        </div>
+
+        <div className="summary-card text-indigo" style={{ borderLeft: '4px solid #6366F1' }}>
+          <div className="summary-card-header">
+            <span className="summary-card-title">Card Spent</span>
+            <CreditCard className="summary-card-icon" style={{ color: '#6366F1' }} />
+          </div>
+          <div className="summary-card-value" style={{ color: '#6366F1' }}>
+            ${cardSpentNum.toFixed(2)}
+          </div>
+          <span className="summary-card-subtitle">Online / Card Purchases</span>
         </div>
 
         <div className="summary-card text-purple">
           <div className="summary-card-header">
-            <span className="summary-card-title">Remaining Cash Balance</span>
+            <span className="summary-card-title">Remaining Petty Cash</span>
             <DollarSign className="summary-card-icon text-purple" />
           </div>
           <div className="summary-card-value text-purple">
             ${dynamicRemainingCash.toFixed(2)}
           </div>
-          <span className="summary-card-subtitle">Auto-subtracted Net Funds</span>
+          <span className="summary-card-subtitle">Net Available Funds</span>
         </div>
       </div>
 
