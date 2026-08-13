@@ -236,6 +236,25 @@ export default function App() {
     }
   };
 
+  // Save full project details & Section B/C inline edits permanently
+  const handleSaveProjectDetails = (targetProject, updatedFields) => {
+    const updatedProjects = projects.map(p => {
+      if (p.id === targetProject.id || p.projectId === targetProject.projectId) {
+        return {
+          ...p,
+          ...updatedFields,
+          value: updatedFields.contractValueUsd || p.value,
+          depositPaid: updatedFields.advanceAmountUsd || p.depositPaid
+        };
+      }
+      return p;
+    });
+
+    setProjects(updatedProjects);
+    localStorage.setItem('tp_last_known_projects_v2', JSON.stringify(updatedProjects));
+    showToast('Project Scope of Work & Section C Financials updated successfully!');
+  };
+
   // Add new project live
   const handleAddProject = async (newProjData) => {
     const isSrelyang = (currentUser?.name || '').toLowerCase().includes('srelyang') || (currentUser?.email || '').toLowerCase().includes('srelyang.thim');
@@ -427,6 +446,7 @@ export default function App() {
             onOpenNewProjectModal={() => setShowNewProjectModal(true)}
             onRefresh={loadData}
             onDeleteProject={handleDeleteProject}
+            onSaveProjectDetails={handleSaveProjectDetails}
           />
         ) : activeTab === 'CEO_PNL_TRACKER' ? (
           <CeoPnLTrackerView 

@@ -1,13 +1,26 @@
-import React from 'react';
-import { X, Building2, User, Phone, Mail, MapPin, Calendar, DollarSign, CheckCircle2, Clock, FileText, Printer, ShieldCheck, PieChart, Sparkles, AlertTriangle, Layers, Award } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Building2, User, Phone, Mail, MapPin, Calendar, DollarSign, CheckCircle2, Clock, FileText, Printer, ShieldCheck, PieChart, Sparkles, AlertTriangle, Layers, Award, Edit3, Save } from 'lucide-react';
 
-export default function ProjectDetailsModal({ project, currentUser, subTasks = [], onClose, onDeleteProject, onCellEdit }) {
+export default function ProjectDetailsModal({ project, currentUser, subTasks = [], onClose, onDeleteProject, onCellEdit, onSaveProjectDetails }) {
   if (!project) return null;
 
   const isCeo = currentUser?.role === 'CEO' || (currentUser?.name || '').toLowerCase().includes('walter') || (currentUser?.role || '').toLowerCase().includes('ceo');
 
-  const totalContract = parseFloat(project.contractValueUsd || project.totalContractValue || project.value || 0);
-  const paidAmount = parseFloat(project.advanceAmountUsd || project.depositPaid || project.amountPaid || 0);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    clientContact: project.clientContact || project.contactPerson || project.phone || '',
+    projectObjective: project.projectObjective || project.statusUpdate || '',
+    scopeOfWork: project.scopeOfWork || project.notes || '',
+    keyDeliverables: project.keyDeliverables || '',
+    keyPartners: project.keyPartners || '',
+    contractValueUsd: project.contractValueUsd || project.value || '',
+    advanceAmountUsd: project.advanceAmountUsd || project.depositPaid || '',
+    paymentTerms: project.paymentTerms || '',
+    invoiceSchedule: project.invoiceSchedule || ''
+  });
+
+  const totalContract = parseFloat(formData.contractValueUsd || project.contractValueUsd || project.totalContractValue || project.value || 0);
+  const paidAmount = parseFloat(formData.advanceAmountUsd || project.advanceAmountUsd || project.depositPaid || project.amountPaid || 0);
   const balanceDue = Math.max(0, totalContract - paidAmount);
 
   const projectTasks = Array.isArray(subTasks) ? subTasks : [];
@@ -23,6 +36,18 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
 
   const formatCurrency = (val) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(isNaN(val) ? 0 : val);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveDetails = () => {
+    if (onSaveProjectDetails) {
+      onSaveProjectDetails(project, formData);
+    }
+    setIsEditing(false);
   };
 
   const handlePrintPDF = () => {
@@ -69,7 +94,7 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
           <tr><th>Project Name</th><td><strong>${project.projectName || project.companyName || '-'}</strong></td></tr>
           <tr><th>Project ID (TP-SL-MM-YY)</th><td><strong>${project.projectId || project.id || '-'}</strong></td></tr>
           <tr><th>Client Name</th><td>${project.client || project.companyName || '-'}</td></tr>
-          <tr><th>Client Contact Details</th><td>${project.clientContact || project.contactPerson || project.phone || '-'}</td></tr>
+          <tr><th>Client Contact Details</th><td>${formData.clientContact || project.clientContact || project.phone || '-'}</td></tr>
           <tr><th>Lead Generation Source</th><td>${project.leadGeneration || '-'}</td></tr>
           <tr><th>Project Manager / Owner</th><td>${project.owner || 'Walter Dantis (CEO)'}</td></tr>
           <tr><th>Lead Assignee</th><td>${project.assignee || '-'}</td></tr>
@@ -81,10 +106,10 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
 
         <h2>SECTION B – SCOPE & OBJECTIVES</h2>
         <table>
-          <tr><th>Project Objective</th><td>${project.projectObjective || project.statusUpdate || '-'}</td></tr>
-          <tr><th>Scope of Work</th><td>${project.scopeOfWork || project.notes || '-'}</td></tr>
-          <tr><th>Key Deliverables</th><td>${project.keyDeliverables || '-'}</td></tr>
-          <tr><th>Key Partners & Stakeholders</th><td>${project.keyPartners || '-'}</td></tr>
+          <tr><th>Project Objective</th><td>${formData.projectObjective || project.projectObjective || '-'}</td></tr>
+          <tr><th>Scope of Work</th><td>${formData.scopeOfWork || project.scopeOfWork || '-'}</td></tr>
+          <tr><th>Key Deliverables</th><td>${formData.keyDeliverables || project.keyDeliverables || '-'}</td></tr>
+          <tr><th>Key Partners & Stakeholders</th><td>${formData.keyPartners || project.keyPartners || '-'}</td></tr>
           <tr><th>Success Criteria</th><td>${project.successCriteria || '-'}</td></tr>
           <tr><th>Known Risks & Constraints</th><td>${project.knownRisks || '-'}</td></tr>
           <tr><th>Out of Scope Tasks</th><td>${project.outOfScope || '-'}</td></tr>
@@ -94,12 +119,11 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
         <h2>SECTION C – FINANCIAL SUMMARY (CEO EXCLUSIVE)</h2>
         <table>
           <tr><th>Contract Value (USD)</th><td><strong>${totalContract > 0 ? formatCurrency(totalContract) : '-'}</strong></td></tr>
-          <tr><th>Advance Retainer Amount</th><td>${paidAmount > 0 ? formatCurrency(paidAmount) : '-'} ${project.advanceRetainerPct ? `(${project.advanceRetainerPct}%)` : ''}</td></tr>
+          <tr><th>Advance Retainer Amount</th><td>${paidAmount > 0 ? formatCurrency(paidAmount) : '-'}</td></tr>
           <tr><th>Outstanding Balance Due</th><td><strong>${totalContract > 0 ? formatCurrency(balanceDue) : '-'}</strong></td></tr>
-          <tr><th>Payment Terms</th><td>${project.paymentTerms || '-'}</td></tr>
+          <tr><th>Payment Terms</th><td>${formData.paymentTerms || project.paymentTerms || '-'}</td></tr>
           <tr><th>Billing Currency</th><td>${project.billingCurrency || 'USD'}</td></tr>
-          <tr><th>Estimated Gross Margin</th><td>${project.estimatedGrossMargin || '-'}</td></tr>
-          <tr><th>Invoice Schedule</th><td>${project.invoiceSchedule || '-'}</td></tr>
+          <tr><th>Invoice Schedule</th><td>${formData.invoiceSchedule || project.invoiceSchedule || '-'}</td></tr>
         </table>
 
         <h2>SECTION D – APPROVAL SIGN-OFF & STATUS</h2>
@@ -135,7 +159,7 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
 
   return (
     <div className="modal-overlay invoice-modal-overlay" style={{ zIndex: 100000 }}>
-      <div className="modal-content invoice-preview-container" style={{ width: '94%', maxWidth: '900px', maxHeight: '94vh', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', borderRadius: '16px', background: '#FFFFFF' }}>
+      <div className="modal-content invoice-preview-container" style={{ width: '94%', maxWidth: '920px', maxHeight: '94vh', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', borderRadius: '16px', background: '#FFFFFF' }}>
         
         {/* Controls Header (Hidden during window.print()) */}
         <div className="no-print" style={{ background: '#0F172A', color: '#FFF', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
@@ -146,6 +170,22 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
             </h3>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {isEditing ? (
+              <button 
+                onClick={handleSaveDetails}
+                style={{ background: '#059669', color: '#FFF', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Save size={15} /> 💾 Save Details
+              </button>
+            ) : (
+              <button 
+                onClick={() => setIsEditing(true)}
+                style={{ background: '#F59E0B', color: '#FFF', border: 'none', padding: '8px 14px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                title="Edit Scope of Work, Objectives & Financial Summary"
+              >
+                <Edit3 size={15} /> ✏️ Edit Details
+              </button>
+            )}
             <button 
               onClick={handleExportWord}
               style={{ background: '#2563EB', color: '#FFF', border: 'none', padding: '8px 14px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -163,7 +203,6 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
               <button 
                 onClick={() => onDeleteProject(project)}
                 style={{ background: '#DC2626', color: '#FFF', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                title="Delete Project via CEO Security Protocol"
               >
                 🗑️ Delete Project
               </button>
@@ -243,7 +282,14 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
                 <p style={{ margin: '0 0 6px 0' }}><strong>Project Name:</strong> {project.projectName || project.companyName || '-'}</p>
                 <p style={{ margin: '0 0 6px 0' }}><strong>Project ID:</strong> {project.projectId || project.id || '-'}</p>
                 <p style={{ margin: '0 0 6px 0' }}><strong>Client Name:</strong> {project.client || project.companyName || '-'}</p>
-                <p style={{ margin: '0 0 6px 0' }}><strong>Client Contact Details:</strong> {project.clientContact || project.contactPerson || project.phone || '-'}</p>
+                <p style={{ margin: '0 0 6px 0' }}>
+                  <strong>Client Contact Details:</strong>{' '}
+                  {isEditing ? (
+                    <input name="clientContact" className="cell-input" value={formData.clientContact} onChange={handleChange} placeholder="Person, Phone, Email..." />
+                  ) : (
+                    formData.clientContact || project.clientContact || '-'
+                  )}
+                </p>
                 <p style={{ margin: 0 }}><strong>Lead Source:</strong> {project.leadGeneration || '-'}</p>
               </div>
               <div>
@@ -256,69 +302,133 @@ export default function ProjectDetailsModal({ project, currentUser, subTasks = [
             </div>
           </div>
 
-          {/* SECTION B – SCOPE & OBJECTIVES */}
+          {/* SECTION B – SCOPE & OBJECTIVES (100% EDITABLE ON SCREEN) */}
           <div style={{ background: '#FFFFFF', border: '1.5px solid #F59E0B', borderRadius: '12px', padding: '18px', marginBottom: '20px', boxShadow: '0 2px 8px rgba(245,158,11,0.08)' }}>
-            <h4 style={{ fontSize: '0.88rem', fontWeight: 900, color: '#92400E', margin: '0 0 12px 0', textTransform: 'uppercase', borderBottom: '1px solid #FDE68A', paddingBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Layers size={16} style={{ color: '#F59E0B' }} /> SECTION B – SCOPE & OBJECTIVES
-            </h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #FDE68A', paddingBottom: '6px' }}>
+              <h4 style={{ fontSize: '0.88rem', fontWeight: 900, color: '#92400E', margin: 0, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Layers size={16} style={{ color: '#F59E0B' }} /> SECTION B – SCOPE & OBJECTIVES
+              </h4>
+              {!isEditing && (
+                <button 
+                  onClick={() => setIsEditing(true)}
+                  style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', borderRadius: '6px', padding: '2px 8px', fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer' }}
+                >
+                  ✏️ Edit Scope
+                </button>
+              )}
+            </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', fontSize: '0.82rem' }}>
               <div style={{ background: '#FEF3C7', padding: '10px 14px', borderRadius: '8px', border: '1px solid #FDE68A' }}>
                 <strong style={{ color: '#78350F', display: 'block', marginBottom: '4px' }}>🎯 Project Objective:</strong>
-                <span style={{ color: '#1E293B' }}>{project.projectObjective || project.statusUpdate || '-'}</span>
+                {isEditing ? (
+                  <textarea name="projectObjective" rows={2} style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #FCD34D' }} value={formData.projectObjective} onChange={handleChange} placeholder="Type project objective..." />
+                ) : (
+                  <span style={{ color: '#1E293B' }}>{formData.projectObjective || project.projectObjective || '-'}</span>
+                )}
               </div>
 
               <div style={{ background: '#F8FAFC', padding: '10px 14px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                <strong style={{ color: '#0F172A', display: 'block', marginBottom: '4px' }}>📋 Scope of Work:</strong>
-                <span style={{ color: '#334155', lineHeight: '1.5' }}>{project.scopeOfWork || project.notes || '-'}</span>
+                <strong style={{ color: '#0F172A', display: 'block', marginBottom: '4px' }}>📋 Scope of Work (Editable):</strong>
+                {isEditing ? (
+                  <textarea name="scopeOfWork" rows={4} style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #CBD5E1' }} value={formData.scopeOfWork} onChange={handleChange} placeholder="Type detailed scope of work..." />
+                ) : (
+                  <span style={{ color: '#334155', lineHeight: '1.5' }}>{formData.scopeOfWork || project.scopeOfWork || '-'}</span>
+                )}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div style={{ background: '#ECFDF5', padding: '10px 14px', borderRadius: '8px', border: '1px solid #A7F3D0' }}>
                   <strong style={{ color: '#065F46', display: 'block', marginBottom: '4px' }}>🏆 Key Deliverables:</strong>
-                  <span style={{ color: '#047857' }}>{project.keyDeliverables || '-'}</span>
+                  {isEditing ? (
+                    <input name="keyDeliverables" style={{ width: '100%', padding: '4px', borderRadius: '4px', border: '1px solid #A7F3D0' }} value={formData.keyDeliverables} onChange={handleChange} placeholder="Key deliverables..." />
+                  ) : (
+                    <span style={{ color: '#047857' }}>{formData.keyDeliverables || project.keyDeliverables || '-'}</span>
+                  )}
                 </div>
 
                 <div style={{ background: '#EFF6FF', padding: '10px 14px', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
                   <strong style={{ color: '#1E40AF', display: 'block', marginBottom: '4px' }}>🤝 Key Partners & Stakeholders:</strong>
-                  <span style={{ color: '#1E3A8A' }}>{project.keyPartners || '-'}</span>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div style={{ background: '#FAF5FF', padding: '10px 14px', borderRadius: '8px', border: '1px solid #E9D5FF' }}>
-                  <strong style={{ color: '#6B21A8', display: 'block', marginBottom: '4px' }}>🌟 Success Criteria:</strong>
-                  <span style={{ color: '#581C87' }}>{project.successCriteria || '-'}</span>
-                </div>
-
-                <div style={{ background: '#FEF2F2', padding: '10px 14px', borderRadius: '8px', border: '1px solid #FCA5A5' }}>
-                  <strong style={{ color: '#991B1B', display: 'block', marginBottom: '4px' }}>⚠️ Known Risks & Out of Scope:</strong>
-                  <span style={{ color: '#7F1D1D' }}>
-                    <strong>Risks:</strong> {project.knownRisks || '-'} <br/>
-                    <strong>Excluded:</strong> {project.outOfScope || '-'}
-                  </span>
+                  {isEditing ? (
+                    <input name="keyPartners" style={{ width: '100%', padding: '4px', borderRadius: '4px', border: '1px solid #BFDBFE' }} value={formData.keyPartners} onChange={handleChange} placeholder="Key partners..." />
+                  ) : (
+                    <span style={{ color: '#1E3A8A' }}>{formData.keyPartners || project.keyPartners || '-'}</span>
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* SECTION C – FINANCIAL SUMMARY */}
+          {/* SECTION C – FINANCIAL SUMMARY (100% EDITABLE & SAVED) */}
           <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '18px', marginBottom: '20px' }}>
-            <h4 style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0F172A', margin: '0 0 12px 0', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #CBD5E1', paddingBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <DollarSign size={16} style={{ color: 'var(--brand-green)' }} /> SECTION C – FINANCIAL SUMMARY & PAYMENT TERMS
-            </h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #CBD5E1', paddingBottom: '6px' }}>
+              <h4 style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0F172A', margin: 0, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <DollarSign size={16} style={{ color: 'var(--brand-green)' }} /> SECTION C – FINANCIAL SUMMARY & PAYMENT TERMS
+              </h4>
+              {!isEditing && (
+                <button 
+                  onClick={() => setIsEditing(true)}
+                  style={{ background: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0', borderRadius: '6px', padding: '2px 8px', fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer' }}
+                >
+                  ✏️ Edit Financials
+                </button>
+              )}
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '0.82rem', color: '#334155' }}>
               <div>
-                <p style={{ margin: '0 0 6px 0' }}><strong>Contract Value:</strong> <span style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{totalContract > 0 ? formatCurrency(totalContract) : '-'}</span></p>
-                <p style={{ margin: '0 0 6px 0' }}><strong>Advance Paid:</strong> {paidAmount > 0 ? formatCurrency(paidAmount) : '-'} {project.advanceRetainerPct ? `(${project.advanceRetainerPct}%)` : ''}</p>
-                <p style={{ margin: 0 }}><strong>Outstanding Due:</strong> <span style={{ fontWeight: 800, color: '#DC2626' }}>{totalContract > 0 ? formatCurrency(balanceDue) : '-'}</span></p>
+                <p style={{ margin: '0 0 6px 0' }}>
+                  <strong>Contract Value ($):</strong>{' '}
+                  {isEditing ? (
+                    <input name="contractValueUsd" type="number" style={{ padding: '4px', width: '130px', borderRadius: '4px', border: '1px solid #CBD5E1' }} value={formData.contractValueUsd} onChange={handleChange} placeholder="e.g. 5000" />
+                  ) : (
+                    <span style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{totalContract > 0 ? formatCurrency(totalContract) : '-'}</span>
+                  )}
+                </p>
+                <p style={{ margin: '0 0 6px 0' }}>
+                  <strong>Advance Paid ($):</strong>{' '}
+                  {isEditing ? (
+                    <input name="advanceAmountUsd" type="number" style={{ padding: '4px', width: '130px', borderRadius: '4px', border: '1px solid #CBD5E1' }} value={formData.advanceAmountUsd} onChange={handleChange} placeholder="e.g. 1250" />
+                  ) : (
+                    paidAmount > 0 ? formatCurrency(paidAmount) : '-'
+                  )}
+                </p>
+                <p style={{ margin: 0 }}>
+                  <strong>Outstanding Balance Due:</strong>{' '}
+                  <span style={{ fontWeight: 800, color: '#DC2626' }}>{totalContract > 0 ? formatCurrency(balanceDue) : '-'}</span>
+                </p>
               </div>
+
               <div>
-                <p style={{ margin: '0 0 6px 0' }}><strong>Payment Terms:</strong> {project.paymentTerms || '-'}</p>
-                <p style={{ margin: '0 0 6px 0' }}><strong>Invoice Schedule:</strong> {project.invoiceSchedule || '-'}</p>
-                <p style={{ margin: 0 }}><strong>Margin Estimate:</strong> {project.estimatedGrossMargin || '-'}</p>
+                <p style={{ margin: '0 0 6px 0' }}>
+                  <strong>Payment Terms:</strong>{' '}
+                  {isEditing ? (
+                    <input name="paymentTerms" style={{ padding: '4px', width: '100%', borderRadius: '4px', border: '1px solid #CBD5E1' }} value={formData.paymentTerms} onChange={handleChange} placeholder="e.g. 25% adv / 75% comp" />
+                  ) : (
+                    formData.paymentTerms || project.paymentTerms || '-'
+                  )}
+                </p>
+                <p style={{ margin: 0 }}>
+                  <strong>Invoice Schedule:</strong>{' '}
+                  {isEditing ? (
+                    <input name="invoiceSchedule" style={{ padding: '4px', width: '100%', borderRadius: '4px', border: '1px solid #CBD5E1' }} value={formData.invoiceSchedule} onChange={handleChange} placeholder="Milestone schedule..." />
+                  ) : (
+                    formData.invoiceSchedule || project.invoiceSchedule || '-'
+                  )}
+                </p>
               </div>
             </div>
+
+            {isEditing && (
+              <div style={{ marginTop: '14px', textAlign: 'right' }}>
+                <button
+                  onClick={handleSaveDetails}
+                  style={{ background: '#059669', color: '#FFF', border: 'none', borderRadius: '8px', padding: '8px 18px', fontSize: '0.82rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <Save size={16} /> Save Section B & C Changes
+                </button>
+              </div>
+            )}
           </div>
 
           {/* SECTION D – APPROVAL SIGN-OFF */}

@@ -8,7 +8,7 @@ import ProjectDetailsModal from './ProjectDetailsModal';
 const SUBTASKS_STORAGE_KEY = 'tp_crm_subtasks_v2';
 const FINANCIALS_STORAGE_KEY = 'tp_crm_project_financials_v1';
 
-export default function ProjectTable({ projects, currentUser, onCellEdit, onOpenNewProjectModal, onRefresh, onDeleteProject }) {
+export default function ProjectTable({ projects, currentUser, onCellEdit, onOpenNewProjectModal, onRefresh, onDeleteProject, onSaveProjectDetails }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSector, setSelectedSector] = useState('ALL');
   const [editingCell, setEditingCell] = useState(null); // { id, field }
@@ -1174,6 +1174,7 @@ export default function ProjectTable({ projects, currentUser, onCellEdit, onOpen
             openCeoDeleteModal(proj);
           } : null}
           onCellEdit={onCellEdit}
+          onSaveProjectDetails={onSaveProjectDetails}
         />
       )}
 
