@@ -152,19 +152,57 @@ function sanitizeAssigneeName(rawName) {
   return str;
 }
 
-// Parse CRM Sheet rows strictly from user's live Google Sheet (Sanitizing legacy template names)
+// Parse CRM Sheet rows strictly from user's live Google Sheet (Sanitizing legacy template names & dynamic column mapping)
 function parseCRMRows(rows) {
   if (!Array.isArray(rows) || rows.length === 0) return [];
   const projects = [];
   let currentSector = 'RETAIL & FRANCHISE';
   
   let headerIndex = -1;
+  let colMap = {
+    projectId: 0,
+    projectName: 1,
+    client: 2,
+    sector: 3,
+    value: 4,
+    depositPaid: 5,
+    owner: 6,
+    assignee: 7,
+    startDate: 8,
+    targetEndDate: 9,
+    completion: 10,
+    status: 11,
+    priority: 12,
+    statusUpdate: 13,
+    driveLink: 14,
+    nextAction: 15,
+    nextActionDueDate: 16,
+    daysToDeadline: 17,
+    lastUpdated: 18,
+    remarks: 19
+  };
+
   for (let i = 0; i < rows.length; i++) {
-    if (rows[i] && rows[i].some(cell => {
-      const c = (cell || '').toString().toLowerCase();
-      return c.includes('project id') || c.includes('project name') || c === 'id' || c.includes('company');
-    })) {
+    const row = rows[i] || [];
+    const rowJoined = row.join(' ').toLowerCase();
+    if (rowJoined.includes('project id') || rowJoined.includes('project name') || rowJoined.includes('client')) {
       headerIndex = i;
+      row.forEach((cell, colIdx) => {
+        const c = (cell || '').toString().toLowerCase().trim();
+        if (c.includes('project id') || c === 'id') colMap.projectId = colIdx;
+        else if (c.includes('project name') || c.includes('company') || c === 'name') colMap.projectName = colIdx;
+        else if (c.includes('client')) colMap.client = colIdx;
+        else if (c.includes('sector') || c.includes('category')) colMap.sector = colIdx;
+        else if (c.includes('value') || c.includes('pricing') || c.includes('amount') || c.includes('contract')) colMap.value = colIdx;
+        else if (c.includes('deposit') || c.includes('advance') || c.includes('paid')) colMap.depositPaid = colIdx;
+        else if (c.includes('owner') || c.includes('lead') || c.includes('director')) colMap.owner = colIdx;
+        else if (c.includes('assignee') || c.includes('manager') || c.includes('pm')) colMap.assignee = colIdx;
+        else if (c.includes('start date') || c.includes('start')) colMap.startDate = colIdx;
+        else if (c.includes('target') || c.includes('end date') || c.includes('deadline')) colMap.targetEndDate = colIdx;
+        else if (c.includes('completion') || c.includes('%')) colMap.completion = colIdx;
+        else if (c.includes('status')) colMap.status = colIdx;
+        else if (c.includes('priority')) colMap.priority = colIdx;
+      });
       break;
     }
   }
@@ -177,15 +215,15 @@ function parseCRMRows(rows) {
     const row = rows[i];
     if (!row || row.length < 2) continue;
     
-    const col0 = (row[0] || '').toString().trim();
-    const col1 = (row[1] || '').toString().trim();
+    const col0 = (row[colMap.projectId] || row[0] || '').toString().trim();
+    const col1 = (row[colMap.projectName] || row[1] || '').toString().trim();
     
     if (!col0 && !col1) continue;
 
     const lower0 = col0.toLowerCase();
     const lower1 = col1.toLowerCase();
 
-    if (lower0.includes('project id') || lower0.includes('project name') || lower1.includes('project name')) {
+    if (lower0.includes('project id') || lower0.includes('project name') || lower1.includes('project name') || lower0.includes('portfolio total') || lower1.includes('portfolio total') || lower0.includes('total')) {
       continue;
     }
 
@@ -193,39 +231,48 @@ function parseCRMRows(rows) {
       continue;
     }
     
-    if (col0.includes('▌') || (col0.toUpperCase() === col0 && col0.length > 3 && !col0.startsWith('TP-') && !col1)) {
+    if ((col0.includes('▌') || (col0.toUpperCase() === col0 && col0.length > 3 && !col0.startsWith('TP-') && !col1)) && !col0.includes('TOTAL')) {
       currentSector = col0.replace('▌', '').trim();
       continue;
     }
     
-    if (col0 === 'PORTFOLIO TOTAL') continue;
-    
     if (col1 || (col0 && col0.length >= 2)) {
-      const rawOwner = (row[4] || '').toString().trim();
-      const rawAssignee = (row[5] || '').toString().trim();
+      const rawOwner = (row[colMap.owner] || row[6] || row[4] || '').toString().trim();
+      const rawAssignee = (row[colMap.assignee] || row[7] || row[5] || '').toString().trim();
+      const rawValue = (row[colMap.value] || row[4] || '$0').toString().trim();
+      const rawDeposit = (row[colMap.depositPaid] || row[5] || '$0').toString().trim();
+      const rawSector = (row[colMap.sector] || '').toString().trim();
+
+      const safeSector = (rawSector && !rawSector.toLowerCase().includes('total') && !rawSector.includes('$')) ? rawSector : currentSector;
+      const safeOwner = (rawOwner && !rawOwner.includes('$')) ? sanitizeOwnerName(rawOwner) : 'Walter Dantis (CEO)';
+      const safeAssignee = (rawAssignee && !rawAssignee.includes('$')) ? sanitizeAssigneeName(rawAssignee) : 'Sreylang Thim';
 
       projects.push({
         id: `p-${i}`,
         rowIndex: i + 1,
-        projectId: col0 || `TP-${i}`,
+        projectId: col0.startsWith('TP-') ? col0 : `TP-${100 + i}`,
         projectName: col1 || col0 || `Project ${i}`,
         companyName: col1 || col0 || `Project ${i}`,
-        client: (row[2] || '').toString().trim() || 'Turning Point Retail',
-        sector: currentSector || (row[3] || '').toString().trim() || 'RETAIL & FRANCHISE',
-        owner: sanitizeOwnerName(rawOwner),
-        assignee: sanitizeAssigneeName(rawAssignee),
-        startDate: (row[6] || '').toString().trim() || '2026-01-01',
-        targetEndDate: (row[7] || '').toString().trim() || '2026-12-31',
-        completion: (row[8] || '').toString().trim() || '0%',
-        status: (row[9] || '').toString().trim() || 'In Progress',
-        priority: (row[10] || '').toString().trim() || 'Medium',
-        statusUpdate: (row[11] || '').toString().trim() || '',
-        driveLink: (row[12] || '').toString().trim() || '',
-        nextAction: (row[13] || '').toString().trim() || '',
-        nextActionDueDate: (row[14] || '').toString().trim() || '',
-        daysToDeadline: parseInt(row[15]) || 0,
-        lastUpdated: (row[16] || '').toString().trim() || new Date().toLocaleDateString('en-GB'),
-        remarks: (row[17] || '').toString().trim() || ''
+        client: (row[colMap.client] || row[2] || '').toString().trim() || 'Turning Point Retail',
+        sector: safeSector || 'RETAIL & FRANCHISE',
+        value: rawValue.startsWith('$') ? rawValue : (rawValue ? `$${rawValue}` : '$0.00'),
+        contractValueUsd: rawValue.replace('$', '').replace(',', ''),
+        depositPaid: rawDeposit.startsWith('$') ? rawDeposit : (rawDeposit ? `$${rawDeposit}` : '$0.00'),
+        advanceAmountUsd: rawDeposit.replace('$', '').replace(',', ''),
+        owner: safeOwner,
+        assignee: safeAssignee,
+        startDate: (row[colMap.startDate] || row[8] || '').toString().trim() || '2026-01-01',
+        targetEndDate: (row[colMap.targetEndDate] || row[9] || '').toString().trim() || '2026-12-31',
+        completion: (row[colMap.completion] || row[10] || '').toString().trim() || '0%',
+        status: (row[colMap.status] || row[11] || '').toString().trim() || 'In Progress',
+        priority: (row[colMap.priority] || row[12] || '').toString().trim() || 'Medium',
+        statusUpdate: (row[colMap.statusUpdate] || row[13] || '').toString().trim() || '',
+        driveLink: (row[colMap.driveLink] || row[14] || '').toString().trim() || '',
+        nextAction: (row[colMap.nextAction] || row[15] || '').toString().trim() || '',
+        nextActionDueDate: (row[colMap.nextActionDueDate] || row[16] || '').toString().trim() || '',
+        daysToDeadline: parseInt(row[colMap.daysToDeadline] || row[17]) || 0,
+        lastUpdated: (row[colMap.lastUpdated] || row[18] || '').toString().trim() || new Date().toLocaleDateString('en-GB'),
+        remarks: (row[colMap.remarks] || row[19] || '').toString().trim() || ''
       });
     }
   }
