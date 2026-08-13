@@ -20,7 +20,7 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
 
   // New task form state
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('Hotel Booking');
+  const [category, setCategory] = useState('Meetings Arrangements');
   const [assigneeEmail, setAssigneeEmail] = useState(defaultAssignee?.email || SYSTEM_USERS[0].email);
   const [detail, setDetail] = useState('');
   
@@ -38,14 +38,17 @@ export default function SubTaskModal({ project, currentUser, subTasks = [], onSa
   const canManageSubTasks = isCeoOrAdmin || isProjectOwner;
 
   const categories = [
-    'Hotel Booking',
-    'Event Logistics',
-    'Shipping & Clearance',
-    'Venue & Setup',
-    'Catering & Refreshments',
+    'Meetings Arrangements',
+    'Hotel & Venue Bookings',
+    'Local tour arrangements',
+    'Market Research Reports',
+    'Documentation & Permits',
+    'Business Registration Service',
+    'Branding & Marketing',
     'IT & Technical Support',
-    'Document & Permits',
-    'Other / Custom'
+    'Event Management',
+    'Shipping & Clearance',
+    'Other'
   ];
 
   const [weightScore, setWeightScore] = useState(20);
