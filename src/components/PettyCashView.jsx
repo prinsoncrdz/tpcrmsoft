@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, ShieldAlert, DollarSign, Calendar, CheckCircle2, TrendingUp, RefreshCw, Plus, PieChart, BarChart3, CreditCard, Wallet, Layers, Eye, Table, ArrowUpRight, ArrowDownRight, Tag, User, Printer, FileText, Trash2, AlertTriangle, Check, X, Clock, Send, ShieldCheck, AlertCircle } from 'lucide-react';
-import { fetchSheetData, SHEET_GIDS, PUBLISHED_SHEET_ID, sendGlobalNotification, fetchGlobalPettyCashDeletions, saveGlobalPettyCashDeletions } from '../services/googleSheets';
+import { fetchSheetData, SHEET_GIDS, PUBLISHED_SHEET_ID, sendGlobalNotification, fetchGlobalPettyCashDeletions, saveGlobalPettyCashDeletions, syncCellToGoogleSheet } from '../services/googleSheets';
 
 const DELETION_REQUESTS_KEY = 'tp_petty_cash_deletion_requests_v2';
 
@@ -229,6 +229,18 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
       });
       alert('🚀 Deletion request submitted! Sent directly to CEO Walter Dantis for approval.');
     } else {
+      // If CEO deletes directly, also mark cell in live Google Sheet as [DELETED]
+      if (itemToDelete && itemToDelete.rowIndex) {
+        try {
+          const targetGid = SHEET_GIDS[activeTab] || SHEET_GIDS.PETTY_CASH_JULY;
+          syncCellToGoogleSheet(null, {
+            gid: targetGid,
+            rowIndex: itemToDelete.rowIndex,
+            columnIndex: 2,
+            value: `[DELETED] ${itemToDelete.description}`
+          });
+        } catch(e) {}
+      }
       alert('✅ Transaction permanently deleted by CEO Walter Dantis.');
     }
 
@@ -237,7 +249,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     setDeletionReasonInput('');
   };
 
-  const handleCeoAction = (requestId, actionType) => {
+  const handleCeoAction = async (requestId, actionType) => {
     const updated = deletionRequests.map(r => {
       if (r.id === requestId) {
         return {
@@ -260,6 +272,25 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
         message: `CEO Walter Dantis has ${actionType === 'APPROVE' ? 'approved and removed' : 'rejected'} your deletion request for "${req.itemDescription}".`,
         type: 'PETTY_CASH_DELETE_RESULT'
       });
+
+      // If approved by CEO, also mark cell in live Google Sheet as [DELETED]
+      if (actionType === 'APPROVE' && req.activeTab && SHEET_GIDS[req.activeTab]) {
+        try {
+          const targetGid = SHEET_GIDS[req.activeTab];
+          const targetItem = [...activeTabData, ...julyData, ...augData, ...septData].find(it => 
+            cleanStr(it.description) === cleanStr(req.itemDescription) || 
+            (it.voucherNo && it.voucherNo !== '-' && cleanStr(it.voucherNo) === cleanStr(req.itemVoucherNo))
+          );
+          if (targetItem && targetItem.rowIndex) {
+            await syncCellToGoogleSheet(null, {
+              gid: targetGid,
+              rowIndex: targetItem.rowIndex,
+              columnIndex: 2,
+              value: `[DELETED] ${req.itemDescription}`
+            });
+          }
+        } catch(e) {}
+      }
     }
   };
 
