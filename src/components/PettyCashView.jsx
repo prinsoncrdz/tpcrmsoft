@@ -554,51 +554,49 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
         </div>
       )}
 
-      {/* GOOGLE SHEET MASTER SUMMARY HEADER BAR FOR ALL MONTHS */}
-      {!isDashboardTab && (
-        <div style={{ 
-          background: '#FFFFFF', 
-          border: '1px solid var(--border-color)', 
-          borderRadius: 'var(--radius-lg)', 
-          padding: '20px', 
-          marginBottom: '24px', 
-          boxShadow: 'var(--shadow-card)',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: '16px'
-        }}>
-          <div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Starting Cash Balance</span>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--brand-green)' }}>
-              ${startingCashNum.toFixed(2)}
-            </div>
-          </div>
-          <div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Total Cash In</span>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#2563EB' }}>
-              ${cashInNum.toFixed(2)}
-            </div>
-          </div>
-          <div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Total Cash Out</span>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#DC2626' }}>
-              ${liveCashOut.toFixed(2)}
-            </div>
-          </div>
-          <div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Remaining Cash Balance</span>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#047857', background: '#ECFDF5', padding: '2px 8px', borderRadius: '6px', display: 'inline-block' }}>
-              ${dynamicRemainingCash.toFixed(2)}
-            </div>
-          </div>
-          <div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Card / Online Spent</span>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#7C3AED' }}>
-              ${liveTotalSpent.toFixed(2)}
-            </div>
+      {/* GOOGLE SHEET MASTER SUMMARY HEADER BAR FOR ALL MONTHS & DASHBOARD */}
+      <div style={{ 
+        background: '#FFFFFF', 
+        border: '1px solid var(--border-color)', 
+        borderRadius: 'var(--radius-lg)', 
+        padding: '20px', 
+        marginBottom: '24px', 
+        boxShadow: 'var(--shadow-card)',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: '16px'
+      }}>
+        <div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Starting Cash Balance</span>
+          <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--brand-green)' }}>
+            ${startingCashNum.toFixed(2)}
           </div>
         </div>
-      )}
+        <div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Total Cash In</span>
+          <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#2563EB' }}>
+            ${cashInNum.toFixed(2)}
+          </div>
+        </div>
+        <div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Total Cash Out</span>
+          <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#DC2626' }}>
+            ${liveCashOut.toFixed(2)}
+          </div>
+        </div>
+        <div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Remaining Cash Balance</span>
+          <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#047857', background: '#ECFDF5', padding: '2px 8px', borderRadius: '6px', display: 'inline-block' }}>
+            ${dynamicRemainingCash.toFixed(2)}
+          </div>
+        </div>
+        <div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Card / Online Spent</span>
+          <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#7C3AED' }}>
+            ${liveTotalSpent.toFixed(2)}
+          </div>
+        </div>
+      </div>
 
       {/* DASHBOARD GRAPHICS VIEW */}
       {isDashboardTab && viewMode === 'ANALYTICS' && (
