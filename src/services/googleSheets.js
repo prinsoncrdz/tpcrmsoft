@@ -716,16 +716,27 @@ export async function saveGlobalPnLData(gasUrl, pnlData) {
 export async function fetchGlobalWeeklyTasks(gasUrl) {
   const targetUrl = gasUrl || DEPLOYED_GAS_URL;
   try {
-    let response = await fetch(`${targetUrl}?action=getFridayReports&t=${Date.now()}`);
-    if (!response.ok) response = await fetch(`${targetUrl}?action=getWeeklyTasks&t=${Date.now()}`);
-    if (!response.ok) throw new Error('Network response not ok');
-    const json = await response.json();
-    if (json.status === 'success' && Array.isArray(json.data)) {
-      return json.data;
+    const res = await fetch(`${targetUrl}?action=getFridayReports&t=${Date.now()}`);
+    if (res.ok) {
+      const json = await res.json();
+      if (json.status === 'success' && json.data) {
+        if (Array.isArray(json.data)) return json.data;
+        if (typeof json.data === 'object') return Object.values(json.data);
+      }
     }
-  } catch (err) {
-    console.warn('Global Weekly Tasks fetch error:', err);
-  }
+  } catch (err) {}
+
+  try {
+    const res2 = await fetch(`${targetUrl}?action=getWeeklyTasks&t=${Date.now()}`);
+    if (res2.ok) {
+      const json2 = await res2.json();
+      if (json2.status === 'success' && json2.data) {
+        if (Array.isArray(json2.data)) return json2.data;
+        if (typeof json2.data === 'object') return Object.values(json2.data);
+      }
+    }
+  } catch (err) {}
+
   return null;
 }
 

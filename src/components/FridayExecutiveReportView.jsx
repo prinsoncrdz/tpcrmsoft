@@ -73,15 +73,14 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
       const saved = localStorage.getItem(FRIDAY_REPORTS_KEY);
       let local = saved ? JSON.parse(saved) : [];
 
-      if (Array.isArray(cloud)) {
-        const map = new Map();
-        (local || []).forEach(r => map.set(r.id, r));
-        (cloud || []).forEach(r => map.set(r.id, r));
-        const merged = Array.from(map.values());
+      const map = new Map();
+      (local || []).forEach(r => { if (r && r.id) map.set(r.id, r); });
+      (cloud || []).forEach(r => { if (r && r.id) map.set(r.id, r); });
+
+      const merged = Array.from(map.values());
+      if (merged.length > 0) {
         setSubmittedReports(merged);
         localStorage.setItem(FRIDAY_REPORTS_KEY, JSON.stringify(merged));
-      } else if (local.length > 0) {
-        setSubmittedReports(local);
       }
     } catch(err) {}
   };
@@ -345,7 +344,11 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
   if (isCeo) {
     const filteredReports = submittedReports.filter(r => {
       if (selectedStaffFilter === 'ALL') return true;
-      return (r.userEmail || '').toLowerCase() === selectedStaffFilter.toLowerCase();
+      const rEmail = (r.userEmail || '').toLowerCase();
+      const rName = (r.staffName || '').toLowerCase();
+      const fEmail = selectedStaffFilter.toLowerCase();
+      const fPrefix = fEmail.includes('@') ? fEmail.split('@')[0] : fEmail;
+      return rEmail === fEmail || rEmail.includes(fPrefix) || rName.includes(fPrefix);
     });
 
     const pendingCount = submittedReports.filter(r => !r.ceoVerified).length;
