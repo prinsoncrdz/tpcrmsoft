@@ -147,10 +147,32 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
 
       if (Object.keys(editsMap).length > 0) {
         localStorage.setItem(PETTY_EDITS_KEY, JSON.stringify(editsMap));
+        
+        // 1. Overlay edits onto existing CSV rows
         const applyEdits = (list) => list.map(item => editsMap[item.id] ? { ...item, ...editsMap[item.id] } : item);
         jT = applyEdits(jT);
         aT = applyEdits(aT);
         sT = applyEdits(sT);
+
+        // 2. Append newly created local/cloud transactions not yet published in CSV
+        const existingIds = new Set([...jT, ...aT, ...sT].map(r => r.id));
+        Object.keys(editsMap).forEach(key => {
+          if (key === '__HEADER_ALLOCATION__') return;
+          const newEntry = editsMap[key];
+          if (!newEntry || !newEntry.description) return;
+
+          if (!existingIds.has(key)) {
+            const mTag = newEntry.monthTag || (
+              (newEntry.date || '').includes('-08-') || (newEntry.date || '').includes('/08/') ? 'aug' :
+              (newEntry.date || '').includes('-07-') || (newEntry.date || '').includes('/07/') ? 'july' :
+              (newEntry.date || '').includes('-09-') || (newEntry.date || '').includes('/09/') ? 'sept' : 'aug'
+            );
+
+            if (mTag === 'july') jT.push(newEntry);
+            else if (mTag === 'sept') sT.push(newEntry);
+            else aT.push(newEntry);
+          }
+        });
       }
     } catch(e) {}
 
