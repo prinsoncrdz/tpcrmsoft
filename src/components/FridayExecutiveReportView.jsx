@@ -63,6 +63,7 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
   const [submittedReports, setSubmittedReports] = useState([]);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState(null);
+  const [editingReportId, setEditingReportId] = useState(null);
   const [ceoFeedbackInput, setCeoFeedbackInput] = useState('');
   const [selectedStaffFilter, setSelectedStaffFilter] = useState('ALL');
 
@@ -141,6 +142,7 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
   };
 
   const handleClearForm = () => {
+    setEditingReportId(null);
     setKeyAchievements('');
     setTopPriorityNextWeek('');
     setSupportNeededFromCeo('');
@@ -160,6 +162,40 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
         supportNeededForTask: ''
       }
     ]);
+  };
+
+  const handleLoadOldReportToEdit = (oldReport) => {
+    if (!oldReport) return;
+    setEditingReportId(oldReport.id);
+    setFullName(oldReport.staffName || currentUser?.name || '');
+    setRoleDesignation(oldReport.roleDesignation || currentUser?.role || '');
+    setWeekEnding(oldReport.weekEnding || '15-08-2026');
+    setEmailAddress(oldReport.userEmail || currentUser?.email || '');
+    setDepartmentReportingTo(oldReport.departmentReportingTo || 'CEO Walter Dantis');
+    setKeyAchievements(oldReport.keyAchievements || '');
+    setTasks(oldReport.tasks && oldReport.tasks.length > 0 ? oldReport.tasks : [
+      {
+        id: `task-${Date.now()}`,
+        projectArea: availableProjects[0]?.companyName || 'General Operations',
+        taskTitle: '',
+        deadline: '15-08-2026',
+        priorityLevel: 'Medium',
+        progressPct: 0,
+        progressThisWeek: '',
+        nextSteps: '',
+        taskStatus: 'On track',
+        supportNeededForTask: ''
+      }
+    ]);
+    setTopPriorityNextWeek(oldReport.topPriorityNextWeek || '');
+    setSupportNeededFromCeo(oldReport.supportNeededFromCeo || '');
+    setBlockersOrRisks(oldReport.blockersOrRisks || '');
+    setAdditionalNotes(oldReport.additionalNotes || '');
+    
+    setShowPreviewModal(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (onShowToast) onShowToast(`Loaded "${oldReport.weekEnding}" report into form! Edit fields and click Resubmit to CEO.`);
   };
 
   const handleSubmitReportToCeo = (e) => {
@@ -186,7 +222,7 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
     }
 
     const reportPayload = {
-      id: `report-${Date.now()}`,
+      id: editingReportId || `report-${Date.now()}`,
       staffName: fullName,
       roleDesignation,
       weekEnding,
@@ -204,19 +240,23 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
       ceoFeedback: ''
     };
 
-    const updated = [reportPayload, ...submittedReports];
+    const updated = editingReportId 
+      ? submittedReports.map(r => r.id === editingReportId ? reportPayload : r)
+      : [reportPayload, ...submittedReports];
+
     saveReportsList(updated);
+    setEditingReportId(null);
 
     sendGlobalNotification(null, {
       recipientEmail: 'walterdantis@turningpointretail.com',
-      title: `📥 New Friday Weekly Report Submitted by ${fullName}`,
-      message: `${fullName} (${roleDesignation}) submitted their Friday Executive Report for week ending ${weekEnding}.`,
+      title: `📥 ${editingReportId ? 'Resubmitted' : 'New'} Friday Weekly Report by ${fullName}`,
+      message: `${fullName} (${roleDesignation}) ${editingReportId ? 'resubmitted & updated' : 'submitted'} their Friday Executive Report for week ending ${weekEnding}.`,
       type: 'WEEKLY_REPORT',
       createdByName: fullName
     });
 
-    if (onShowToast) onShowToast(`🚀 Friday Executive Report sent directly to CEO Walter Dantis!`);
-    alert(`🎉 Success! Your Friday Executive Weekly Report has been submitted directly to CEO Walter Dantis.`);
+    if (onShowToast) onShowToast(`🚀 Friday Executive Report ${editingReportId ? 'resubmitted' : 'sent'} directly to CEO Walter Dantis!`);
+    alert(`🎉 Success! Your Friday Executive Weekly Report has been ${editingReportId ? 'resubmitted' : 'submitted'} directly to CEO Walter Dantis.`);
 
     handleClearForm();
   };
@@ -1076,8 +1116,30 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
                       <strong>Key Achievements:</strong> {rep.keyAchievements}
                     </div>
 
-                    <div style={{ fontSize: '0.78rem', color: '#475569' }}>
+                    <div style={{ fontSize: '0.78rem', color: '#475569', marginBottom: '10px' }}>
                       <strong>Top Priority Next Week:</strong> {rep.topPriorityNextWeek}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid #E2E8F0', paddingTop: '10px', marginTop: '10px' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleLoadOldReportToEdit(rep)}
+                        style={{
+                          padding: '6px 14px',
+                          background: '#FFFBEB',
+                          color: '#B45309',
+                          border: '1px solid #FDE68A',
+                          borderRadius: '8px',
+                          fontSize: '0.78rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                      >
+                        <RotateCcw size={14} /> 🔄 Resubmit / Edit Old Report
+                      </button>
                     </div>
                   </div>
                 ))}
