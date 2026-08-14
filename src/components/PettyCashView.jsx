@@ -178,7 +178,19 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   useEffect(() => {
     loadAllPettyCashData();
     const interval = setInterval(loadAllPettyCashData, 1000);
-    return () => clearInterval(interval);
+
+    let bcSync;
+    try {
+      bcSync = new BroadcastChannel('tp_petty_cash_sync_channel');
+      bcSync.onmessage = () => {
+        loadAllPettyCashData();
+      };
+    } catch(e) {}
+
+    return () => {
+      clearInterval(interval);
+      if (bcSync) bcSync.close();
+    };
   }, [activeTab, refreshTrigger]);
 
   const cleanStr = (s) => (s || '').toString().toLowerCase().replace(/[^a-z0-9]/g, '');

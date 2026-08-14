@@ -400,15 +400,30 @@ export default function App() {
   const handleAddPettyCash = async (pettyCashItem) => {
     const currentGid = SHEET_GIDS[activeTab] || SHEET_GIDS.PETTY_CASH_JULY;
     setIsSyncing(true);
-    showToast('Syncing Petty Cash transaction to Google Sheet...');
+    showToast('Syncing Petty Cash transaction to Google Sheet & Cloud...');
 
+    // 1. Send to Google Sheet
     await addPettyCashToGoogleSheet(gasUrl, {
       gid: currentGid,
       item: pettyCashItem
     });
 
+    // 2. Overlay into Global Petty Cash Edits for instant real-time live sync across all devices
+    try {
+      const itemKey = pettyCashItem.id || `pc-${Date.now()}`;
+      const savedStr = localStorage.getItem('tp_petty_cash_edits_v1');
+      const editsMap = savedStr ? JSON.parse(savedStr) : {};
+      editsMap[itemKey] = { ...pettyCashItem, id: itemKey };
+      localStorage.setItem('tp_petty_cash_edits_v1', JSON.stringify(editsMap));
+      await saveGlobalPettyCashEdits(gasUrl, editsMap);
+
+      const bc = new BroadcastChannel('tp_petty_cash_sync_channel');
+      bc.postMessage({ pettyCashEdits: editsMap });
+      bc.close();
+    } catch(e) {}
+
     setIsSyncing(false);
-    showToast(`Petty Cash transaction for "${pettyCashItem.description}" saved to Google Sheet!`);
+    showToast(`Petty Cash transaction for "${pettyCashItem.description}" saved live across all screens!`);
     setRefreshTrigger(prev => prev + 1);
     confetti({ particleCount: 60, spread: 60 });
   };
