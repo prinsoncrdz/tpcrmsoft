@@ -262,12 +262,15 @@ export default function App() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Immediate cell edit sync for CRM
+  // Immediate cell edit sync for CRM with instant cloud overlay persistence
   const handleCellEdit = async (project, field, colIndex, newValue) => {
-    const updatedProjects = projects.map(p => p.id === project.id ? { ...p, [field]: newValue } : p);
+    const updatedProjects = projects.map(p => (p.id === project.id || p.projectId === project.projectId) ? { ...p, [field]: newValue, lastUpdated: new Date().toLocaleDateString('en-GB') } : p);
     setProjects(updatedProjects);
     localStorage.setItem('tp_last_known_projects_v2', JSON.stringify(updatedProjects));
     broadcastProjectUpdate(updatedProjects);
+    
+    // Save live cloud overlay so all devices receive cell edit in real-time (1s)
+    syncProjectsDetailsToCloud(updatedProjects);
 
     setIsSyncing(true);
     showToast(`Updating ${field} in Google Sheet...`);
@@ -285,7 +288,7 @@ export default function App() {
     }
   };
 
-  // Helper to persist rich Section B & C details (Scope of Work, Objective, Pricing, Payment Terms) to Google Apps Script cloud storage
+  // Helper to persist rich Section B & C details + live CRM cell edits to Google Apps Script cloud storage
   const syncProjectsDetailsToCloud = async (projectsList) => {
     try {
       const map = {};
@@ -293,6 +296,7 @@ export default function App() {
         const key = p.projectId || p.id;
         if (key) {
           map[key] = {
+            ...p,
             clientContact: p.clientContact || '',
             projectObjective: p.projectObjective || '',
             scopeOfWork: p.scopeOfWork || '',
@@ -301,7 +305,13 @@ export default function App() {
             contractValueUsd: p.contractValueUsd || p.value || '',
             advanceAmountUsd: p.advanceAmountUsd || p.depositPaid || '',
             paymentTerms: p.paymentTerms || '',
-            invoiceSchedule: p.invoiceSchedule || ''
+            invoiceSchedule: p.invoiceSchedule || '',
+            status: p.status || 'In Progress',
+            completion: p.completion || '0%',
+            priority: p.priority || 'Medium',
+            targetEndDate: p.targetEndDate || '',
+            nextAction: p.nextAction || '',
+            statusUpdate: p.statusUpdate || ''
           };
         }
       });
