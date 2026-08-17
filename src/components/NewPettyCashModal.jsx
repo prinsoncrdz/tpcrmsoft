@@ -22,9 +22,20 @@ export default function NewPettyCashModal({ onClose, onAddPettyCash, currentUser
     e.preventDefault();
     if (!formData.description) return;
 
-    // Ensure dollar sign formatting
+    // Automatically compute monthTag from transaction date
+    let computedMonthTag = 'aug';
+    try {
+      const selectedDate = formData.date || new Date().toISOString().split('T')[0];
+      const monthNum = new Date(selectedDate).getMonth() + 1; // 1-12
+      computedMonthTag = monthNum === 7 ? 'july' : (monthNum === 9 ? 'sept' : 'aug');
+    } catch(err) {
+      computedMonthTag = 'aug';
+    }
+
+    // Ensure dollar sign formatting & monthTag assignment
     const formattedData = {
       ...formData,
+      monthTag: computedMonthTag,
       cardSpent: formData.cardSpent.startsWith('$') ? formData.cardSpent : `$${formData.cardSpent}`,
       cashOut: formData.cashOut.startsWith('$') ? formData.cashOut : `$${formData.cashOut}`,
       cashIn: formData.cashIn.startsWith('$') ? formData.cashIn : `$${formData.cashIn}`

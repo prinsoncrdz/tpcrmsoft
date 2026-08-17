@@ -374,10 +374,32 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     );
   }
 
-  // Filter out approved deleted rows & enforce strict month isolation for each tab
-  const isJulyRow = (r) => r.monthTag === 'july' || (r.date || '').toLowerCase().includes('jul') || (r.date || '').includes('-07-') || (r.date || '').includes('/07/');
-  const isAugRow = (r) => r.monthTag === 'aug' || (r.date || '').toLowerCase().includes('aug') || (r.date || '').includes('-08-') || (r.date || '').includes('/08/');
-  const isSeptRow = (r) => r.monthTag === 'sept' || (r.date || '').toLowerCase().includes('sep') || (r.date || '').includes('-09-') || (r.date || '').includes('/09/');
+  // Filter out approved deleted rows & enforce strict month isolation for each tab with robust date parsing
+  const getRowMonthTag = (r) => {
+    if (!r) return 'aug';
+    if (r.monthTag === 'july' || r.monthTag === 'aug' || r.monthTag === 'sept') return r.monthTag;
+    
+    const dStr = (r.date || '').toLowerCase();
+    if (dStr.includes('jul') || dStr.includes('-07-') || dStr.includes('/07/') || dStr.includes('-7-') || dStr.includes('/7/')) return 'july';
+    if (dStr.includes('sep') || dStr.includes('-09-') || dStr.includes('/09/') || dStr.includes('-9-') || dStr.includes('/9/')) return 'sept';
+    if (dStr.includes('aug') || dStr.includes('-08-') || dStr.includes('/08/') || dStr.includes('-8-') || dStr.includes('/8/')) return 'aug';
+
+    try {
+      const parsedDate = new Date(dStr);
+      if (!isNaN(parsedDate.getTime())) {
+        const m = parsedDate.getMonth() + 1;
+        if (m === 7) return 'july';
+        if (m === 9) return 'sept';
+        if (m === 8) return 'aug';
+      }
+    } catch(e) {}
+
+    return 'aug'; // Default fallback to August 2026 current month
+  };
+
+  const isJulyRow = (r) => getRowMonthTag(r) === 'july';
+  const isAugRow = (r) => getRowMonthTag(r) === 'aug';
+  const isSeptRow = (r) => getRowMonthTag(r) === 'sept';
 
   const filteredJulyData = julyData.filter(r => !isItemDeleted(r) && isJulyRow(r));
   const filteredAugData = augData.filter(r => !isItemDeleted(r) && isAugRow(r));
