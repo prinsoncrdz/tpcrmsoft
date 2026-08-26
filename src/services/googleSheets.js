@@ -280,7 +280,7 @@ function parseCRMRows(rows) {
   return projects;
 }
 
-// Universal robust Petty Cash parser with GID month isolation
+// Universal robust Petty Cash parser with GID month isolation & dynamic header column mapping
 function parsePettyCashRows(rows, gid) {
   const monthTag = gid === SHEET_GIDS.PETTY_CASH_JULY ? 'july' :
                    gid === SHEET_GIDS.PETTY_CASH_AUG ? 'aug' :
@@ -307,19 +307,45 @@ function parsePettyCashRows(rows, gid) {
     }
   }
 
+  let colMap = {
+    date: 0,
+    description: 1,
+    voucherNo: 2,
+    category: 3,
+    paymentMethod: 4,
+    paidBy: 5,
+    cashIn: 6,
+    cashOut: 7,
+    cardSpent: 8
+  };
+
   let headerIndex = -1;
   for (let i = 0; i < rows.length; i++) {
-    if (rows[i] && rows[i].some(cell => cell && cell.toString().trim().toLowerCase() === 'date')) {
+    const row = rows[i] || [];
+    const rowStr = row.join(' ').toLowerCase();
+    if (rowStr.includes('date') && (rowStr.includes('description') || rowStr.includes('detail') || rowStr.includes('voucher') || rowStr.includes('category') || rowStr.includes('amount') || rowStr.includes('spent'))) {
       headerIndex = i;
+      row.forEach((cell, cIdx) => {
+        const c = (cell || '').toString().toLowerCase().trim();
+        if (c === 'date' || c.includes('date')) colMap.date = cIdx;
+        else if (c.includes('description') || c.includes('detail') || c.includes('expense') || c.includes('item')) colMap.description = cIdx;
+        else if (c.includes('voucher') || c.includes('bill') || c.includes('ref') || c.includes('inv')) colMap.voucherNo = cIdx;
+        else if (c.includes('category') || c.includes('type')) colMap.category = cIdx;
+        else if (c.includes('payment') || c.includes('method') || c.includes('mode')) colMap.paymentMethod = cIdx;
+        else if (c.includes('paid by') || c.includes('person') || c.includes('staff') || c.includes('paid')) colMap.paidBy = cIdx;
+        else if (c.includes('cash in') || c.includes('in flow') || c.includes('received')) colMap.cashIn = cIdx;
+        else if (c.includes('cash out') || c.includes('cash spent')) colMap.cashOut = cIdx;
+        else if (c.includes('card') || c.includes('spent') || c.includes('total') || c.includes('amount')) colMap.cardSpent = cIdx;
+      });
       break;
     }
   }
 
   if (headerIndex === -1) {
     for (let i = 0; i < rows.length; i++) {
-      if (rows[i] && rows[i].length >= 2 && (rows[i][0] || rows[i][1] || rows[i][2])) {
+      if (rows[i] && rows[i].length >= 2) {
         const firstCell = (rows[i][0] || '').toString().trim().toLowerCase();
-        if (firstCell !== 'date' && !firstCell.includes('starting')) {
+        if (firstCell !== 'date' && !firstCell.includes('starting') && !firstCell.includes('allocation')) {
           headerIndex = Math.max(0, i - 1);
           break;
         }
@@ -327,30 +353,32 @@ function parsePettyCashRows(rows, gid) {
     }
   }
 
-  if (headerIndex === -1) {
-    headerIndex = 0;
-  }
+  if (headerIndex === -1) headerIndex = 0;
 
   for (let i = headerIndex; i < rows.length; i++) {
     const row = rows[i];
     if (!row || row.length < 2) continue;
 
-    const cell0 = (row[0] || '').toString().trim();
-    const cell1 = (row[1] || '').toString().trim();
-    const cell2 = (row[2] || '').toString().trim();
+    const dateVal = (row[colMap.date] !== undefined ? row[colMap.date] : row[0] || '').toString().trim();
+    const descVal = (row[colMap.description] !== undefined ? row[colMap.description] : row[1] || '').toString().trim();
 
-    const dateVal = cell1 || cell0;
-    const descVal = cell2 || cell1 || cell0;
-    
     if (!dateVal && !descVal) continue;
     const lowerDesc = descVal.toLowerCase();
     const lowerDate = dateVal.toLowerCase();
-    
-    if (lowerDate === 'date' || lowerDesc === 'description' || lowerDesc === 'total spent' || lowerDesc.includes('starting petty cash') || lowerDesc === 'total') {
+
+    if (lowerDate === 'date' || lowerDesc === 'description' || lowerDesc === 'total spent' || lowerDesc.includes('starting petty cash') || lowerDesc === 'total' || lowerDate.includes('starting')) {
       continue;
     }
 
-    const rawSpent = (row[9] || row[8] || row[7] || row[3] || '0').toString().trim();
+    const voucherVal = (row[colMap.voucherNo] !== undefined ? row[colMap.voucherNo] : row[2] || '-').toString().trim() || '-';
+    const catVal = (row[colMap.category] !== undefined ? row[colMap.category] : row[3] || 'Supplies').toString().trim() || 'Supplies';
+    const payVal = (row[colMap.paymentMethod] !== undefined ? row[colMap.paymentMethod] : row[4] || 'Card/Online').toString().trim() || 'Card/Online';
+    const paidByVal = (row[colMap.paidBy] !== undefined ? row[colMap.paidBy] : row[5] || 'Admin Manager').toString().trim() || 'Admin Manager';
+
+    const cInVal = (row[colMap.cashIn] !== undefined ? row[colMap.cashIn] : row[6] || '$0.00').toString().trim();
+    const cOutVal = (row[colMap.cashOut] !== undefined ? row[colMap.cashOut] : row[7] || '$0.00').toString().trim();
+    
+    const rawSpent = (row[colMap.cardSpent] !== undefined ? row[colMap.cardSpent] : (row[8] || row[7] || row[3] || '0')).toString().trim();
     const formattedSpent = rawSpent ? (rawSpent.startsWith('$') ? rawSpent : `$${rawSpent}`) : '$0.00';
 
     transactions.push({
@@ -358,13 +386,13 @@ function parsePettyCashRows(rows, gid) {
       monthTag: monthTag,
       rowIndex: i + 1,
       date: dateVal || '2026-08-01',
-      description: descVal || 'Petty Cash Item',
-      voucherNo: (row[3] || row[2] || '-').toString().trim() || '-',
-      category: (row[4] || 'Supplies').toString().trim() || 'Supplies',
-      paymentMethod: (row[5] || 'Card/Online').toString().trim() || 'Card/Online',
-      paidBy: (row[6] || 'Admin Manager').toString().trim() || 'Admin Manager',
-      cashIn: (row[7] || '$0.00').toString().trim(),
-      cashOut: (row[8] || '$0.00').toString().trim(),
+      description: descVal || 'Petty Cash Expense',
+      voucherNo: voucherVal,
+      category: catVal,
+      paymentMethod: payVal,
+      paidBy: paidByVal,
+      cashIn: cInVal ? (cInVal.startsWith('$') ? cInVal : `$${cInVal}`) : '$0.00',
+      cashOut: cOutVal ? (cOutVal.startsWith('$') ? cOutVal : `$${cOutVal}`) : '$0.00',
       cardSpent: formattedSpent
     });
   }
