@@ -164,14 +164,15 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
 
           if (!existingIds.has(key)) {
             const mTag = newEntry.monthTag || (
-              (newEntry.date || '').includes('-08-') || (newEntry.date || '').includes('/08/') ? 'aug' :
-              (newEntry.date || '').includes('-07-') || (newEntry.date || '').includes('/07/') ? 'july' :
-              (newEntry.date || '').includes('-09-') || (newEntry.date || '').includes('/09/') ? 'sept' : 'aug'
+              (newEntry.date || '').includes('-09-') || (newEntry.date || '').includes('/09/') || (newEntry.date || '').toLowerCase().includes('sep') ? 'sept' :
+              (newEntry.date || '').includes('-07-') || (newEntry.date || '').includes('/07/') || (newEntry.date || '').toLowerCase().includes('jul') ? 'july' :
+              (newEntry.date || '').includes('-08-') || (newEntry.date || '').includes('/08/') || (newEntry.date || '').toLowerCase().includes('aug') ? 'aug' : 'sept'
             );
 
             if (mTag === 'july') jT.push(newEntry);
             else if (mTag === 'sept') sT.push(newEntry);
-            else aT.push(newEntry);
+            else if (mTag === 'aug') aT.push(newEntry);
+            else sT.push(newEntry);
           }
         });
       }
