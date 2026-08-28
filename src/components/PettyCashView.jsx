@@ -6,12 +6,16 @@ const DELETION_REQUESTS_KEY = 'tp_petty_cash_deletion_requests_v2';
 const PETTY_EDITS_KEY = 'tp_petty_cash_edits_v1';
 
 export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCashModal, refreshTrigger }) {
-  const isAuthorized = !!currentUser;
-  const isCeoOrAdmin = currentUser?.role === 'CEO' || 
-                        currentUser?.role === 'Admin' || 
-                        (currentUser?.name || '').toLowerCase().includes('walter') || 
-                        (currentUser?.email || '').toLowerCase().includes('walterdantis') || 
-                        (currentUser?.role || '').toLowerCase().includes('ceo');
+  const isAuthorized = currentUser?.role === 'CEO' || 
+                       currentUser?.role === 'Admin' || 
+                       (currentUser?.name || '').toLowerCase().includes('walter') || 
+                       (currentUser?.name || '').toLowerCase().includes('admin') || 
+                       (currentUser?.email || '').toLowerCase().includes('walterdantis') || 
+                       (currentUser?.email || '').toLowerCase().includes('admin@') || 
+                       (currentUser?.role || '').toLowerCase().includes('ceo') || 
+                       (currentUser?.role || '').toLowerCase().includes('admin');
+
+  const isCeoOrAdmin = isAuthorized;
   const isCeo = currentUser?.role === 'CEO' || 
                 (currentUser?.name || '').toLowerCase().includes('walter') || 
                 (currentUser?.email || '').toLowerCase().includes('walterdantis') || 

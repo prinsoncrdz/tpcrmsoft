@@ -183,7 +183,11 @@ export default function Navbar({ activeTab, setActiveTab, currentUser, onLogout,
   const isExecutive = currentUser?.role === 'CEO' || 
                       currentUser?.role === 'Admin' || 
                       currentUser?.name?.toLowerCase().includes('walter') || 
-                      currentUser?.role?.toLowerCase().includes('ceo');
+                      currentUser?.name?.toLowerCase().includes('admin') || 
+                      currentUser?.email?.toLowerCase().includes('walterdantis') || 
+                      currentUser?.email?.toLowerCase().includes('admin@') || 
+                      currentUser?.role?.toLowerCase().includes('ceo') || 
+                      currentUser?.role?.toLowerCase().includes('admin');
 
   const isCeoOnly = currentUser?.role === 'CEO' || 
                     currentUser?.name?.toLowerCase().includes('walter') || 
@@ -208,11 +212,12 @@ export default function Navbar({ activeTab, setActiveTab, currentUser, onLogout,
     { id: 'TAX_INVOICES', label: 'Tax Invoices 🧾', icon: <FileText size={15} />, ceoAdminOnly: true },
     { id: 'TEAM_CHAT', label: 'Team Chat 💬', icon: <MessageSquare size={15} />, restricted: false },
     { id: 'CHANGE_PASSWORD', label: 'Change Password 🔑', icon: <Lock size={15} />, prinsonOnly: true },
-    { id: 'PETTY_CASH_DASHBOARD', label: 'Petty Cash Dashboard', icon: <LayoutDashboard size={15} />, restricted: false },
-    { id: 'PETTY_CASH_JULY', label: 'July 2026', icon: <DollarSign size={15} />, restricted: false },
-    { id: 'PETTY_CASH_AUG', label: 'August 2026', icon: <DollarSign size={15} />, restricted: false },
-    { id: 'PETTY_CASH_SEPT', label: 'September 2026', icon: <DollarSign size={15} />, restricted: false }
+    { id: 'PETTY_CASH_DASHBOARD', label: 'Petty Cash Dashboard', icon: <LayoutDashboard size={15} />, restricted: true },
+    { id: 'PETTY_CASH_JULY', label: 'July 2026', icon: <DollarSign size={15} />, restricted: true },
+    { id: 'PETTY_CASH_AUG', label: 'August 2026', icon: <DollarSign size={15} />, restricted: true },
+    { id: 'PETTY_CASH_SEPT', label: 'September 2026', icon: <DollarSign size={15} />, restricted: true }
   ].filter(item => {
+    if (item.restricted && !isExecutive) return false;
     // Project Approvals tab is strictly reserved for Srelyang Thim & CEO Walter Dantis ONLY
     if (item.srelyangCeoOnly && !isSrelyangOrCeo) return false;
     // Change Password tab is strictly reserved for Prinson Cardoza ONLY
