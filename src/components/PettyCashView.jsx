@@ -181,20 +181,21 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     setAugData(aT);
     setSeptData(sT);
 
-    // Dynamic header summary priority: Dashboard Tab -> August Tab -> July Tab
-    const liveHeaderFromSheet = (dashRes.success && dashRes.headerSummary && dashRes.headerSummary.startingCash !== '$0.00') ? dashRes.headerSummary :
+    // Dynamic header summary priority: September Tab -> August Tab -> Dashboard Tab -> July Tab
+    const liveHeaderFromSheet = (septRes.success && septRes.headerSummary && septRes.headerSummary.startingCash !== '$0.00') ? septRes.headerSummary :
                                 (augRes.success && augRes.headerSummary && augRes.headerSummary.startingCash !== '$0.00') ? augRes.headerSummary :
+                                (dashRes.success && dashRes.headerSummary && dashRes.headerSummary.startingCash !== '$0.00') ? dashRes.headerSummary :
                                 (julyRes.success && julyRes.headerSummary) ? julyRes.headerSummary : null;
 
     if (activeTab === 'PETTY_CASH_JULY') {
       setActiveTabData(jT);
-      if (julyRes.success && julyRes.data && julyRes.data.headerSummary) setHeaderSummary(julyRes.data.headerSummary);
+      if (julyRes.success && julyRes.headerSummary) setHeaderSummary(julyRes.headerSummary);
     } else if (activeTab === 'PETTY_CASH_AUG') {
       setActiveTabData(aT);
-      if (augRes.success && augRes.data && augRes.data.headerSummary) setHeaderSummary(augRes.data.headerSummary);
+      if (augRes.success && augRes.headerSummary) setHeaderSummary(augRes.headerSummary);
     } else if (activeTab === 'PETTY_CASH_SEPT') {
       setActiveTabData(sT);
-      if (septRes.success && septRes.data && septRes.data.headerSummary) setHeaderSummary(septRes.data.headerSummary);
+      if (septRes.success && septRes.headerSummary) setHeaderSummary(septRes.headerSummary);
     } else {
       setActiveTabData([...jT, ...aT, ...sT]);
       if (liveHeaderFromSheet) setHeaderSummary(liveHeaderFromSheet);
