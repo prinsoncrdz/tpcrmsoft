@@ -1084,11 +1084,12 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                     style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.85rem' }}
                   >
                     <option value="Supplies">Supplies</option>
-                    <option value="Travel/Fuel">Travel/Fuel</option>
-                    <option value="Meals/Entertainment">Meals/Entertainment</option>
-                    <option value="Office Equipment">Office Equipment</option>
-                    <option value="Utilities">Utilities</option>
-                    <option value="Miscellaneous">Miscellaneous</option>
+                    <option value="Travel and Transport">Travel and Transport</option>
+                    <option value="Meals & Hospitality">Meals & Hospitality</option>
+                    <option value="Stationery">Stationery</option>
+                    <option value="Tax Related">Tax Related</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
                 <div>

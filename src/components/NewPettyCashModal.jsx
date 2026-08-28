@@ -97,10 +97,11 @@ export default function NewPettyCashModal({ onClose, onAddPettyCash, currentUser
               <label className="form-label">Category</label>
               <select name="category" className="form-select" value={formData.category} onChange={handleChange}>
                 <option value="Supplies">Supplies</option>
-                <option value="Logistics">Logistics</option>
-                <option value="Meals">Meals & Hospitality</option>
+                <option value="Travel and Transport">Travel and Transport</option>
+                <option value="Meals & Hospitality">Meals & Hospitality</option>
                 <option value="Stationery">Stationery</option>
-                <option value="Software">Software / Subscriptions</option>
+                <option value="Tax Related">Tax Related</option>
+                <option value="Maintenance">Maintenance</option>
                 <option value="Other">Other</option>
               </select>
             </div>
