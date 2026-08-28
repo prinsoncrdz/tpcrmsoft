@@ -114,7 +114,7 @@ export async function fetchSheetData(gid = SHEET_GIDS.CRM) {
             const projects = parseCRMRows(rows);
             resolve({ success: true, data: projects, source: 'LIVE_SHEET_CSV' });
           } else {
-            const pettyCash = parsePettyCashRows(rows);
+            const pettyCash = parsePettyCashRows(rows, gid);
             resolve({ success: true, data: pettyCash.transactions, headerSummary: pettyCash.headerSummary, source: 'LIVE_SHEET_CSV' });
           }
         },
@@ -377,9 +377,15 @@ function parsePettyCashRows(rows, gid) {
 
     const cInVal = (row[colMap.cashIn] !== undefined ? row[colMap.cashIn] : row[6] || '$0.00').toString().trim();
     const cOutVal = (row[colMap.cashOut] !== undefined ? row[colMap.cashOut] : row[7] || '$0.00').toString().trim();
-    
     const rawSpent = (row[colMap.cardSpent] !== undefined ? row[colMap.cardSpent] : (row[8] || row[7] || row[3] || '0')).toString().trim();
-    const formattedSpent = rawSpent ? (rawSpent.startsWith('$') ? rawSpent : `$${rawSpent}`) : '$0.00';
+
+    const formattedCashIn = cInVal ? (cInVal.startsWith('$') ? cInVal : `$${cInVal}`) : '$0.00';
+    const formattedCashOut = cOutVal ? (cOutVal.startsWith('$') ? cOutVal : `$${cOutVal}`) : '$0.00';
+    
+    let formattedSpent = rawSpent ? (rawSpent.startsWith('$') ? rawSpent : `$${rawSpent}`) : '$0.00';
+    if ((!formattedSpent || formattedSpent === '$0.00') && formattedCashOut && formattedCashOut !== '$0.00') {
+      formattedSpent = formattedCashOut;
+    }
 
     transactions.push({
       id: `pc-${monthTag}-${i}`,
@@ -391,8 +397,8 @@ function parsePettyCashRows(rows, gid) {
       category: catVal,
       paymentMethod: payVal,
       paidBy: paidByVal,
-      cashIn: cInVal ? (cInVal.startsWith('$') ? cInVal : `$${cInVal}`) : '$0.00',
-      cashOut: cOutVal ? (cOutVal.startsWith('$') ? cOutVal : `$${cOutVal}`) : '$0.00',
+      cashIn: formattedCashIn,
+      cashOut: formattedCashOut,
       cardSpent: formattedSpent
     });
   }
