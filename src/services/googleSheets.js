@@ -295,16 +295,23 @@ function parsePettyCashRows(rows, gid) {
     cardSpent: '$0.00'
   };
 
-  for (let i = 0; i < Math.min(15, rows.length); i++) {
-    const rowStr = rows[i] ? rows[i].join(' ').toLowerCase() : '';
-    if (rowStr.includes('starting') || rowStr.includes('initial') || rowStr.includes('opening') || rowStr.includes('allocation')) {
-      const dataRow = rows[i + 1] || rows[i] || [];
-      const sVal = (dataRow[1] || dataRow[0] || '').toString().trim();
-      const cIn = (dataRow[2] || dataRow[1] || '').toString().trim();
-      if (sVal) headerSummary.startingCash = sVal.startsWith('$') ? sVal : `$${sVal}`;
-      if (cIn) headerSummary.cashIn = cIn.startsWith('$') ? cIn : `$${cIn}`;
-      break;
-    }
+  for (let i = 0; i < Math.min(25, rows.length); i++) {
+    const row = rows[i] || [];
+    row.forEach((cell, cIdx) => {
+      const c = (cell || '').toString().toLowerCase().trim();
+      if (c.includes('starting') || c.includes('initial') || c.includes('opening') || c.includes('allocation') || c.includes('float')) {
+        const val = (row[cIdx + 1] || (rows[i + 1] ? rows[i + 1][cIdx] : '') || '').toString().trim();
+        if (val && (val.includes('$') || !isNaN(parseFloat(val.replace('$', '').replace(',', ''))))) {
+          headerSummary.startingCash = val.startsWith('$') ? val : `$${val}`;
+        }
+      }
+      if (c.includes('cash in') || c.includes('replenish') || c.includes('deposit') || c.includes('in flow')) {
+        const val = (row[cIdx + 1] || (rows[i + 1] ? rows[i + 1][cIdx] : '') || '').toString().trim();
+        if (val && (val.includes('$') || !isNaN(parseFloat(val.replace('$', '').replace(',', ''))))) {
+          headerSummary.cashIn = val.startsWith('$') ? val : `$${val}`;
+        }
+      }
+    });
   }
 
   let colMap = {

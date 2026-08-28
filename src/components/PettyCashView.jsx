@@ -122,7 +122,8 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   const loadAllPettyCashData = async () => {
     setLoading(true);
 
-    const [julyRes, augRes, septRes, cloudEdits] = await Promise.all([
+    const [dashRes, julyRes, augRes, septRes, cloudEdits] = await Promise.all([
+      fetchSheetData(SHEET_GIDS.PETTY_CASH_DASHBOARD),
       fetchSheetData(SHEET_GIDS.PETTY_CASH_JULY),
       fetchSheetData(SHEET_GIDS.PETTY_CASH_AUG),
       fetchSheetData(SHEET_GIDS.PETTY_CASH_SEPT),
@@ -180,6 +181,11 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     setAugData(aT);
     setSeptData(sT);
 
+    // Dynamic header summary priority: Dashboard Tab -> August Tab -> July Tab
+    const liveHeaderFromSheet = (dashRes.success && dashRes.headerSummary && dashRes.headerSummary.startingCash !== '$0.00') ? dashRes.headerSummary :
+                                (augRes.success && augRes.headerSummary && augRes.headerSummary.startingCash !== '$0.00') ? augRes.headerSummary :
+                                (julyRes.success && julyRes.headerSummary) ? julyRes.headerSummary : null;
+
     if (activeTab === 'PETTY_CASH_JULY') {
       setActiveTabData(jT);
       if (julyRes.success && julyRes.data && julyRes.data.headerSummary) setHeaderSummary(julyRes.data.headerSummary);
@@ -191,7 +197,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
       if (septRes.success && septRes.data && septRes.data.headerSummary) setHeaderSummary(septRes.data.headerSummary);
     } else {
       setActiveTabData([...jT, ...aT, ...sT]);
-      if (septRes.success && septRes.data && septRes.data.headerSummary) setHeaderSummary(septRes.data.headerSummary);
+      if (liveHeaderFromSheet) setHeaderSummary(liveHeaderFromSheet);
     }
 
     setLoading(false);
