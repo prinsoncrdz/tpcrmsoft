@@ -11,8 +11,8 @@ export const SHEET_GIDS = {
   PETTY_CASH_SEPT: '1003'
 };
 
-// User's Updated Live Google Apps Script Web App Deployment URL with Global Cloud Chat, Sub-Tasks & Invoice Engine
-export const DEPLOYED_GAS_URL = 'https://script.google.com/macros/s/AKfycbywmjFfVPVFI90xPzkDO7Cu5Yq5EtQLM7WjF6R_SNRX--SZqqgDRAkJaT8Xif3M7SFOpQ/exec';
+// User's Updated Live Google Apps Script Web App Deployment URL (Version 14 - Aug 28, 2026)
+export const DEPLOYED_GAS_URL = 'https://script.google.com/macros/s/AKfycbx4mZTSsdee1bdXVb5PLbOGUKjoK5rkYL7uXEmm51UeD1LxlRsCYEkRFGIIrvJ_-JfyEw/exec';
 export const DEFAULT_GAS_URL = DEPLOYED_GAS_URL;
 
 // Registered Turning Point Retail Team Users with UNIQUE passwords for each user
