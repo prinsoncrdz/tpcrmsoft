@@ -387,11 +387,20 @@ function parsePettyCashRows(rows, gid) {
     const rawSpent = (row[colMap.cardSpent] !== undefined ? row[colMap.cardSpent] : (row[8] || row[7] || row[3] || '0')).toString().trim();
 
     const formattedCashIn = cInVal ? (cInVal.startsWith('$') ? cInVal : `$${cInVal}`) : '$0.00';
-    const formattedCashOut = cOutVal ? (cOutVal.startsWith('$') ? cOutVal : `$${cOutVal}`) : '$0.00';
-    
+    let formattedCashOut = cOutVal ? (cOutVal.startsWith('$') ? cOutVal : `$${cOutVal}`) : '$0.00';
     let formattedSpent = rawSpent ? (rawSpent.startsWith('$') ? rawSpent : `$${rawSpent}`) : '$0.00';
-    if ((!formattedSpent || formattedSpent === '$0.00') && formattedCashOut && formattedCashOut !== '$0.00') {
-      formattedSpent = formattedCashOut;
+
+    const isCashPayment = payVal.toLowerCase().includes('cash') || (cOutVal && cOutVal !== '$0.00' && !rawSpent);
+    if (isCashPayment) {
+      if (formattedCashOut === '$0.00' && formattedSpent !== '$0.00') {
+        formattedCashOut = formattedSpent;
+      }
+      formattedSpent = '$0.00';
+    } else {
+      if (formattedSpent === '$0.00' && formattedCashOut !== '$0.00') {
+        formattedSpent = formattedCashOut;
+      }
+      formattedCashOut = '$0.00';
     }
 
     transactions.push({

@@ -481,25 +481,27 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     setShowEditHeaderModal(false);
   };
 
-  // Dynamic automatic mathematical calculations across active non-deleted rows
+  // Dynamic automatic mathematical calculations across active non-deleted rows with ZERO double-counting
   const rawStarting = parseVal(safeHeaderSummary.startingCash);
   const liveCashIn = targetRowsForSummary.reduce((acc, r) => acc + parseVal(r.cashIn), 0);
   const parsedCashIn = parseVal(safeHeaderSummary.cashIn);
   
   // 1. Cash Out (Physical cash expenditures)
   const cashOutSpent = targetRowsForSummary.reduce((acc, r) => {
-    const isCash = (r.paymentMethod || '').toLowerCase().includes('cash') || parseVal(r.cashOut) > 0;
+    const pMethod = (r.paymentMethod || '').toLowerCase();
+    const isCash = pMethod.includes('cash') || (parseVal(r.cashOut) > 0 && parseVal(r.cardSpent) === 0);
     return acc + (isCash ? parseVal(r.cashOut || r.cardSpent) : 0);
   }, 0);
 
   // 2. Card Spent (Card / Online expenditures)
   const cardSpentNum = targetRowsForSummary.reduce((acc, r) => {
-    const isCard = (r.paymentMethod || '').toLowerCase().includes('card') || (r.paymentMethod || '').toLowerCase().includes('online') || parseVal(r.cardSpent) > 0;
-    return acc + (isCard ? parseVal(r.cardSpent || r.cashOut) : 0);
+    const pMethod = (r.paymentMethod || '').toLowerCase();
+    const isCash = pMethod.includes('cash') || (parseVal(r.cashOut) > 0 && parseVal(r.cardSpent) === 0);
+    return acc + (!isCash ? parseVal(r.cardSpent || r.cashOut) : 0);
   }, 0);
 
-  const liveTotalSpent = targetRowsForSummary.reduce((acc, r) => acc + parseVal(r.cardSpent || r.cashOut), 0);
-  const liveCashOut = liveTotalSpent;
+  const liveTotalSpent = cashOutSpent + cardSpentNum;
+  const liveCashOut = cashOutSpent;
 
   // Allocation & dynamic funds calculations
   let startingCashNum = rawStarting;
