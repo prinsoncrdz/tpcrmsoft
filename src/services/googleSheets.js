@@ -366,31 +366,95 @@ function parsePettyCashRows(rows, gid) {
     const row = rows[i];
     if (!row || row.length < 2) continue;
 
-    const dateVal = (row[colMap.date] !== undefined ? row[colMap.date] : row[0] || '').toString().trim();
-    const descVal = (row[colMap.description] !== undefined ? row[colMap.description] : row[1] || '').toString().trim();
+    // Smart cell scanner per row to handle column shifting across different Google Sheet statement layouts
+    let dateVal = '';
+    let descVal = '';
+    let voucherVal = '-';
+    let catVal = 'Supplies';
+    let payVal = 'Card/Online';
+    let paidByVal = 'Admin Manager';
+    let cInVal = '$0.00';
+    let cOutVal = '$0.00';
+    let rawSpent = '$0.00';
 
-    if (!dateVal && !descVal) continue;
-    const lowerDesc = descVal.toLowerCase();
-    const lowerDate = dateVal.toLowerCase();
-
-    if (lowerDate === 'date' || lowerDesc === 'description' || lowerDesc === 'total spent' || lowerDesc.includes('starting petty cash') || lowerDesc === 'total' || lowerDate.includes('starting')) {
-      continue;
+    // 1. Locate Date cell
+    let dateIdx = -1;
+    for (let c = 0; c < Math.min(4, row.length); c++) {
+      const cellStr = (row[c] || '').toString().trim();
+      if (cellStr.match(/202[0-9]/) || cellStr.match(/^[0-9]{1,4}[\/\-][0-9]{1,2}[\/\-][0-9]{1,4}$/)) {
+        dateVal = cellStr;
+        dateIdx = c;
+        break;
+      }
     }
 
-    const voucherVal = (row[colMap.voucherNo] !== undefined ? row[colMap.voucherNo] : row[2] || '-').toString().trim() || '-';
-    const catVal = (row[colMap.category] !== undefined ? row[colMap.category] : row[3] || 'Supplies').toString().trim() || 'Supplies';
-    const payVal = (row[colMap.paymentMethod] !== undefined ? row[colMap.paymentMethod] : row[4] || 'Card/Online').toString().trim() || 'Card/Online';
-    const paidByVal = (row[colMap.paidBy] !== undefined ? row[colMap.paidBy] : row[5] || 'Admin Manager').toString().trim() || 'Admin Manager';
+    if (!dateVal && colMap.date !== undefined && row[colMap.date]) {
+      const cellStr = row[colMap.date].toString().trim();
+      if (cellStr && cellStr.toLowerCase() !== 'date') {
+        dateVal = cellStr;
+        dateIdx = colMap.date;
+      }
+    }
 
-    const cInVal = (row[colMap.cashIn] !== undefined ? row[colMap.cashIn] : row[6] || '$0.00').toString().trim();
-    const cOutVal = (row[colMap.cashOut] !== undefined ? row[colMap.cashOut] : row[7] || '$0.00').toString().trim();
-    const rawSpent = (row[colMap.cardSpent] !== undefined ? row[colMap.cardSpent] : (row[8] || row[7] || row[3] || '0')).toString().trim();
+    if (!dateVal) continue; // Skip non-data rows without a valid date
 
-    const formattedCashIn = cInVal ? (cInVal.startsWith('$') ? cInVal : `$${cInVal}`) : '$0.00';
-    let formattedCashOut = cOutVal ? (cOutVal.startsWith('$') ? cOutVal : `$${cOutVal}`) : '$0.00';
-    let formattedSpent = rawSpent ? (rawSpent.startsWith('$') ? rawSpent : `$${rawSpent}`) : '$0.00';
+    // 2. Locate Description cell
+    for (let c = dateIdx + 1; c < row.length; c++) {
+      const cellStr = (row[c] || '').toString().trim();
+      if (!cellStr) continue;
+      const lowerCell = cellStr.toLowerCase();
 
-    const isCashPayment = payVal.toLowerCase().includes('cash') || (cOutVal && cOutVal !== '$0.00' && !rawSpent);
+      // Skip duplicate dates
+      if (cellStr === dateVal || cellStr.match(/202[0-9]/)) continue;
+
+      // Detect Categories & Payment Methods
+      if (lowerCell === 'supplies' || lowerCell === 'meals' || lowerCell === 'stationery' || lowerCell === 'other' || lowerCell === 'logistics' || lowerCell === 'maintenance' || lowerCell === 'tax related') {
+        catVal = cellStr.charAt(0).toUpperCase() + cellStr.slice(1);
+        continue;
+      }
+      if (lowerCell.includes('petty cash') || lowerCell.includes('card') || lowerCell.includes('online')) {
+        payVal = lowerCell.includes('petty cash') ? 'Petty Cash' : 'Card/Online';
+        continue;
+      }
+
+      // If cell contains descriptive text and isn't numeric only, it's our Description!
+      if (!descVal && /[a-zA-Z]/.test(cellStr)) {
+        descVal = cellStr;
+        break;
+      }
+    }
+
+    if (!descVal && colMap.description !== undefined && row[colMap.description]) {
+      const cellStr = row[colMap.description].toString().trim();
+      if (cellStr && cellStr.toLowerCase() !== 'description') descVal = cellStr;
+    }
+
+    if (!descVal) descVal = 'Petty Cash Expense';
+
+    // 3. Extract Voucher, Paid By, Cash In, Cash Out, Card Spent
+    if (colMap.voucherNo !== undefined && row[colMap.voucherNo]) voucherVal = row[colMap.voucherNo].toString().trim() || '-';
+    if (colMap.paidBy !== undefined && row[colMap.paidBy]) paidByVal = row[colMap.paidBy].toString().trim() || 'Admin Manager';
+    if (colMap.cashIn !== undefined && row[colMap.cashIn]) cInVal = row[colMap.cashIn].toString().trim();
+    if (colMap.cashOut !== undefined && row[colMap.cashOut]) cOutVal = row[colMap.cashOut].toString().trim();
+    if (colMap.cardSpent !== undefined && row[colMap.cardSpent]) rawSpent = row[colMap.cardSpent].toString().trim();
+
+    // Fallback scan for money values if colMap was shifted
+    row.forEach((cell, cIdx) => {
+      if (cIdx <= dateIdx) return;
+      const cellStr = (cell || '').toString().trim();
+      if (cellStr.startsWith('$') || (!isNaN(parseFloat(cellStr)) && parseFloat(cellStr) > 0)) {
+        const val = cellStr.startsWith('$') ? cellStr : `$${cellStr}`;
+        if (cIdx === 6 || cIdx === 7) cInVal = val;
+        else if (cIdx === 7 || cIdx === 8) cOutVal = val;
+        else if (cIdx >= 8) rawSpent = val;
+      }
+    });
+
+    const formattedCashIn = cInVal && cInVal !== '0' ? (cInVal.startsWith('$') ? cInVal : `$${cInVal}`) : '$0.00';
+    let formattedCashOut = cOutVal && cOutVal !== '0' ? (cOutVal.startsWith('$') ? cOutVal : `$${cOutVal}`) : '$0.00';
+    let formattedSpent = rawSpent && rawSpent !== '0' ? (rawSpent.startsWith('$') ? rawSpent : `$${rawSpent}`) : '$0.00';
+
+    const isCashPayment = payVal.toLowerCase().includes('cash') || (formattedCashOut !== '$0.00' && formattedSpent === '$0.00');
     if (isCashPayment) {
       if (formattedCashOut === '$0.00' && formattedSpent !== '$0.00') {
         formattedCashOut = formattedSpent;
@@ -408,7 +472,7 @@ function parsePettyCashRows(rows, gid) {
       monthTag: monthTag,
       rowIndex: i + 1,
       date: dateVal || '2026-08-01',
-      description: descVal || 'Petty Cash Expense',
+      description: descVal,
       voucherNo: voucherVal,
       category: catVal,
       paymentMethod: payVal,
