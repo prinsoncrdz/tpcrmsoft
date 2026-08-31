@@ -128,8 +128,10 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     } catch(e) {}
   };
 
-  const loadAllPettyCashData = async () => {
-    setLoading(true);
+  const loadAllPettyCashData = async (isInitial = false) => {
+    if (isInitial || (julyData.length === 0 && augData.length === 0 && septData.length === 0)) {
+      setLoading(true);
+    }
 
     const [dashRes, julyRes, augRes, septRes, cloudEdits] = await Promise.all([
       fetchSheetData(SHEET_GIDS.PETTY_CASH_DASHBOARD),
@@ -215,14 +217,15 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   };
 
   useEffect(() => {
-    loadAllPettyCashData();
-    const interval = setInterval(loadAllPettyCashData, 1000);
+    loadAllPettyCashData(true);
+    // Optimized background interval refresh (10 seconds) to eliminate network lag & syncing delays
+    const interval = setInterval(() => loadAllPettyCashData(false), 10000);
 
     let bcSync;
     try {
       bcSync = new BroadcastChannel('tp_petty_cash_sync_channel');
       bcSync.onmessage = () => {
-        loadAllPettyCashData();
+        loadAllPettyCashData(false);
       };
     } catch(e) {}
 
@@ -414,18 +417,28 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     return 'aug'; // Default fallback to August 2026 current month
   };
 
-  const isJulyRow = (r) => getRowMonthTag(r) === 'july';
-  const isAugRow = (r) => getRowMonthTag(r) === 'aug';
-  const isSeptRow = (r) => getRowMonthTag(r) === 'sept';
+  // Date-wise parsing and chronological sorting helper
+  const parseDateMs = (dStr) => {
+    if (!dStr) return 0;
+    const s = dStr.toString().trim();
+    const m = s.match(/^([0-9]{4})[\/\-]([0-9]{1,2})[\/\-]([0-9]{1,2})/);
+    if (m) return new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3])).getTime();
+    const p = new Date(s);
+    return isNaN(p.getTime()) ? 0 : p.getTime();
+  };
 
-  const filteredJulyData = julyData.filter(r => !isItemDeleted(r) && isJulyRow(r));
-  const filteredAugData = augData.filter(r => !isItemDeleted(r) && isAugRow(r));
-  const filteredSeptData = septData.filter(r => !isItemDeleted(r) && isSeptRow(r));
+  const sortByDate = (arr) => {
+    return [...arr].sort((a, b) => parseDateMs(b.date) - parseDateMs(a.date));
+  };
+
+  const filteredJulyData = sortByDate(julyData.filter(r => !isItemDeleted(r) && isJulyRow(r)));
+  const filteredAugData = sortByDate(augData.filter(r => !isItemDeleted(r) && isAugRow(r)));
+  const filteredSeptData = sortByDate(septData.filter(r => !isItemDeleted(r) && isSeptRow(r)));
 
   const filteredActiveTabData = activeTab === 'PETTY_CASH_JULY' ? filteredJulyData :
                                 activeTab === 'PETTY_CASH_AUG' ? filteredAugData :
                                 activeTab === 'PETTY_CASH_SEPT' ? filteredSeptData :
-                                [...filteredJulyData, ...filteredAugData, ...filteredSeptData];
+                                sortByDate([...filteredJulyData, ...filteredAugData, ...filteredSeptData]);
 
   // Calculate live analytics across non-deleted rows
   const parseVal = (str) => parseFloat((str || '0').toString().replace('$', '').replace(',', '')) || 0;
