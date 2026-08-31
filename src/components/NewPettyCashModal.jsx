@@ -70,10 +70,11 @@ export default function NewPettyCashModal({ onClose, onAddPettyCash, currentUser
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Bill / Voucher Number</label>
+              <label className="form-label">Invoice Number</label>
               <input 
                 name="voucherNo"
                 className="form-input"
+                placeholder="e.g. INV-1002"
                 value={formData.voucherNo}
                 onChange={handleChange}
               />
@@ -102,47 +103,45 @@ export default function NewPettyCashModal({ onClose, onAddPettyCash, currentUser
                 <option value="Stationery">Stationery</option>
                 <option value="Tax Related">Tax Related</option>
                 <option value="Maintenance">Maintenance</option>
+                <option value="Reimbursement">Reimbursement (CEO Extra Funds)</option>
                 <option value="Other">Other</option>
               </select>
             </div>
             <div className="form-group">
               <label className="form-label">Payment Method</label>
               <select name="paymentMethod" className="form-select" value={formData.paymentMethod} onChange={handleChange}>
+                <option value="ABA QR Code">ABA QR Code</option>
                 <option value="Card/Online">Card / Online</option>
-                <option value="Petty Cash">Cash</option>
+                <option value="Cash">Cash</option>
                 <option value="Bank Transfer">Bank Transfer</option>
               </select>
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div className="form-group">
-              <label className="form-label">Card / Online Spent ($)</label>
+              <label className="form-label">Amount ($)</label>
               <input 
                 name="cardSpent"
                 className="form-input"
                 placeholder="0.00"
                 value={formData.cardSpent}
-                onChange={handleChange}
+                onChange={(e) => {
+                  setFormData({
+                    ...formData,
+                    cardSpent: e.target.value,
+                    cashOut: formData.paymentMethod === 'Cash' ? e.target.value : '$0.00'
+                  });
+                }}
+                required
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Cash Out ($)</label>
+              <label className="form-label">Paid By</label>
               <input 
-                name="cashOut"
+                name="paidBy"
                 className="form-input"
-                placeholder="0.00"
-                value={formData.cashOut}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Cash In ($)</label>
-              <input 
-                name="cashIn"
-                className="form-input"
-                placeholder="0.00"
-                value={formData.cashIn}
+                value={formData.paidBy}
                 onChange={handleChange}
               />
             </div>

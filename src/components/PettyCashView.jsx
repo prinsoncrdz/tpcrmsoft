@@ -437,10 +437,6 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     return 'aug'; // Default fallback to August 2026 current month
   };
 
-  const isJulyRow = (r) => getRowMonthTag(r) === 'july';
-  const isAugRow = (r) => getRowMonthTag(r) === 'aug';
-  const isSeptRow = (r) => getRowMonthTag(r) === 'sept';
-
   // Date-wise parsing and chronological sorting helper
   const parseDateMs = (dStr) => {
     if (!dStr) return 0;
@@ -449,6 +445,19 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     if (m) return new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3])).getTime();
     const p = new Date(s);
     return isNaN(p.getTime()) ? 0 : p.getTime();
+  };
+
+  const formatDisplayDate = (dStr) => {
+    if (!dStr) return '-';
+    const s = dStr.toString().trim();
+    const m = s.match(/^([0-9]{4})[\/\-]([0-9]{1,2})[\/\-]([0-9]{1,2})/);
+    if (m) {
+      const year = m[1];
+      const month = m[2].padStart(2, '0');
+      const day = m[3].padStart(2, '0');
+      return `${day}-${month}-${year}`;
+    }
+    return s;
   };
 
   const sortByDate = (arr) => {
@@ -473,7 +482,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   const totalYTD = julyTotal + augTotal + septTotal;
 
   // Category breakdown compile
-  const allRows = [...filteredJulyData, ...filteredAugData, ...filteredSeptData];
+  const allRows = sortByDate([...filteredJulyData, ...filteredAugData, ...filteredSeptData]);
 
   // Target rows for financial summary bar (All rows when on Dashboard, active month rows otherwise)
   const targetRowsForSummary = isDashboardTab ? allRows : filteredActiveTabData;
@@ -518,34 +527,52 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     setShowEditHeaderModal(false);
   };
 
-  // Dynamic automatic mathematical calculations across active non-deleted rows with ZERO double-counting
+  // Payment Method Breakdown Calculations across target rows
+  const abaQrSpent = targetRowsForSummary.reduce((acc, r) => {
+    const p = (r.paymentMethod || '').toLowerCase();
+    const isReimbursement = (r.category || '').toLowerCase().includes('reimbursement') || (r.description || '').toLowerCase().includes('reimbursement');
+    if (isReimbursement) return acc;
+    return acc + (p.includes('aba') || p.includes('qr') ? parseVal(r.cardSpent || r.cashOut) : 0);
+  }, 0);
+
+  const cardOnlineSpent = targetRowsForSummary.reduce((acc, r) => {
+    const p = (r.paymentMethod || '').toLowerCase();
+    const isReimbursement = (r.category || '').toLowerCase().includes('reimbursement') || (r.description || '').toLowerCase().includes('reimbursement');
+    if (isReimbursement) return acc;
+    return acc + ((p.includes('card') || p.includes('online')) && !p.includes('aba') ? parseVal(r.cardSpent || r.cashOut) : 0);
+  }, 0);
+
+  const cashSpent = targetRowsForSummary.reduce((acc, r) => {
+    const p = (r.paymentMethod || '').toLowerCase();
+    const isReimbursement = (r.category || '').toLowerCase().includes('reimbursement') || (r.description || '').toLowerCase().includes('reimbursement');
+    if (isReimbursement) return acc;
+    return acc + (p.includes('cash') || (parseVal(r.cashOut) > 0 && !p.includes('bank') && !p.includes('card')) ? parseVal(r.cashOut || r.cardSpent) : 0);
+  }, 0);
+
+  const bankTransferSpent = targetRowsForSummary.reduce((acc, r) => {
+    const p = (r.paymentMethod || '').toLowerCase();
+    const isReimbursement = (r.category || '').toLowerCase().includes('reimbursement') || (r.description || '').toLowerCase().includes('reimbursement');
+    if (isReimbursement) return acc;
+    return acc + (p.includes('bank') || p.includes('transfer') ? parseVal(r.cardSpent || r.cashOut) : 0);
+  }, 0);
+
+  // CEO Reimbursements (Extra funds provided by CEO added to Admin Cash On Hand)
+  const ceoReimbursementNum = targetRowsForSummary.reduce((acc, r) => {
+    const isReimbursement = (r.category || '').toLowerCase().includes('reimbursement') || (r.description || '').toLowerCase().includes('reimbursement');
+    return acc + (isReimbursement ? parseVal(r.cardSpent || r.cashOut || r.cashIn) : 0);
+  }, 0);
+
   const rawStarting = parseVal(safeHeaderSummary.startingCash);
-  const liveCashIn = targetRowsForSummary.reduce((acc, r) => acc + parseVal(r.cashIn), 0);
   const parsedCashIn = parseVal(safeHeaderSummary.cashIn);
-  
-  // 1. Cash Out (Physical cash expenditures)
-  const cashOutSpent = targetRowsForSummary.reduce((acc, r) => {
-    const pMethod = (r.paymentMethod || '').toLowerCase();
-    const isCash = pMethod.includes('cash') || (parseVal(r.cashOut) > 0 && parseVal(r.cardSpent) === 0);
-    return acc + (isCash ? parseVal(r.cashOut || r.cardSpent) : 0);
-  }, 0);
 
-  // 2. Card Spent (Card / Online expenditures)
-  const cardSpentNum = targetRowsForSummary.reduce((acc, r) => {
-    const pMethod = (r.paymentMethod || '').toLowerCase();
-    const isCash = pMethod.includes('cash') || (parseVal(r.cashOut) > 0 && parseVal(r.cardSpent) === 0);
-    return acc + (!isCash ? parseVal(r.cardSpent || r.cashOut) : 0);
-  }, 0);
+  // Financial summary metrics
+  let adminCashOnHandNum = rawStarting;
+  let totalReimbursementsNum = ceoReimbursementNum + parsedCashIn;
 
-  const liveTotalSpent = cashOutSpent + cardSpentNum;
-  const liveCashOut = cashOutSpent;
+  const totalAdminCashAvailable = adminCashOnHandNum + totalReimbursementsNum;
+  const liveTotalSpent = abaQrSpent + cardOnlineSpent + cashSpent + bankTransferSpent;
+  const dynamicRemainingCash = Math.max(0, totalAdminCashAvailable - liveTotalSpent);
 
-  // Allocation & dynamic funds calculations
-  let startingCashNum = rawStarting;
-  let totalCashInNum = Math.max(parsedCashIn, liveCashIn);
-
-  const totalAvailableFunds = startingCashNum + totalCashInNum;
-  const dynamicRemainingCash = Math.max(0, totalAvailableFunds - liveTotalSpent);
   const categoryMap = {};
   allRows.forEach(r => {
     const cat = r.category || 'Supplies';
@@ -597,29 +624,31 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
         <table>
           <thead>
             <tr>
-              <th>Date</th>
+              <th>Date (DD-MM-YYYY)</th>
               <th>Description / Item</th>
-              <th>Voucher / Bill No</th>
+              <th>Invoice Number</th>
               <th>Category</th>
               <th>Payment Method</th>
-              <th>Amount Spent ($ USD)</th>
+              <th>Paid By</th>
+              <th>Amount ($ USD)</th>
             </tr>
           </thead>
           <tbody>
             ${dataToExport.map(r => `
               <tr>
-                <td>${r.date}</td>
+                <td>${formatDisplayDate(r.date)}</td>
                 <td><strong>${r.description}</strong></td>
                 <td>${r.voucherNo || '-'}</td>
                 <td>${r.category || 'General'}</td>
                 <td>${r.paymentMethod || 'Card/Online'}</td>
+                <td>${r.paidBy || 'Admin Manager'}</td>
                 <td><strong>${r.cardSpent || r.cashOut || '$0.00'}</strong></td>
               </tr>
             `).join('')}
           </tbody>
         </table>
         <div style="margin-top: 20px; text-align: right; font-size: 11px;">
-          <strong>Total Spent: $${liveTotalSpent.toFixed(2)} USD</strong>
+          <strong>Total Expenses: $${liveTotalSpent.toFixed(2)} USD</strong>
         </div>
       </body>
       </html>
@@ -651,9 +680,11 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
         </div>
 
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <button onClick={handleOpenEditHeaderModal} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', background: '#FFFBEB', color: '#B45309', borderColor: '#FDE68A', fontWeight: 700 }}>
-            <Edit2 size={15} /> ✏️ Edit Allocations
-          </button>
+          {isCeoOrAdmin && (
+            <button onClick={handleOpenEditHeaderModal} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', background: '#FFFBEB', color: '#B45309', borderColor: '#FDE68A', fontWeight: 700 }}>
+              <Edit2 size={15} /> ✏️ Edit Allocations
+            </button>
+          )}
 
           <button onClick={handleExportMonthlyWord} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem' }}>
             <FileText size={15} /> Export Word (.doc)
@@ -669,50 +700,39 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
         </div>
       </div>
 
-      {/* Master Financial Summary Cards Bar - 5 Metric Columns */}
-      <div className="summary-cards-grid no-print" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+      {/* Master Financial Summary Cards Bar */}
+      <div className="summary-cards-grid no-print" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '12px', marginBottom: '16px' }}>
         <div className="summary-card text-emerald">
           <div className="summary-card-header">
-            <span className="summary-card-title">Starting Petty Cash</span>
+            <span className="summary-card-title">Admin Cash On Hand</span>
             <Wallet className="summary-card-icon text-emerald" />
           </div>
           <div className="summary-card-value text-emerald">
-            ${startingCashNum.toFixed(2)}
+            ${adminCashOnHandNum.toFixed(2)}
           </div>
-          <span className="summary-card-subtitle">Approved Allocation</span>
+          <span className="summary-card-subtitle">Starting Cash Float</span>
         </div>
 
         <div className="summary-card text-blue">
           <div className="summary-card-header">
-            <span className="summary-card-title">Cash In</span>
+            <span className="summary-card-title">CEO Reimbursements</span>
             <TrendingUp className="summary-card-icon text-blue" />
           </div>
           <div className="summary-card-value text-blue">
-            ${totalCashInNum.toFixed(2)}
+            ${totalReimbursementsNum.toFixed(2)}
           </div>
-          <span className="summary-card-subtitle">Replenished Funds</span>
+          <span className="summary-card-subtitle">Extra Funds Added to Float</span>
         </div>
 
         <div className="summary-card text-amber">
           <div className="summary-card-header">
-            <span className="summary-card-title">Cash Out</span>
+            <span className="summary-card-title">Total Expenses Spent</span>
             <ArrowDownRight className="summary-card-icon text-amber" />
           </div>
           <div className="summary-card-value text-amber">
-            ${cashOutSpent.toFixed(2)}
+            ${liveTotalSpent.toFixed(2)}
           </div>
-          <span className="summary-card-subtitle">Cash Expenditures</span>
-        </div>
-
-        <div className="summary-card text-indigo" style={{ borderLeft: '4px solid #6366F1' }}>
-          <div className="summary-card-header">
-            <span className="summary-card-title">Card Spent</span>
-            <CreditCard className="summary-card-icon" style={{ color: '#6366F1' }} />
-          </div>
-          <div className="summary-card-value" style={{ color: '#6366F1' }}>
-            ${cardSpentNum.toFixed(2)}
-          </div>
-          <span className="summary-card-subtitle">Online / Card Purchases</span>
+          <span className="summary-card-subtitle">Total Expenditures</span>
         </div>
 
         <div className="summary-card text-purple">
@@ -724,6 +744,34 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
             ${dynamicRemainingCash.toFixed(2)}
           </div>
           <span className="summary-card-subtitle">Net Available Funds</span>
+        </div>
+      </div>
+
+      {/* Payment Method Financial Breakdown Section */}
+      <div className="no-print" style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '14px', padding: '16px 20px', marginBottom: '24px', boxShadow: 'var(--shadow-card)' }}>
+        <h4 style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <CreditCard size={16} style={{ color: 'var(--brand-green)' }} /> Payment Method Expenditures Breakdown
+        </h4>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px' }}>
+          <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', padding: '12px', borderRadius: '10px' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#166534', display: 'block' }}>📱 ABA QR Code</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#15803D' }}>${abaQrSpent.toFixed(2)}</span>
+          </div>
+
+          <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '12px', borderRadius: '10px' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#1E40AF', display: 'block' }}>💳 Card / Online</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#1D4ED8' }}>${cardOnlineSpent.toFixed(2)}</span>
+          </div>
+
+          <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', padding: '12px', borderRadius: '10px' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#92400E', display: 'block' }}>💵 Cash Payment</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#B45309' }}>${cashSpent.toFixed(2)}</span>
+          </div>
+
+          <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', padding: '12px', borderRadius: '10px' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#5B21B6', display: 'block' }}>🏦 Bank Transfer</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#6D28D9' }}>${bankTransferSpent.toFixed(2)}</span>
+          </div>
         </div>
       </div>
 
@@ -766,41 +814,41 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
                     <span>September 2026</span>
-                    <span style={{ color: '#059669', fontWeight: 800 }}>${septTotal.toFixed(2)} ({filteredSeptData.length} items)</span>
+                    <span style={{ color: '#8B5CF6', fontWeight: 800 }}>${septTotal.toFixed(2)} ({filteredSeptData.length} items)</span>
                   </div>
                   <div style={{ width: '100%', height: '14px', background: '#F1F5F9', borderRadius: '8px', overflow: 'hidden' }}>
-                    <div style={{ width: `${Math.min(100, (septTotal / Math.max(1, totalYTD)) * 100)}%`, height: '100%', background: 'linear-gradient(90deg, #10B981, #047857)', borderRadius: '8px' }} />
+                    <div style={{ width: `${Math.min(100, (septTotal / Math.max(1, totalYTD)) * 100)}%`, height: '100%', background: 'linear-gradient(90deg, #A855F7, #6D28D9)', borderRadius: '8px' }} />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Category Breakdown Distribution */}
+            {/* Category Breakdown Graphic */}
             <div style={{ background: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '24px', boxShadow: 'var(--shadow-card)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <PieChart style={{ color: '#059669' }} />
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Expense Category Distribution</h3>
+                  <PieChart style={{ color: '#8B5CF6' }} />
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Expenditure Category Breakdown</h3>
                 </div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Live Category Aggregation</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Distribution</span>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '12px' }}>
                 {categories.length === 0 ? (
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '20px' }}>Loading live category graphics...</p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No category data available.</p>
                 ) : (
-                  categories.map((cat, i) => (
-                    <div key={cat.name}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '4px' }}>
-                        <span style={{ fontWeight: 600 }}>{cat.name}</span>
-                        <span style={{ color: 'var(--brand-green)', fontWeight: 700 }}>${cat.amount.toFixed(2)} ({cat.percentage}%)</span>
+                  categories.map((cat, idx) => (
+                    <div key={idx}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', fontWeight: 600, marginBottom: '4px' }}>
+                        <span>{cat.name}</span>
+                        <span>${cat.amount.toFixed(2)} ({cat.percentage}%)</span>
                       </div>
-                      <div style={{ width: '100%', height: '8px', background: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: '100%', height: '10px', background: '#F1F5F9', borderRadius: '6px', overflow: 'hidden' }}>
                         <div style={{ 
                           width: `${cat.percentage}%`, 
                           height: '100%', 
-                          background: i % 2 === 0 ? 'linear-gradient(90deg, #FDB913, #0A6B3D)' : 'linear-gradient(90deg, #2563EB, #7C3AED)', 
-                          borderRadius: '4px' 
+                          background: idx === 0 ? '#0A6B3D' : idx === 1 ? '#2563EB' : idx === 2 ? '#8B5CF6' : idx === 3 ? '#F59E0B' : '#64748B',
+                          borderRadius: '6px' 
                         }} />
                       </div>
                     </div>
@@ -816,13 +864,13 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
             <table className="custom-table">
               <thead>
                 <tr>
-                  <th>Date</th>
+                  <th>Date (DD-MM-YYYY)</th>
                   <th>Description / Item</th>
-                  <th>Bill Number</th>
+                  <th>Invoice Number</th>
                   <th>Category</th>
                   <th>Payment Method</th>
-                  <th>Card / Online Spent</th>
-                  <th>Cash Out</th>
+                  <th>Paid By</th>
+                  <th>Amount</th>
                   <th style={{ textAlign: 'center' }}>Actions</th>
                 </tr>
               </thead>
@@ -836,30 +884,21 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                 ) : (
                   allRows.map((item, idx) => (
                     <tr key={item.id || idx}>
-                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.date}</td>
+                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{formatDisplayDate(item.date)}</td>
                       <td style={{ fontWeight: 600 }}>{item.description}</td>
                       <td><span className="project-id-badge">{item.voucherNo || '-'}</span></td>
                       <td style={{ color: 'var(--brand-green)', fontWeight: 600 }}>{item.category || 'General'}</td>
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.paymentMethod || 'Card/Online'}</td>
-                      <td style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{item.cardSpent || '$0.00'}</td>
-                      <td style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{item.cashOut || '$0.00'}</td>
+                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.paidBy || 'Admin Manager'}</td>
+                      <td style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{item.cardSpent || item.cashOut || '$0.00'}</td>
                       <td style={{ textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                          <button
-                            onClick={() => handleOpenEditModal(item)}
-                            style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                            title="Edit Petty Cash Entry"
-                          >
-                            <Edit2 size={13} /> Edit
-                          </button>
-                          <button
-                            onClick={() => handleDirectDelete(item)}
-                            style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                            title="Direct Delete Transaction"
-                          >
-                            <Trash2 size={13} /> Delete
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => handleOpenEditModal(item)}
+                          style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          title="Edit Petty Cash Entry"
+                        >
+                          <Edit2 size={13} /> Edit
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -884,7 +923,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>{item.date}</span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>{formatDisplayDate(item.date)}</span>
                     <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: '2px 0 0 0' }}>{item.description}</h4>
                   </div>
                   <span style={{ 
@@ -902,7 +941,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.75rem', alignItems: 'center' }}>
                   <span style={{ background: '#F1F5F9', color: '#475569', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
-                    Bill: {item.voucherNo || '-'}
+                    Invoice: {item.voucherNo || '-'}
                   </span>
                   <span style={{ background: '#FEF3C7', color: '#B45309', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
                     {item.category || 'Supplies'}
@@ -919,12 +958,6 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                   >
                     <Edit2 size={14} /> Edit Entry
                   </button>
-                  <button
-                    onClick={() => handleDirectDelete(item)}
-                    style={{ flex: 1, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                  >
-                    <Trash2 size={14} /> Delete
-                  </button>
                 </div>
               </div>
             ))}
@@ -940,13 +973,13 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
             <table className="custom-table">
               <thead>
                 <tr>
-                  <th>Date</th>
+                  <th>Date (DD-MM-YYYY)</th>
                   <th>Description / Item</th>
-                  <th>Bill Number</th>
+                  <th>Invoice Number</th>
                   <th>Category</th>
                   <th>Payment Method</th>
-                  <th>Card / Online Spent</th>
-                  <th>Cash Out</th>
+                  <th>Paid By</th>
+                  <th>Amount</th>
                   <th style={{ textAlign: 'center' }}>Actions</th>
                 </tr>
               </thead>
@@ -960,30 +993,21 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                 ) : (
                   filteredActiveTabData.map((item, idx) => (
                     <tr key={item.id || idx}>
-                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.date}</td>
+                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{formatDisplayDate(item.date)}</td>
                       <td style={{ fontWeight: 600 }}>{item.description}</td>
                       <td><span className="project-id-badge">{item.voucherNo || '-'}</span></td>
                       <td style={{ color: 'var(--brand-green)', fontWeight: 600 }}>{item.category || 'General'}</td>
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.paymentMethod || 'Card/Online'}</td>
-                      <td style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{item.cardSpent || '$0.00'}</td>
-                      <td style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{item.cashOut || '$0.00'}</td>
+                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.paidBy || 'Admin Manager'}</td>
+                      <td style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{item.cardSpent || item.cashOut || '$0.00'}</td>
                       <td style={{ textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                          <button
-                            onClick={() => handleOpenEditModal(item)}
-                            style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                            title="Edit Petty Cash Entry"
-                          >
-                            <Edit2 size={13} /> Edit
-                          </button>
-                          <button
-                            onClick={() => handleDirectDelete(item)}
-                            style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                            title="Direct Delete Transaction"
-                          >
-                            <Trash2 size={13} /> Delete
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => handleOpenEditModal(item)}
+                          style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          title="Edit Petty Cash Entry"
+                        >
+                          <Edit2 size={13} /> Edit
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -1008,7 +1032,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>{item.date}</span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>{formatDisplayDate(item.date)}</span>
                     <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', margin: '2px 0 0 0' }}>{item.description}</h4>
                   </div>
                   <span style={{ 
@@ -1026,7 +1050,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.75rem', alignItems: 'center' }}>
                   <span style={{ background: '#F1F5F9', color: '#475569', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
-                    Bill: {item.voucherNo || '-'}
+                    Invoice: {item.voucherNo || '-'}
                   </span>
                   <span style={{ background: '#FEF3C7', color: '#B45309', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
                     {item.category || 'Supplies'}
@@ -1042,12 +1066,6 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                     style={{ flex: 1, background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                   >
                     <Edit2 size={14} /> Edit Entry
-                  </button>
-                  <button
-                    onClick={() => handleDirectDelete(item)}
-                    style={{ flex: 1, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                  >
-                    <Trash2 size={14} /> Delete
                   </button>
                 </div>
               </div>
@@ -1103,19 +1121,19 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#475569', marginBottom: '4px' }}>
-                    Voucher / Bill Number
+                    Invoice Number
                   </label>
                   <input
                     type="text"
                     value={editFormData.voucherNo}
                     onChange={e => setEditFormData({ ...editFormData, voucherNo: e.target.value })}
-                    placeholder="e.g. V-102"
+                    placeholder="e.g. INV-1002"
                     style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.85rem' }}
                   />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#475569', marginBottom: '4px' }}>
-                    Amount Spent ($ USD) *
+                    Amount ($ USD) *
                   </label>
                   <input
                     type="number"
@@ -1145,6 +1163,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                     <option value="Stationery">Stationery</option>
                     <option value="Tax Related">Tax Related</option>
                     <option value="Maintenance">Maintenance</option>
+                    <option value="Reimbursement">Reimbursement (CEO Extra Funds)</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
@@ -1157,8 +1176,9 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                     onChange={e => setEditFormData({ ...editFormData, paymentMethod: e.target.value })}
                     style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.85rem' }}
                   >
-                    <option value="Card/Online">Card/Online</option>
-                    <option value="Petty Cash">Petty Cash</option>
+                    <option value="ABA QR Code">ABA QR Code</option>
+                    <option value="Card/Online">Card / Online</option>
+                    <option value="Cash">Cash</option>
                     <option value="Bank Transfer">Bank Transfer</option>
                   </select>
                 </div>
