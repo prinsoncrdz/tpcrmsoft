@@ -437,6 +437,10 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     return 'aug'; // Default fallback to August 2026 current month
   };
 
+  const isJulyRow = (r) => getRowMonthTag(r) === 'july';
+  const isAugRow = (r) => getRowMonthTag(r) === 'aug';
+  const isSeptRow = (r) => getRowMonthTag(r) === 'sept';
+
   // Date-wise parsing and chronological sorting helper
   const parseDateMs = (dStr) => {
     if (!dStr) return 0;
