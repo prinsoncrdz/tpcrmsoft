@@ -128,25 +128,35 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     } catch(e) {}
   };
 
+  const isFetchingRef = React.useRef(false);
+
   const loadAllPettyCashData = async (isInitial = false) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+
     if (isInitial || (julyData.length === 0 && augData.length === 0 && septData.length === 0)) {
       setLoading(true);
     }
 
-    const [dashRes, julyRes, augRes, septRes, cloudEdits] = await Promise.all([
-      fetchSheetData(SHEET_GIDS.PETTY_CASH_DASHBOARD),
-      fetchSheetData(SHEET_GIDS.PETTY_CASH_JULY),
-      fetchSheetData(SHEET_GIDS.PETTY_CASH_AUG),
-      fetchSheetData(SHEET_GIDS.PETTY_CASH_SEPT),
-      fetchGlobalPettyCashEdits()
-    ]);
-
-    let jT = julyRes.success ? (Array.isArray(julyRes.data) ? julyRes.data : (julyRes.data?.transactions || [])) : [];
-    let aT = augRes.success ? (Array.isArray(augRes.data) ? augRes.data : (augRes.data?.transactions || [])) : [];
-    let sT = septRes.success ? (Array.isArray(septRes.data) ? septRes.data : (septRes.data?.transactions || [])) : [];
-
-    // Apply cloud + local overlay edits across all devices
     try {
+      const [dashRes, julyRes, augRes, septRes, cloudEdits] = await Promise.all([
+        fetchSheetData(SHEET_GIDS.PETTY_CASH_DASHBOARD),
+        fetchSheetData(SHEET_GIDS.PETTY_CASH_JULY),
+        fetchSheetData(SHEET_GIDS.PETTY_CASH_AUG),
+        fetchSheetData(SHEET_GIDS.PETTY_CASH_SEPT),
+        fetchGlobalPettyCashEdits()
+      ]);
+
+      let jT = julyRes.success ? (Array.isArray(julyRes.data) ? julyRes.data : (julyRes.data?.transactions || [])) : [];
+      let aT = augRes.success ? (Array.isArray(augRes.data) ? augRes.data : (augRes.data?.transactions || [])) : [];
+      let sT = septRes.success ? (Array.isArray(septRes.data) ? septRes.data : (septRes.data?.transactions || [])) : [];
+
+      // Preserve existing in-memory transactions if a fetch fails
+      if (jT.length === 0 && julyData.length > 0) jT = julyData;
+      if (aT.length === 0 && augData.length > 0) aT = augData;
+      if (sT.length === 0 && septData.length > 0) sT = septData;
+
+      // Apply cloud + local overlay edits across all devices
       const editsMap = {};
       const savedStr = localStorage.getItem(PETTY_EDITS_KEY);
       if (savedStr) Object.assign(editsMap, JSON.parse(savedStr));
@@ -187,39 +197,49 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
           }
         });
       }
-    } catch(e) {}
 
-    setJulyData(jT);
-    setAugData(aT);
-    setSeptData(sT);
+      setJulyData(jT);
+      setAugData(aT);
+      setSeptData(sT);
 
-    // Dynamic header summary priority: September Tab -> August Tab -> Dashboard Tab -> July Tab
-    const liveHeaderFromSheet = (septRes.success && septRes.headerSummary && septRes.headerSummary.startingCash !== '$0.00') ? septRes.headerSummary :
-                                (augRes.success && augRes.headerSummary && augRes.headerSummary.startingCash !== '$0.00') ? augRes.headerSummary :
-                                (dashRes.success && dashRes.headerSummary && dashRes.headerSummary.startingCash !== '$0.00') ? dashRes.headerSummary :
-                                (julyRes.success && julyRes.headerSummary) ? julyRes.headerSummary : null;
+      // Dynamic header summary priority: September Tab -> August Tab -> Dashboard Tab -> July Tab
+      const liveHeaderFromSheet = (septRes.success && septRes.headerSummary && septRes.headerSummary.startingCash !== '$0.00') ? septRes.headerSummary :
+                                  (augRes.success && augRes.headerSummary && augRes.headerSummary.startingCash !== '$0.00') ? augRes.headerSummary :
+                                  (dashRes.success && dashRes.headerSummary && dashRes.headerSummary.startingCash !== '$0.00') ? dashRes.headerSummary :
+                                  (julyRes.success && julyRes.headerSummary) ? julyRes.headerSummary : null;
 
-    if (activeTab === 'PETTY_CASH_JULY') {
-      setActiveTabData(jT);
-      if (julyRes.success && julyRes.headerSummary) setHeaderSummary(julyRes.headerSummary);
-    } else if (activeTab === 'PETTY_CASH_AUG') {
-      setActiveTabData(aT);
-      if (augRes.success && augRes.headerSummary) setHeaderSummary(augRes.headerSummary);
-    } else if (activeTab === 'PETTY_CASH_SEPT') {
-      setActiveTabData(sT);
-      if (septRes.success && septRes.headerSummary) setHeaderSummary(septRes.headerSummary);
-    } else {
-      setActiveTabData([...jT, ...aT, ...sT]);
-      if (liveHeaderFromSheet) setHeaderSummary(liveHeaderFromSheet);
+      if (activeTab === 'PETTY_CASH_JULY') {
+        setActiveTabData(jT);
+        if (julyRes.success && julyRes.headerSummary) setHeaderSummary(julyRes.headerSummary);
+      } else if (activeTab === 'PETTY_CASH_AUG') {
+        setActiveTabData(aT);
+        if (augRes.success && augRes.headerSummary) setHeaderSummary(augRes.headerSummary);
+      } else if (activeTab === 'PETTY_CASH_SEPT') {
+        setActiveTabData(sT);
+        if (septRes.success && septRes.headerSummary) setHeaderSummary(septRes.headerSummary);
+      } else {
+        setActiveTabData([...jT, ...aT, ...sT]);
+        if (liveHeaderFromSheet) setHeaderSummary(liveHeaderFromSheet);
+      }
+    } catch(e) {
+    } finally {
+      setLoading(false);
+      isFetchingRef.current = false;
     }
-
-    setLoading(false);
   };
 
+  // Immediate tab switching without network lag
+  useEffect(() => {
+    if (activeTab === 'PETTY_CASH_JULY') setActiveTabData(julyData);
+    else if (activeTab === 'PETTY_CASH_AUG') setActiveTabData(augData);
+    else if (activeTab === 'PETTY_CASH_SEPT') setActiveTabData(septData);
+    else setActiveTabData([...julyData, ...augData, ...septData]);
+  }, [activeTab]);
+
+  // Stable persistent background sync poller (mount-only)
   useEffect(() => {
     loadAllPettyCashData(true);
-    // Optimized background interval refresh (10 seconds) to eliminate network lag & syncing delays
-    const interval = setInterval(() => loadAllPettyCashData(false), 10000);
+    const interval = setInterval(() => loadAllPettyCashData(false), 12000);
 
     let bcSync;
     try {
@@ -233,7 +253,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
       clearInterval(interval);
       if (bcSync) bcSync.close();
     };
-  }, [activeTab, refreshTrigger]);
+  }, [refreshTrigger]);
 
   const cleanStr = (s) => (s || '').toString().toLowerCase().replace(/[^a-z0-9]/g, '');
 
