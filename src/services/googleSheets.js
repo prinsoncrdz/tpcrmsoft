@@ -11,8 +11,8 @@ export const SHEET_GIDS = {
   PETTY_CASH_SEPT: '1003'
 };
 
-// User's Updated Live Google Apps Script Web App Deployment URL (Aug 31, 2026)
-export const DEPLOYED_GAS_URL = 'https://script.google.com/macros/s/AKfycbxxtzcoO0yM_NEI4EzoW1dhFsyJPu04VYDbr1QV1IUMK20ep6AC4Uk-66Hw_AN9o3vGLQ/exec';
+// User's Updated Live Google Apps Script Web App Deployment URL (Version 16 - Aug 31, 2026)
+export const DEPLOYED_GAS_URL = 'https://script.google.com/macros/s/AKfycbwPqWhHE9RbyRYrW8awOjF3TYmlYQm8Aac4mXxBYw1tOVWRRja7ZtAlJKVMeO9DHub8aw/exec';
 export const DEFAULT_GAS_URL = DEPLOYED_GAS_URL;
 
 // Registered Turning Point Retail Team Users with UNIQUE passwords for each user
