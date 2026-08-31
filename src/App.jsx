@@ -408,22 +408,43 @@ export default function App() {
 
   // Add new Petty Cash transaction
   const handleAddPettyCash = async (pettyCashItem) => {
-    const currentGid = SHEET_GIDS[activeTab] || SHEET_GIDS.PETTY_CASH_JULY;
+    // Auto-resolve proper monthly statement GID from transaction date or monthTag
+    const dStr = (pettyCashItem.date || '').toLowerCase();
+    const mTag = pettyCashItem.monthTag || (
+      dStr.includes('-09-') || dStr.includes('/09/') || dStr.includes('sep') ? 'sept' :
+      dStr.includes('-07-') || dStr.includes('/07/') || dStr.includes('jul') ? 'july' :
+      dStr.includes('-08-') || dStr.includes('/08/') || dStr.includes('aug') ? 'aug' : 'aug'
+    );
+
+    const targetGid = mTag === 'sept' ? SHEET_GIDS.PETTY_CASH_SEPT :
+                      mTag === 'july' ? SHEET_GIDS.PETTY_CASH_JULY :
+                      SHEET_GIDS.PETTY_CASH_AUG;
+
+    const formattedItem = { ...pettyCashItem, monthTag: mTag };
+
     setIsSyncing(true);
     showToast('Syncing Petty Cash transaction to Google Sheet & Cloud...');
 
-    // 1. Send to Google Sheet
+    // 1. Send to Google Sheet target statement tab
     await addPettyCashToGoogleSheet(gasUrl, {
-      gid: currentGid,
-      item: pettyCashItem
+      gid: targetGid,
+      item: formattedItem
     });
 
     // 2. Overlay into Global Petty Cash Edits for instant real-time live sync across all devices
     try {
-      const itemKey = pettyCashItem.id || `pc-${Date.now()}`;
+      const itemKey = formattedItem.id || `pc-${mTag}-${Date.now()}`;
+      
+      // Fetch latest cloud edits map first to avoid overwriting remote entries
+      const cloudEdits = await fetchGlobalPettyCashEdits(gasUrl);
       const savedStr = localStorage.getItem('tp_petty_cash_edits_v1');
-      const editsMap = savedStr ? JSON.parse(savedStr) : {};
-      editsMap[itemKey] = { ...pettyCashItem, id: itemKey };
+      const editsMap = {};
+
+      if (savedStr) Object.assign(editsMap, JSON.parse(savedStr));
+      if (cloudEdits && typeof cloudEdits === 'object') Object.assign(editsMap, cloudEdits);
+
+      editsMap[itemKey] = { ...formattedItem, id: itemKey };
+      
       localStorage.setItem('tp_petty_cash_edits_v1', JSON.stringify(editsMap));
       await saveGlobalPettyCashEdits(gasUrl, editsMap);
 
@@ -433,9 +454,11 @@ export default function App() {
     } catch(e) {}
 
     setIsSyncing(false);
-    showToast(`Petty Cash transaction for "${pettyCashItem.description}" saved live across all screens!`);
+    showToast(`Petty Cash transaction for "${formattedItem.description}" saved live to Google Sheet & Cloud!`);
     setRefreshTrigger(prev => prev + 1);
-    confetti({ particleCount: 60, spread: 60 });
+    try {
+      if (typeof confetti === 'function') confetti({ particleCount: 60, spread: 60 });
+    } catch(e) {}
   };
 
   const handleDeleteProject = async (projectId, deleteReason) => {
