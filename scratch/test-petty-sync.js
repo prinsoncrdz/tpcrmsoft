@@ -1,6 +1,6 @@
 import https from 'https';
 
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzLo4HYV47RRiE6ostVKEyZf1TjDbo_H8ZGEHGGASVJgOhAAiVqE4tQTZDqR_ZCKPUWXw/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbw_zv8kOSrJZOkN8PjW4btdMaoRSQr8k6kQ2Kbm-fhWOrywJOgV3o4kfUK7e10sHf6LKQ/exec';
 
 console.log('--- RUNNING LIVE PETTY CASH NETWORK SYNC AUDIT TEST ---');
 
