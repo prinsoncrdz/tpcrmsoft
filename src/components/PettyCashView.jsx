@@ -464,6 +464,10 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     return [...arr].sort((a, b) => parseDateMs(b.date) - parseDateMs(a.date));
   };
 
+  const isJulyRow = (r) => getRowMonthTag(r) === 'july';
+  const isAugRow = (r) => getRowMonthTag(r) === 'aug';
+  const isSeptRow = (r) => getRowMonthTag(r) === 'sept';
+
   const filteredJulyData = sortByDate(julyData.filter(r => !isItemDeleted(r) && isJulyRow(r)));
   const filteredAugData = sortByDate(augData.filter(r => !isItemDeleted(r) && isAugRow(r)));
   const filteredSeptData = sortByDate(septData.filter(r => !isItemDeleted(r) && isSeptRow(r)));
