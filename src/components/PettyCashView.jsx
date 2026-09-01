@@ -156,11 +156,19 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
       if (aT.length === 0 && augData.length > 0) aT = augData;
       if (sT.length === 0 && septData.length > 0) sT = septData;
 
-      // Apply cloud + local overlay edits across all devices
-      const editsMap = {};
+      // 1. Single Source of Truth for Cloud Overlays across all PCs
+      let editsMap = {};
       const savedStr = localStorage.getItem(PETTY_EDITS_KEY);
-      if (savedStr) Object.assign(editsMap, JSON.parse(savedStr));
-      if (cloudEdits && typeof cloudEdits === 'object') Object.assign(editsMap, cloudEdits);
+
+      if (cloudEdits && typeof cloudEdits === 'object') {
+        editsMap = cloudEdits;
+        // Keep local storage 100% synchronized with Google Cloud single source of truth
+        localStorage.setItem(PETTY_EDITS_KEY, JSON.stringify(cloudEdits));
+      } else if (savedStr) {
+        try {
+          editsMap = JSON.parse(savedStr);
+        } catch(e) {}
+      }
 
       if (editsMap['__HEADER_ALLOCATION__']) {
         setCustomHeader(editsMap['__HEADER_ALLOCATION__']);
@@ -168,8 +176,6 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
       }
 
       if (Object.keys(editsMap).length > 0) {
-        localStorage.setItem(PETTY_EDITS_KEY, JSON.stringify(editsMap));
-        
         // 1. Overlay edits onto existing CSV rows
         const applyEdits = (list) => list.map(item => editsMap[item.id] ? { ...item, ...editsMap[item.id] } : item);
         jT = applyEdits(jT);
