@@ -88,7 +88,7 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
 
   useEffect(() => {
     loadReports();
-    const interval = setInterval(loadReports, 1000);
+    const interval = setInterval(loadReports, 60000);
 
     let bc;
     try {

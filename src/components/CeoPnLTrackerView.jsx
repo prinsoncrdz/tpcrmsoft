@@ -94,7 +94,7 @@ export default function CeoPnLTrackerView({ currentUser }) {
       setIsCloudSyncing(false);
     }
     loadCloudPnL();
-    const interval = setInterval(loadCloudPnL, 1000);
+    const interval = setInterval(loadCloudPnL, 60000);
 
     let bc;
     try {

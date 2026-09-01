@@ -41,8 +41,8 @@ function NotificationBell({ currentUser }) {
     window.addEventListener('tp_notification_created', handleCreated);
     window.addEventListener('tp_notification_updated', handleUpdated);
 
-    // Also poll every 3 seconds for cloud notifications
-    const timer = setInterval(loadNotifs, 3000);
+    // Poll every 60 seconds for cloud notifications
+    const timer = setInterval(loadNotifs, 60000);
 
     return () => {
       window.removeEventListener('tp_notification_created', handleCreated);

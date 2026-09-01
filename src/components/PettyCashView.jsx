@@ -245,7 +245,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
   // Stable persistent background sync poller (mount-only)
   useEffect(() => {
     loadAllPettyCashData(true);
-    const interval = setInterval(() => loadAllPettyCashData(false), 12000);
+    const interval = setInterval(() => loadAllPettyCashData(false), 60000);
 
     let bcSync;
     try {
