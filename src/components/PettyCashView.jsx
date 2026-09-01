@@ -608,6 +608,23 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
     setTimeout(() => { document.title = origTitle; }, 1000);
   };
 
+  const getItemAmount = (item) => {
+    if (!item) return '$0.00';
+    const cSpent = parseVal(item.cardSpent);
+    const cOut = parseVal(item.cashOut);
+    const cIn = parseVal(item.cashIn);
+
+    if (cSpent > 0) return `$${cSpent.toFixed(2)}`;
+    if (cOut > 0) return `$${cOut.toFixed(2)}`;
+    if (cIn > 0) return `$${cIn.toFixed(2)}`;
+
+    if (item.cardSpent && item.cardSpent !== '$0.00' && item.cardSpent !== '$0' && item.cardSpent !== '0') return item.cardSpent;
+    if (item.cashOut && item.cashOut !== '$0.00' && item.cashOut !== '$0' && item.cashOut !== '0') return item.cashOut;
+    if (item.cashIn && item.cashIn !== '$0.00' && item.cashIn !== '$0' && item.cashIn !== '0') return item.cashIn;
+
+    return '$0.00';
+  };
+
   const handleExportMonthlyWord = () => {
     const dataToExport = isDashboardTab ? allRows : filteredActiveTabData;
     const title = monthNameMap[activeTab] || 'Petty Cash Statement';
@@ -650,7 +667,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                 <td>${r.category || 'General'}</td>
                 <td>${r.paymentMethod || 'Card/Online'}</td>
                 <td>${r.paidBy || 'Admin Manager'}</td>
-                <td><strong>${r.cardSpent || r.cashOut || '$0.00'}</strong></td>
+                <td><strong>${getItemAmount(r)}</strong></td>
               </tr>
             `).join('')}
           </tbody>
@@ -898,7 +915,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                       <td style={{ color: 'var(--brand-green)', fontWeight: 600 }}>{item.category || 'General'}</td>
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.paymentMethod || 'Card/Online'}</td>
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.paidBy || 'Admin Manager'}</td>
-                      <td style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{item.cardSpent || item.cashOut || '$0.00'}</td>
+                      <td style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{getItemAmount(item)}</td>
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                           <button
@@ -954,7 +971,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                     borderRadius: '8px',
                     border: '1px solid #A7F3D0'
                   }}>
-                    {item.cardSpent || item.cashOut || '$0.00'}
+                    {getItemAmount(item)}
                   </span>
                 </div>
 
@@ -1026,7 +1043,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                       <td style={{ color: 'var(--brand-green)', fontWeight: 600 }}>{item.category || 'General'}</td>
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.paymentMethod || 'Card/Online'}</td>
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.paidBy || 'Admin Manager'}</td>
-                      <td style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{item.cardSpent || item.cashOut || '$0.00'}</td>
+                      <td style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{getItemAmount(item)}</td>
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                           <button
@@ -1082,7 +1099,7 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                     borderRadius: '8px',
                     border: '1px solid #A7F3D0'
                   }}>
-                    {item.cardSpent || item.cashOut || '$0.00'}
+                    {getItemAmount(item)}
                   </span>
                 </div>
 
