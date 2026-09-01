@@ -156,19 +156,17 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
       if (aT.length === 0 && augData.length > 0) aT = augData;
       if (sT.length === 0 && septData.length > 0) sT = septData;
 
-      // 1. Single Source of Truth for Cloud Overlays across all PCs
+      // 1. Seamless 2-Way Multi-Device Sync Merger (Combines Cloud + Local Edits)
       let editsMap = {};
       const savedStr = localStorage.getItem(PETTY_EDITS_KEY);
-
-      if (cloudEdits && typeof cloudEdits === 'object') {
-        editsMap = cloudEdits;
-        // Keep local storage 100% synchronized with Google Cloud single source of truth
-        localStorage.setItem(PETTY_EDITS_KEY, JSON.stringify(cloudEdits));
-      } else if (savedStr) {
-        try {
-          editsMap = JSON.parse(savedStr);
-        } catch(e) {}
+      if (savedStr) {
+        try { Object.assign(editsMap, JSON.parse(savedStr)); } catch(e) {}
       }
+      if (cloudEdits && typeof cloudEdits === 'object') {
+        Object.assign(editsMap, cloudEdits);
+      }
+      // Save merged master state back to local storage
+      localStorage.setItem(PETTY_EDITS_KEY, JSON.stringify(editsMap));
 
       if (editsMap['__HEADER_ALLOCATION__']) {
         setCustomHeader(editsMap['__HEADER_ALLOCATION__']);
