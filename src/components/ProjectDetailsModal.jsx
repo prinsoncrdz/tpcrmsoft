@@ -2,22 +2,22 @@ import React, { useState } from 'react';
 import { X, Building2, User, Phone, Mail, MapPin, Calendar, DollarSign, CheckCircle2, Clock, FileText, Printer, ShieldCheck, PieChart, Sparkles, AlertTriangle, Layers, Award, Edit3, Save } from 'lucide-react';
 
 export default function ProjectDetailsModal({ project, currentUser, subTasks = [], onClose, onDeleteProject, onCellEdit, onSaveProjectDetails }) {
-  if (!project) return null;
-
   const isCeo = currentUser?.role === 'CEO' || (currentUser?.name || '').toLowerCase().includes('walter') || (currentUser?.role || '').toLowerCase().includes('ceo');
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    clientContact: project.clientContact || project.contactPerson || project.phone || '',
-    projectObjective: project.projectObjective || project.statusUpdate || '',
-    scopeOfWork: project.scopeOfWork || project.notes || '',
-    keyDeliverables: project.keyDeliverables || '',
-    keyPartners: project.keyPartners || '',
-    contractValueUsd: project.contractValueUsd || project.value || '',
-    advanceAmountUsd: project.advanceAmountUsd || project.depositPaid || '',
-    paymentTerms: project.paymentTerms || '',
-    invoiceSchedule: project.invoiceSchedule || ''
+    clientContact: project?.clientContact || project?.contactPerson || project?.phone || '',
+    projectObjective: project?.projectObjective || project?.statusUpdate || '',
+    scopeOfWork: project?.scopeOfWork || project?.notes || '',
+    keyDeliverables: project?.keyDeliverables || '',
+    keyPartners: project?.keyPartners || '',
+    contractValueUsd: project?.contractValueUsd || project?.value || '',
+    advanceAmountUsd: project?.advanceAmountUsd || project?.depositPaid || '',
+    paymentTerms: project?.paymentTerms || '',
+    invoiceSchedule: project?.invoiceSchedule || ''
   });
+
+  if (!project) return null;
 
   const totalContract = parseFloat(formData.contractValueUsd || project.contractValueUsd || project.totalContractValue || project.value || 0);
   const paidAmount = parseFloat(formData.advanceAmountUsd || project.advanceAmountUsd || project.depositPaid || project.amountPaid || 0);

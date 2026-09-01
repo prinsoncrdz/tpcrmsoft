@@ -2,27 +2,6 @@ import React, { useEffect } from 'react';
 import { X, Printer, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function InvoicePrintPreviewModal({ invoice, currentUser, onClose }) {
-  if (!invoice) return null;
-
-  const isCeo = currentUser?.role === 'CEO' || 
-                currentUser?.name?.toLowerCase().includes('walter') || 
-                currentUser?.role?.toLowerCase().includes('ceo');
-
-  const signatureUrl = localStorage.getItem('tp_crm_ceo_signature_v1') || '';
-  const sealUrl = localStorage.getItem('tp_crm_company_seal_v1') || '';
-
-  const items = Array.isArray(invoice.items) ? invoice.items : [];
-  const subtotal = items.reduce((sum, item) => sum + (parseFloat(item?.quantity || 0) * parseFloat(item?.unitPrice || 0)), 0);
-  const includeVat = invoice.includeVat !== false;
-  const vatAmount = includeVat ? subtotal * 0.10 : 0;
-  const grandTotal = subtotal + vatAmount;
-  const amountReceived = parseFloat(invoice.amountReceived || 0);
-  const balanceDue = grandTotal - amountReceived;
-
-  const formatCurrency = (val) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(isNaN(val) ? 0 : val);
-  };
-
   // Auto trigger download & Google Drive backup when creating an invoice
   useEffect(() => {
     if (invoice?.autoDownload) {
@@ -32,6 +11,8 @@ export default function InvoicePrintPreviewModal({ invoice, currentUser, onClose
       return () => clearTimeout(timer);
     }
   }, [invoice]);
+
+  if (!invoice) return null;
 
   const handlePrint = () => {
     const origTitle = document.title;
