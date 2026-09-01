@@ -22,23 +22,32 @@ export default function NewPettyCashModal({ onClose, onAddPettyCash, currentUser
     e.preventDefault();
     if (!formData.description) return;
 
-    // Automatically compute monthTag from transaction date
-    let computedMonthTag = 'aug';
-    try {
-      const selectedDate = formData.date || new Date().toISOString().split('T')[0];
-      const monthNum = new Date(selectedDate).getMonth() + 1; // 1-12
-      computedMonthTag = monthNum === 7 ? 'july' : (monthNum === 9 ? 'sept' : 'aug');
-    } catch(err) {
-      computedMonthTag = 'aug';
+    // Robust monthTag parsing from date string without timezone shifts
+    let computedMonthTag = 'sept';
+    const dStr = (formData.date || '').toString();
+    const match1 = dStr.match(/([0-9]{4})[\/\-]([0-9]{1,2})[\/\-]([0-9]{1,2})/); // YYYY-MM-DD
+    const match2 = dStr.match(/([0-9]{1,2})[\/\-]([0-9]{1,2})[\/\-]([0-9]{4})/); // DD-MM-YYYY
+
+    if (match1) {
+      const m = parseInt(match1[2]);
+      computedMonthTag = m === 7 ? 'july' : (m === 8 ? 'aug' : 'sept');
+    } else if (match2) {
+      const m = parseInt(match2[2]);
+      computedMonthTag = m === 7 ? 'july' : (m === 8 ? 'aug' : 'sept');
     }
 
-    // Ensure dollar sign formatting & monthTag assignment
+    const rawAmt = parseFloat((formData.cardSpent || formData.cashOut || '0').toString().replace('$', '').replace(',', '')) || 0;
+    const formattedAmt = `$${rawAmt.toFixed(2)}`;
+
+    const isCash = (formData.paymentMethod || '').toLowerCase().includes('cash');
+    const isReimbursement = (formData.category || '').toLowerCase().includes('reimbursement') || (formData.description || '').toLowerCase().includes('reimbursement');
+
     const formattedData = {
       ...formData,
       monthTag: computedMonthTag,
-      cardSpent: formData.cardSpent.startsWith('$') ? formData.cardSpent : `$${formData.cardSpent}`,
-      cashOut: formData.cashOut.startsWith('$') ? formData.cashOut : `$${formData.cashOut}`,
-      cashIn: formData.cashIn.startsWith('$') ? formData.cashIn : `$${formData.cashIn}`
+      cardSpent: isReimbursement ? '$0.00' : (!isCash ? formattedAmt : '$0.00'),
+      cashOut: isReimbursement ? '$0.00' : (isCash ? formattedAmt : '$0.00'),
+      cashIn: isReimbursement ? formattedAmt : '$0.00'
     };
 
     onAddPettyCash(formattedData);

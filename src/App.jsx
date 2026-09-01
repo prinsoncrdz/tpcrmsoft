@@ -406,59 +406,80 @@ export default function App() {
     }
   };
 
-  // Add new Petty Cash transaction
+  // Add new Petty Cash transaction with 0ms instant optimistic rendering
   const handleAddPettyCash = async (pettyCashItem) => {
-    // Auto-resolve proper monthly statement GID from transaction date or monthTag
-    const dStr = (pettyCashItem.date || '').toLowerCase();
-    const mTag = pettyCashItem.monthTag || (
-      dStr.includes('-09-') || dStr.includes('/09/') || dStr.includes('sep') ? 'sept' :
-      dStr.includes('-07-') || dStr.includes('/07/') || dStr.includes('jul') ? 'july' :
-      dStr.includes('-08-') || dStr.includes('/08/') || dStr.includes('aug') ? 'aug' : 'aug'
-    );
+    // Robust monthTag parsing from date string without timezone shifts
+    let mTag = pettyCashItem.monthTag || 'sept';
+    const dStr = (pettyCashItem.date || '').toString();
+    const match1 = dStr.match(/([0-9]{4})[\/\-]([0-9]{1,2})[\/\-]([0-9]{1,2})/);
+    const match2 = dStr.match(/([0-9]{1,2})[\/\-]([0-9]{1,2})[\/\-]([0-9]{4})/);
+
+    if (match1) {
+      const m = parseInt(match1[2]);
+      mTag = m === 7 ? 'july' : (m === 8 ? 'aug' : 'sept');
+    } else if (match2) {
+      const m = parseInt(match2[2]);
+      mTag = m === 7 ? 'july' : (m === 8 ? 'aug' : 'sept');
+    }
 
     const targetGid = mTag === 'sept' ? SHEET_GIDS.PETTY_CASH_SEPT :
                       mTag === 'july' ? SHEET_GIDS.PETTY_CASH_JULY :
                       SHEET_GIDS.PETTY_CASH_AUG;
 
-    const formattedItem = { ...pettyCashItem, monthTag: mTag };
+    const rawVal = parseFloat((pettyCashItem.cardSpent || pettyCashItem.cashOut || '0').toString().replace('$', '').replace(',', '')) || 0;
+    const formattedVal = `$${rawVal.toFixed(2)}`;
 
-    setIsSyncing(true);
-    showToast('Syncing Petty Cash transaction to Google Sheet & Cloud...');
+    const pMethod = (pettyCashItem.paymentMethod || 'Card/Online').toString();
+    const isCash = pMethod.toLowerCase().includes('cash');
+    const isReimbursement = (pettyCashItem.category || '').toLowerCase().includes('reimbursement') || (pettyCashItem.description || '').toLowerCase().includes('reimbursement');
 
-    // 1. Send to Google Sheet target statement tab
-    await addPettyCashToGoogleSheet(gasUrl, {
-      gid: targetGid,
-      item: formattedItem
-    });
+    const itemKey = pettyCashItem.id || `pc-${mTag}-${Date.now()}`;
+    const normalizedItem = {
+      ...pettyCashItem,
+      id: itemKey,
+      monthTag: mTag,
+      paymentMethod: pMethod,
+      cardSpent: isReimbursement ? '$0.00' : (!isCash ? formattedVal : '$0.00'),
+      cashOut: isReimbursement ? '$0.00' : (isCash ? formattedVal : '$0.00'),
+      cashIn: isReimbursement ? formattedVal : '$0.00'
+    };
 
-    // 2. Overlay into Global Petty Cash Edits for instant real-time live sync across all devices
+    // 1. INSTANT OPTIMISTIC UI UPDATE (0ms) -> Save to local storage & re-render immediately
+    const savedStr = localStorage.getItem('tp_petty_cash_edits_v1');
+    let editsMap = {};
+    if (savedStr) {
+      try { editsMap = JSON.parse(savedStr); } catch(e) {}
+    }
+    editsMap[itemKey] = normalizedItem;
+    localStorage.setItem('tp_petty_cash_edits_v1', JSON.stringify(editsMap));
+
+    // Force instant UI refresh on screen
+    setRefreshTrigger(prev => prev + 1);
+
     try {
-      const itemKey = formattedItem.id || `pc-${mTag}-${Date.now()}`;
-      
-      // Fetch latest cloud edits map first to avoid overwriting remote entries
-      const cloudEdits = await fetchGlobalPettyCashEdits(gasUrl);
-      const savedStr = localStorage.getItem('tp_petty_cash_edits_v1');
-      const editsMap = {};
-
-      if (savedStr) Object.assign(editsMap, JSON.parse(savedStr));
-      if (cloudEdits && typeof cloudEdits === 'object') Object.assign(editsMap, cloudEdits);
-
-      editsMap[itemKey] = { ...formattedItem, id: itemKey };
-      
-      localStorage.setItem('tp_petty_cash_edits_v1', JSON.stringify(editsMap));
-      await saveGlobalPettyCashEdits(gasUrl, editsMap);
-
       const bc = new BroadcastChannel('tp_petty_cash_sync_channel');
       bc.postMessage({ pettyCashEdits: editsMap });
       bc.close();
     } catch(e) {}
 
-    setIsSyncing(false);
-    showToast(`Petty Cash transaction for "${formattedItem.description}" saved live to Google Sheet & Cloud!`);
-    setRefreshTrigger(prev => prev + 1);
+    showToast(`Petty Cash transaction for "${normalizedItem.description}" added live!`);
+
     try {
       if (typeof confetti === 'function') confetti({ particleCount: 60, spread: 60 });
     } catch(e) {}
+
+    // 2. Perform background cloud sync and Google Sheet insertion asynchronously
+    setIsSyncing(true);
+    try {
+      await saveGlobalPettyCashEdits(gasUrl, editsMap);
+      await addPettyCashToGoogleSheet(gasUrl, {
+        gid: targetGid,
+        item: normalizedItem
+      });
+    } catch(err) {
+      console.warn('Background petty cash sync error:', err);
+    }
+    setIsSyncing(false);
   };
 
   const handleDeleteProject = async (projectId, deleteReason) => {
