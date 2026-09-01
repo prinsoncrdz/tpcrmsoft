@@ -902,13 +902,24 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.paidBy || 'Admin Manager'}</td>
                       <td style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{item.cardSpent || item.cashOut || '$0.00'}</td>
                       <td style={{ textAlign: 'center' }}>
-                        <button
-                          onClick={() => handleOpenEditModal(item)}
-                          style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                          title="Edit Petty Cash Entry"
-                        >
-                          <Edit2 size={13} /> Edit
-                        </button>
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                          <button
+                            onClick={() => handleOpenEditModal(item)}
+                            style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            title="Edit Petty Cash Entry"
+                          >
+                            <Edit2 size={13} /> Edit
+                          </button>
+                          {isCeo && (
+                            <button
+                              onClick={() => handleDirectDelete(item)}
+                              style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              title="Delete Petty Cash Entry (CEO Only)"
+                            >
+                              <Trash2 size={13} /> Delete
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -968,6 +979,14 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                   >
                     <Edit2 size={14} /> Edit Entry
                   </button>
+                  {isCeo && (
+                    <button
+                      onClick={() => handleDirectDelete(item)}
+                      style={{ flex: 1, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    >
+                      <Trash2 size={14} /> Delete
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -1011,13 +1030,24 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.paidBy || 'Admin Manager'}</td>
                       <td style={{ fontWeight: 800, color: 'var(--brand-green)' }}>{item.cardSpent || item.cashOut || '$0.00'}</td>
                       <td style={{ textAlign: 'center' }}>
-                        <button
-                          onClick={() => handleOpenEditModal(item)}
-                          style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                          title="Edit Petty Cash Entry"
-                        >
-                          <Edit2 size={13} /> Edit
-                        </button>
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                          <button
+                            onClick={() => handleOpenEditModal(item)}
+                            style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            title="Edit Petty Cash Entry"
+                          >
+                            <Edit2 size={13} /> Edit
+                          </button>
+                          {isCeo && (
+                            <button
+                              onClick={() => handleDirectDelete(item)}
+                              style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              title="Delete Petty Cash Entry (CEO Only)"
+                            >
+                              <Trash2 size={13} /> Delete
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -1077,6 +1107,14 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
                   >
                     <Edit2 size={14} /> Edit Entry
                   </button>
+                  {isCeo && (
+                    <button
+                      onClick={() => handleDirectDelete(item)}
+                      style={{ flex: 1, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    >
+                      <Trash2 size={14} /> Delete
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
