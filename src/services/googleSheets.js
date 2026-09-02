@@ -442,29 +442,31 @@ function parsePettyCashRows(rows, gid) {
     row.forEach((cell, cIdx) => {
       if (cIdx <= dateIdx) return;
       const cellStr = (cell || '').toString().trim();
-      if (cellStr.startsWith('$') || (!isNaN(parseFloat(cellStr)) && parseFloat(cellStr) > 0)) {
-        const val = cellStr.startsWith('$') ? cellStr : `$${cellStr}`;
-        if (cIdx === 6 || cIdx === 7) cInVal = val;
-        else if (cIdx === 7 || cIdx === 8) cOutVal = val;
-        else if (cIdx >= 8) rawSpent = val;
+      const num = parseFloat(cellStr.replace('$', '').replace(',', ''));
+      if (!isNaN(num) && num > 0) {
+        const val = `$${num.toFixed(2)}`;
+        if (cIdx === 7) cInVal = val;
+        else if (cIdx === 8) cOutVal = val;
+        else if (cIdx >= 9) rawSpent = val;
       }
     });
 
-    const formattedCashIn = cInVal && cInVal !== '0' ? (cInVal.startsWith('$') ? cInVal : `$${cInVal}`) : '$0.00';
-    let formattedCashOut = cOutVal && cOutVal !== '0' ? (cOutVal.startsWith('$') ? cOutVal : `$${cOutVal}`) : '$0.00';
-    let formattedSpent = rawSpent && rawSpent !== '0' ? (rawSpent.startsWith('$') ? rawSpent : `$${rawSpent}`) : '$0.00';
+    const isCashPayment = payVal.toLowerCase().includes('cash') && !payVal.toLowerCase().includes('card') && !payVal.toLowerCase().includes('online');
+    
+    let formattedCashIn = cInVal && cInVal !== '0' && cInVal !== '$0.00' ? (cInVal.startsWith('$') ? cInVal : `$${cInVal}`) : '$0.00';
+    let formattedCashOut = '$0.00';
+    let formattedSpent = '$0.00';
 
-    const isCashPayment = payVal.toLowerCase().includes('cash') || (formattedCashOut !== '$0.00' && formattedSpent === '$0.00');
-    if (isCashPayment) {
-      if (formattedCashOut === '$0.00' && formattedSpent !== '$0.00') {
-        formattedCashOut = formattedSpent;
+    const nonZeroValStr = (cOutVal && cOutVal !== '$0.00' && cOutVal !== '0') ? cOutVal :
+                          (rawSpent && rawSpent !== '$0.00' && rawSpent !== '0') ? rawSpent : null;
+
+    if (nonZeroValStr) {
+      const cleanVal = nonZeroValStr.startsWith('$') ? nonZeroValStr : `$${nonZeroValStr}`;
+      if (isCashPayment) {
+        formattedCashOut = cleanVal;
+      } else {
+        formattedSpent = cleanVal;
       }
-      formattedSpent = '$0.00';
-    } else {
-      if (formattedSpent === '$0.00' && formattedCashOut !== '$0.00') {
-        formattedSpent = formattedCashOut;
-      }
-      formattedCashOut = '$0.00';
     }
 
     transactions.push({

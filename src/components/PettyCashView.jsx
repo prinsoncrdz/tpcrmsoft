@@ -174,8 +174,28 @@ export default function PettyCashView({ activeTab, currentUser, onOpenNewPettyCa
       }
 
       if (Object.keys(editsMap).length > 0) {
-        // 1. Overlay edits onto existing CSV rows
-        const applyEdits = (list) => list.map(item => editsMap[item.id] ? { ...item, ...editsMap[item.id] } : item);
+        // 1. Overlay edits onto existing CSV rows while preserving valid Google Sheet amounts
+        const applyEdits = (list) => list.map(item => {
+          const edit = editsMap[item.id];
+          if (!edit) return item;
+
+          const editAmt = parseVal(edit.cardSpent) || parseVal(edit.cashOut) || parseVal(edit.cashIn);
+          const itemAmt = parseVal(item.cardSpent) || parseVal(item.cashOut) || parseVal(item.cashIn);
+
+          // If overlay edit is $0.00 but Google Sheet has a valid non-zero amount, preserve Google Sheet's amount
+          if (editAmt === 0 && itemAmt > 0) {
+            return {
+              ...edit,
+              ...item,
+              description: edit.description || item.description,
+              voucherNo: edit.voucherNo || item.voucherNo,
+              category: edit.category || item.category,
+              paymentMethod: edit.paymentMethod || item.paymentMethod,
+              paidBy: edit.paidBy || item.paidBy
+            };
+          }
+          return { ...item, ...edit };
+        });
         jT = applyEdits(jT);
         aT = applyEdits(aT);
         sT = applyEdits(sT);
