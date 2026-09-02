@@ -445,29 +445,23 @@ function parsePettyCashRows(rows, gid) {
       const num = parseFloat(cellStr.replace('$', '').replace(',', ''));
       if (!isNaN(num) && num > 0) {
         const val = `$${num.toFixed(2)}`;
-        if (cIdx === 7) cInVal = val;
-        else if (cIdx === 8) cOutVal = val;
-        else if (cIdx >= 9) rawSpent = val;
+        if (cIdx === 7 && cInVal === '$0.00') cInVal = val;
+        else if (cIdx === 8 && cOutVal === '$0.00') cOutVal = val;
+        else if (cIdx >= 9 && rawSpent === '$0.00') rawSpent = val;
       }
     });
 
-    const isCashPayment = payVal.toLowerCase().includes('cash') && !payVal.toLowerCase().includes('card') && !payVal.toLowerCase().includes('online');
-    
-    let formattedCashIn = cInVal && cInVal !== '0' && cInVal !== '$0.00' ? (cInVal.startsWith('$') ? cInVal : `$${cInVal}`) : '$0.00';
-    let formattedCashOut = '$0.00';
-    let formattedSpent = '$0.00';
+    const parseMoneyCell = (str) => {
+      if (!str) return '$0.00';
+      const clean = str.toString().trim();
+      const num = parseFloat(clean.replace('$', '').replace(',', ''));
+      if (!isNaN(num) && num > 0) return `$${num.toFixed(2)}`;
+      return '$0.00';
+    };
 
-    const nonZeroValStr = (cOutVal && cOutVal !== '$0.00' && cOutVal !== '0') ? cOutVal :
-                          (rawSpent && rawSpent !== '$0.00' && rawSpent !== '0') ? rawSpent : null;
-
-    if (nonZeroValStr) {
-      const cleanVal = nonZeroValStr.startsWith('$') ? nonZeroValStr : `$${nonZeroValStr}`;
-      if (isCashPayment) {
-        formattedCashOut = cleanVal;
-      } else {
-        formattedSpent = cleanVal;
-      }
-    }
+    const formattedCashIn = parseMoneyCell(cInVal);
+    const formattedCashOut = parseMoneyCell(cOutVal);
+    const formattedSpent = parseMoneyCell(rawSpent);
 
     transactions.push({
       id: `pc-${monthTag}-${i}`,
