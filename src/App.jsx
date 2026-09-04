@@ -22,6 +22,7 @@ import {
   saveGlobalDeletedProjects,
   fetchGlobalProjectsDetails,
   saveGlobalProjectsDetails,
+  SYSTEM_USERS,
   SHEET_GIDS,
   DEFAULT_GAS_URL 
 } from './services/googleSheets';
@@ -47,8 +48,18 @@ export default function App() {
   }, []);
 
   const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('tp_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('tp_user');
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      const matched = (SYSTEM_USERS || []).find(u => u.email.toLowerCase() === (parsed.email || '').toLowerCase());
+      if (matched) {
+        const synced = { ...parsed, ...matched };
+        localStorage.setItem('tp_user', JSON.stringify(synced));
+        return synced;
+      }
+      return parsed;
+    } catch(e) { return null; }
   });
 
   const [activeTab, setActiveTab] = useState('CRM');

@@ -24,7 +24,7 @@ export const SYSTEM_USERS = [
     passwordHash: 'WalterCEO@2026!',
     fallbackPassword: 'TurningPoint@2026!',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-    allowedTabs: ['CRM', 'PETTY_CASH_DASHBOARD', 'PETTY_CASH_JULY', 'PETTY_CASH_AUG', 'PETTY_CASH_SEPT']
+    allowedTabs: ['CRM', 'PETTY_CASH_DASHBOARD', 'PETTY_CASH_JULY', 'PETTY_CASH_AUG', 'PETTY_CASH_SEPT', 'TAX_INVOICES', 'PROJECT_APPROVALS', 'FRIDAY_REPORT', 'CEO_PNL_TRACKER', 'TEAM_CHAT']
   },
   {
     email: 'admin@turningpointretail.com',
@@ -33,7 +33,7 @@ export const SYSTEM_USERS = [
     passwordHash: 'AdminTurning@2026!',
     fallbackPassword: 'TurningPoint@2026!',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150',
-    allowedTabs: ['CRM', 'PETTY_CASH_DASHBOARD', 'PETTY_CASH_JULY', 'PETTY_CASH_AUG', 'PETTY_CASH_SEPT']
+    allowedTabs: ['CRM', 'PETTY_CASH_DASHBOARD', 'PETTY_CASH_JULY', 'PETTY_CASH_AUG', 'PETTY_CASH_SEPT', 'TAX_INVOICES', 'PROJECT_APPROVALS', 'FRIDAY_REPORT', 'CEO_PNL_TRACKER', 'TEAM_CHAT']
   },
   {
     email: 'srelyang.thim@turningpointretail.com',
@@ -42,7 +42,7 @@ export const SYSTEM_USERS = [
     passwordHash: 'SrelyangThim@2026!',
     fallbackPassword: 'TurningPoint@2026!',
     avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=150',
-    allowedTabs: ['CRM']
+    allowedTabs: ['CRM', 'PROJECT_APPROVALS', 'FRIDAY_REPORT', 'TEAM_CHAT']
   },
   {
     email: 'ajay.dsouza@turningpointretail.com',
@@ -51,7 +51,7 @@ export const SYSTEM_USERS = [
     passwordHash: 'AjayDsouza@2026!',
     fallbackPassword: 'TurningPoint@2026!',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150',
-    allowedTabs: ['CRM']
+    allowedTabs: ['CRM', 'FRIDAY_REPORT', 'TEAM_CHAT']
   },
   {
     email: 'prinson.cardoza@turningpointretail.com',
@@ -60,7 +60,7 @@ export const SYSTEM_USERS = [
     passwordHash: 'PrinsonCardoza@2026!',
     fallbackPassword: 'TurningPoint@2026!',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150',
-    allowedTabs: ['CRM']
+    allowedTabs: ['CRM', 'FRIDAY_REPORT', 'CHANGE_PASSWORD', 'TEAM_CHAT']
   },
   {
     email: 'support@turningpointretail.com',
@@ -69,7 +69,7 @@ export const SYSTEM_USERS = [
     passwordHash: 'SreymomSupport@2026!',
     fallbackPassword: 'TurningPoint@2026!',
     avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=150',
-    allowedTabs: ['CRM']
+    allowedTabs: ['CRM', 'FRIDAY_REPORT', 'TEAM_CHAT']
   }
 ];
 
