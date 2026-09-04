@@ -3,7 +3,8 @@
 // File: src/services/awsClient.js
 // ============================================================================
 
-const AWS_API_ENDPOINT = import.meta.env?.VITE_AWS_API_ENDPOINT || localStorage.getItem('tp_aws_api_endpoint') || '';
+const DEPLOYED_AWS_API = 'https://vb8j474fn3.execute-api.us-east-1.amazonaws.com';
+const AWS_API_ENDPOINT = import.meta.env?.VITE_AWS_API_ENDPOINT || localStorage.getItem('tp_aws_api_endpoint') || DEPLOYED_AWS_API;
 
 export const isAwsConfigured = Boolean(AWS_API_ENDPOINT);
 
