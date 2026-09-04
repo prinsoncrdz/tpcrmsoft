@@ -13,6 +13,12 @@ import NewProjectModal from './components/NewProjectModal';
 import NewPettyCashModal from './components/NewPettyCashModal';
 import SheetConfigModal from './components/SheetConfigModal';
 import { 
+  fetchSupabaseProjects, 
+  saveSupabaseProject, 
+  subscribeToRealtimeTable, 
+  isSupabaseConfigured 
+} from './services/supabaseClient';
+import { 
   fetchSheetData, 
   filterProjectsByRole, 
   syncCellToGoogleSheet, 
@@ -93,9 +99,22 @@ export default function App() {
     } catch(e) {}
   };
 
-  // Pure live fetch from published Google Sheet CSV feed with Real-time Deletion Filtering
+  // Primary Live Fetch from Supabase PostgreSQL Database with Google Sheets Fallback
   const loadData = async () => {
     setIsSyncing(true);
+
+    // 1. Try fetching primary project records from Supabase Database
+    try {
+      const supaProjects = await fetchSupabaseProjects();
+      if (Array.isArray(supaProjects) && supaProjects.length > 0) {
+        setProjects(supaProjects);
+        localStorage.setItem('tp_last_known_projects_v2', JSON.stringify(supaProjects));
+        setIsSyncing(false);
+        return;
+      }
+    } catch (e) {
+      console.warn('Supabase primary projects load notice:', e);
+    }
 
     let currentDeleted = deletedProjectKeys;
     try {
@@ -334,12 +353,14 @@ export default function App() {
   const handleSaveProjectDetails = async (targetProject, updatedFields) => {
     const updatedProjects = projects.map(p => {
       if (p.id === targetProject.id || p.projectId === targetProject.projectId) {
-        return {
+        const merged = {
           ...p,
           ...updatedFields,
           value: updatedFields.contractValueUsd || p.value,
           depositPaid: updatedFields.advanceAmountUsd || p.depositPaid
         };
+        saveSupabaseProject(merged);
+        return merged;
       }
       return p;
     });
@@ -395,9 +416,10 @@ export default function App() {
 
       localStorage.setItem('tp_last_known_projects_v2', JSON.stringify(updatedProjects));
       broadcastProjectUpdate(updatedProjects);
+      saveSupabaseProject(newProject);
 
       setIsSyncing(true);
-      showToast(`Pushing "${projName}" to Google Sheet database...`);
+      showToast(`Pushing "${projName}" to Supabase & Google Sheet database...`);
 
       await addProjectToGoogleSheet(gasUrl, newProject);
       await syncProjectsDetailsToCloud(updatedProjects);

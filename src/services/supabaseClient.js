@@ -36,6 +36,64 @@ export function subscribeToRealtimeTable(tableName, onPayload) {
   };
 }
 
+// Project Mapper Functions (relational PostgreSQL <-> camelCase React UI)
+export function mapProjectToSupabase(p) {
+  if (!p) return null;
+  return {
+    project_id: p.projectId || p.id || `PROJ-${Date.now()}`,
+    company_name: p.companyName || p.projectName || 'New Project',
+    client_name: p.client || p.clientName || '',
+    sector: p.sector || '',
+    project_owner: p.owner || p.projectOwner || '',
+    assigned_to: p.assignedTo || p.assignee || '',
+    contract_value: parseFloat((p.value || p.contractValue || '0').toString().replace('$', '').replace(/,/g, '')) || 0,
+    deposit_paid: parseFloat((p.depositPaid || '0').toString().replace('$', '').replace(/,/g, '')) || 0,
+    start_date: p.startDate && p.startDate !== '-' ? p.startDate : null,
+    completion_pct: parseInt((p.completion || p.completionPct || '0').toString().replace('%', ''), 10) || 0,
+    status: p.status || 'Pending CEO Approval',
+    priority: p.priority || 'High',
+    status_update: p.statusUpdate || '',
+    drive_link: p.driveLink || '',
+    next_action: p.nextAction || '',
+    next_action_due: p.nextActionDueDate && p.nextActionDueDate !== '-' ? p.nextActionDueDate : null,
+    financials: p.financials || {},
+    is_deleted: Boolean(p.isDeleted || p.status === 'DELETED')
+  };
+}
+
+export function mapSupabaseToProject(row) {
+  if (!row) return null;
+  return {
+    id: row.project_id || row.id,
+    projectId: row.project_id,
+    companyName: row.company_name,
+    projectName: row.company_name,
+    client: row.client_name,
+    clientName: row.client_name,
+    sector: row.sector,
+    owner: row.project_owner,
+    projectOwner: row.project_owner,
+    assignedTo: row.assigned_to,
+    assignee: row.assigned_to,
+    value: `$${(row.contract_value || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+    contractValueUsd: row.contract_value || 0,
+    depositPaid: `$${(row.deposit_paid || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+    startDate: row.start_date || '-',
+    completion: `${row.completion_pct || 0}%`,
+    completionPct: row.completion_pct || 0,
+    status: row.status || 'Pending CEO Approval',
+    priority: row.priority || 'High',
+    statusUpdate: row.status_update || '',
+    driveLink: row.drive_link || '',
+    nextAction: row.next_action || '',
+    nextActionDueDate: row.next_action_due || '-',
+    financials: row.financials || {},
+    isDeleted: row.is_deleted,
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  };
+}
+
 // 1. Projects Data Layer
 export async function fetchSupabaseProjects() {
   if (!supabase) return null;
@@ -47,7 +105,7 @@ export async function fetchSupabaseProjects() {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data;
+    return (data || []).map(mapSupabaseToProject);
   } catch (err) {
     console.warn('Supabase projects fetch error:', err);
     return null;
@@ -57,13 +115,14 @@ export async function fetchSupabaseProjects() {
 export async function saveSupabaseProject(projectPayload) {
   if (!supabase) return null;
   try {
+    const dbRecord = mapProjectToSupabase(projectPayload);
     const { data, error } = await supabase
       .from('projects')
-      .upsert(projectPayload, { onConflict: 'project_id' })
+      .upsert(dbRecord, { onConflict: 'project_id' })
       .select();
 
     if (error) throw error;
-    return data;
+    return (data || []).map(mapSupabaseToProject);
   } catch (err) {
     console.warn('Supabase project save error:', err);
     return null;
