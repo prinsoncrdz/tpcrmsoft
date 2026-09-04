@@ -10,11 +10,20 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
                 (currentUser?.email || '').toLowerCase().includes('walterdantis') || 
                 (currentUser?.role || '').toLowerCase().includes('ceo');
 
-  const now = new Date();
-  const dayOfWeekNum = now.getDay(); // 0 = Sun, 1 = Mon, 2 = Tue, 3 = Wed, 4 = Thu, 5 = Fri, 6 = Sat
-  const isFridayOrSaturday = dayOfWeekNum === 5 || dayOfWeekNum === 6;
-  const isCeoVerificationWindow = dayOfWeekNum === 6 || dayOfWeekNum === 0 || dayOfWeekNum === 1; // Sat, Sun, Mon
-  const canAccessPortal = isFridayOrSaturday || isCeo;
+  const getFridayDateStr = () => {
+    const d = new Date();
+    const day = d.getDay();
+    const diffToFriday = (5 - day + 7) % 7;
+    d.setDate(d.getDate() + diffToFriday);
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  };
+
+  const defaultFridayDate = getFridayDateStr();
+  const canAccessPortal = true;
+  const canSubmitNow = true;
 
   // Filter Assigned Projects from Live CRM Sheet for Logged-In Staff
   const staffNameLower = (currentUser?.name || '').toLowerCase();
@@ -32,7 +41,7 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
   // Form State for Staff
   const [fullName, setFullName] = useState(currentUser?.name || '');
   const [roleDesignation, setRoleDesignation] = useState(currentUser?.role || '');
-  const [weekEnding, setWeekEnding] = useState('15-08-2026');
+  const [weekEnding, setWeekEnding] = useState(defaultFridayDate);
   const [emailAddress, setEmailAddress] = useState(currentUser?.email || '');
   const [departmentReportingTo, setDepartmentReportingTo] = useState('CEO Walter Dantis');
   const [keyAchievements, setKeyAchievements] = useState('');
@@ -43,7 +52,7 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
       id: `task-1`,
       projectArea: availableProjects[0]?.companyName || 'General Operations',
       taskTitle: '',
-      deadline: '15-08-2026',
+      deadline: defaultFridayDate,
       priorityLevel: 'Medium',
       progressPct: 50,
       progressThisWeek: '',
@@ -200,11 +209,6 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
 
   const handleSubmitReportToCeo = (e) => {
     e.preventDefault();
-
-    if (!canSubmitNow) {
-      alert('🔒 Form submission to CEO unlocks exclusively every Friday & Saturday! You can fill, draft, and preview your weekly report anytime.');
-      return;
-    }
 
     if (!fullName || !roleDesignation || !weekEnding || !emailAddress) {
       alert('Please fill in all required Staff Details fields (*).');
@@ -375,8 +379,6 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
     window.print();
     setTimeout(() => { document.title = origTitle; }, 1000);
   };
-
-  const canSubmitNow = isFridayOrSaturday || isCeo;
 
   // =========================================================================
   // CEO EXECUTIVE REVIEW DASHBOARD VIEW (CEO DOES NOT FILL FORM)
