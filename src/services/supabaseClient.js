@@ -1,8 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Environment variables or configurable Supabase credentials
+// User provided Supabase publishable key
+const DEFAULT_SUPABASE_KEY = 'sb_publishable_MpfhCDs9Kp54qLVPJ4HD0A_P3eTT-Zq';
+
 const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || localStorage.getItem('tp_supabase_url') || '';
-const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || localStorage.getItem('tp_supabase_anon_key') || '';
+const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || localStorage.getItem('tp_supabase_anon_key') || DEFAULT_SUPABASE_KEY;
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
