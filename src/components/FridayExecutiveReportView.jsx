@@ -88,16 +88,18 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
       (cloud || []).forEach(r => { if (r && r.id) map.set(r.id, r); });
 
       const merged = Array.from(map.values());
+      setSubmittedReports(merged);
       if (merged.length > 0) {
-        setSubmittedReports(merged);
         localStorage.setItem(FRIDAY_REPORTS_KEY, JSON.stringify(merged));
       }
-    } catch(err) {}
+    } catch(err) {
+      console.warn('Friday reports load error:', err);
+    }
   };
 
   useEffect(() => {
     loadReports();
-    const interval = setInterval(loadReports, 60000);
+    const interval = setInterval(loadReports, 30000);
 
     let bc;
     try {
@@ -120,6 +122,12 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
     setSubmittedReports(updated);
     localStorage.setItem(FRIDAY_REPORTS_KEY, JSON.stringify(updated));
     saveGlobalWeeklyTasks(null, updated);
+
+    try {
+      const bc = new BroadcastChannel('tp_friday_executive_reports_channel');
+      bc.postMessage({ submittedReports: updated });
+      bc.close();
+    } catch(e) {}
   };
 
   // Staff Task Form Handlers
@@ -431,6 +439,14 @@ export default function FridayExecutiveReportView({ currentUser, projects = [], 
           </div>
 
           <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              onClick={loadReports}
+              className="btn-secondary"
+              style={{ padding: '8px 14px', fontSize: '0.8rem', fontWeight: 800, background: '#10B981', color: '#FFF', border: '1px solid #059669', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              title="Sync latest submitted reports from Google Cloud"
+            >
+              <RotateCcw size={15} /> Refresh Live Reports
+            </button>
             <button 
               onClick={() => window.print()}
               className="btn-secondary"
