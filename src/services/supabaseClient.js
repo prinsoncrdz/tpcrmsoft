@@ -132,3 +132,68 @@ export async function saveSupabaseFridayReport(reportPayload) {
     return null;
   }
 }
+
+// 4. CEO PnL Tracker Data Layer
+export async function fetchSupabasePnL() {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('pnl_tracker')
+      .select('*');
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.warn('Supabase PnL fetch error:', err);
+    return null;
+  }
+}
+
+export async function saveSupabasePnL(pnlPayload) {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('pnl_tracker')
+      .upsert(pnlPayload, { onConflict: 'month' })
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.warn('Supabase PnL save error:', err);
+    return null;
+  }
+}
+
+// 5. Team Real-Time Chat Data Layer
+export async function fetchSupabaseChatMessages() {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('team_messages')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.warn('Supabase chat messages fetch error:', err);
+    return null;
+  }
+}
+
+export async function sendSupabaseChatMessage(messagePayload) {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('team_messages')
+      .insert(messagePayload)
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.warn('Supabase chat message send error:', err);
+    return null;
+  }
+}
