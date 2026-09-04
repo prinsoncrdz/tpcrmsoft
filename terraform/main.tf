@@ -136,7 +136,7 @@ resource "aws_dynamodb_table" "chat" {
 }
 
 # ----------------------------------------------------------------------------
-# 2. AMAZON S3 ASSETS BUCKET
+# 2. AMAZON S3 BUCKETS (ASSETS & FRONTEND WEB HOSTING)
 # ----------------------------------------------------------------------------
 
 resource "aws_s3_bucket" "crm_assets" {
@@ -158,6 +158,56 @@ resource "aws_s3_bucket_cors_configuration" "crm_assets_cors" {
     allowed_origins = ["*"]
     max_age_seconds = 3000
   }
+}
+
+# Frontend S3 Bucket for Static Website Hosting
+resource "aws_s3_bucket" "frontend_bucket" {
+  bucket_prefix = "turningpoint-crm-web-"
+  force_destroy = true
+
+  tags = {
+    Project     = var.project_name
+    Environment = var.environment
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "frontend_public_access" {
+  bucket = aws_s3_bucket.frontend_bucket.id
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+resource "aws_s3_bucket_website_configuration" "frontend_website" {
+  bucket = aws_s3_bucket.frontend_bucket.id
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "index.html"
+  }
+}
+
+resource "aws_s3_bucket_policy" "frontend_bucket_policy" {
+  bucket     = aws_s3_bucket.frontend_bucket.id
+  depends_on = [aws_s3_bucket_public_access_block.frontend_public_access]
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.frontend_bucket.arn}/*"
+      }
+    ]
+  })
 }
 
 # ----------------------------------------------------------------------------

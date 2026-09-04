@@ -8,9 +8,19 @@ output "api_gateway_endpoint" {
   description = "Base URL of the deployed AWS API Gateway HTTP API"
 }
 
-output "s3_bucket_name" {
+output "s3_assets_bucket_name" {
   value       = aws_s3_bucket.crm_assets.bucket
   description = "Name of the created S3 assets bucket"
+}
+
+output "frontend_bucket_name" {
+  value       = aws_s3_bucket.frontend_bucket.bucket
+  description = "Name of the created S3 bucket for frontend hosting"
+}
+
+output "frontend_website_url" {
+  value       = "http://${aws_s3_bucket_website_configuration.frontend_website.website_endpoint}"
+  description = "Public URL for hosted Turning Point CRM Web App"
 }
 
 output "petty_cash_table_name" {
